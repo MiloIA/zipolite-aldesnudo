@@ -170,6 +170,17 @@ footer a{color:var(--teal);text-decoration:none;}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #ddd;border-top-color:var(--ocean);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 @media(max-width:768px){nav{padding:12px 18px;}.nav-links{display:none;}.hero-content{grid-template-columns:1fr;gap:28px;padding:50px 20px 80px;}.hero-logo-ring{width:200px;height:200px;}.hero-logo-ring img{width:170px;height:170px;}.stats-inner{grid-template-columns:repeat(2,1fr);}.packages-grid,.includes-grid{grid-template-columns:1fr;}section{padding:56px 18px;}.ag{grid-template-columns:1fr;}.pay-opts{grid-template-columns:1fr;}.frow{grid-template-columns:1fr;}}
+
+#testimonios { background: white; }
+.testi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
+.testi-card { background: var(--sand); border-radius: 20px; padding: 26px; border: 1.5px solid rgba(0,188,212,0.12); transition: transform 0.2s, box-shadow 0.2s; position: relative; }
+.testi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,150,170,0.12); }
+.testi-stars { color: var(--yellow); font-size: 1.1rem; margin-bottom: 12px; letter-spacing: 2px; }
+.testi-text { font-size: 0.92rem; color: #3a5060; line-height: 1.65; margin-bottom: 18px; font-style: italic; }
+.testi-author { display: flex; align-items: center; gap: 12px; }
+.testi-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--ocean), var(--teal)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+.testi-name { font-weight: 600; font-size: 0.88rem; color: var(--dark); }
+.testi-trip { font-size: 0.75rem; color: var(--ocean); margin-top: 2px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -183,6 +194,7 @@ footer a{color:var(--teal);text-decoration:none;}
     <li><a href="#paquetes">Paquetes</a></li>
     <li><a href="#galeria">Galería</a></li>
     <li><a href="#blog-section">Blog</a></li>
+    <li><a href="#testimonios">Reseñas</a></li>
     <li><a href="#redes">Contacto</a></li>
     <li><div class="lang-switch"><button class="lang-btn active" onclick="setLang('es')">ES</button><button class="lang-btn" onclick="setLang('en')">EN</button></div></li>
     <li><a href="#paquetes" class="nav-cta">¡Reservar!</a></li>
@@ -263,6 +275,72 @@ footer a{color:var(--teal);text-decoration:none;}
     <p class="section-sub">Guías, tips y aventuras de nuestra comunidad.</p>
     <div class="blog-grid" id="blog-container">
       <div class="empty-msg"><span class="spin"></span> Cargando blog...</div>
+    </div>
+  </div>
+</section>
+
+
+<section id="testimonios">
+  <div class="section-inner">
+    <span class="section-tag">Lo que dicen nuestros viajeros</span>
+    <h2 class="section-title">La familia que se elige 🌈</h2>
+    <p class="section-sub">Palabras reales de quienes ya vivieron Zipolite con nosotros.</p>
+    <div class="testi-grid">
+
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Gracias por TODO !!!!!! Fue una gran experiencia, les agradezco a cada uno de Ustedes."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">G</div>
+          <div><div class="testi-name">Gonzalo</div><div class="testi-trip">Zipolite Dic 2025</div></div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Muchas gracias por todo, estuvo muy bien el viaje, hasta pronto y que estén bien."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">V</div>
+          <div><div class="testi-name">Viajero anónimo</div><div class="testi-trip">Zipolite Dic 2025</div></div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Gracias a Ustedes, estuvo muy bien el viaje, nos la pasamos genial. Hasta pronto."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">F</div>
+          <div><div class="testi-name">Francisco</div><div class="testi-trip">Zipolite Dic 2025 · Mendoza</div></div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Les agradezco a cada quien por su compañía tan amena en este viaje, me la pasé increíble. Gracias a las personas organizadoras por hacer este viaje."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">I</div>
+          <div><div class="testi-name">Isaac y Mich</div><div class="testi-trip">Zipolite Dic 2025</div></div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Gracias por la organización. Me gustó la experiencia de viajar con ustedes. Un gusto conocer a todos."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">M</div>
+          <div><div class="testi-name">Manuel (Mia)</div><div class="testi-trip">Zipolite Dic 2025</div></div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Un placer conocerlos y por la experiencia de Zipolite 🎉🥳🎊"</p>
+        <div class="testi-author">
+          <div class="testi-avatar">L</div>
+          <div><div class="testi-name">Luis Ángel</div><div class="testi-trip">Zipolite Feb 2026 · García</div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
