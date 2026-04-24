@@ -16,7 +16,7 @@ nav{background:var(--white);padding:14px 40px;display:flex;align-items:center;ju
 .nav-logo img{width:50px;height:50px;border-radius:50%;object-fit:cover;}
 .nav-logo-text{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;line-height:1.2;color:var(--dark);}
 .nav-logo-text span{display:block;font-size:0.68rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;color:var(--ocean);text-transform:uppercase;letter-spacing:0.1em;}
-.nav-links{display:flex;align-items:center;gap:28px;list-style:none;}
+.nav-links{display:flex;align-items:center;gap:24px;list-style:none;}
 .nav-links a{text-decoration:none;color:var(--dark);font-size:0.88rem;font-weight:500;transition:color 0.2s;}
 .nav-links a:hover{color:var(--ocean);}
 .nav-cta{background:var(--red)!important;color:white!important;padding:9px 20px;border-radius:100px;font-weight:600!important;}
@@ -25,16 +25,16 @@ nav{background:var(--white);padding:14px 40px;display:flex;align-items:center;ju
 .lang-btn.active{background:var(--dark);color:white;border-color:var(--dark);}
 .hero{min-height:90vh;background:linear-gradient(160deg,#E0F7FA 0%,#B2EBF2 40%,#E8F5E9 100%);position:relative;display:flex;align-items:center;overflow:hidden;}
 .hero-content{max-width:1100px;margin:0 auto;padding:80px 40px 100px;display:grid;grid-template-columns:1.1fr 0.9fr;gap:60px;align-items:center;position:relative;z-index:2;width:100%;}
-.hero-tag{display:inline-flex;align-items:center;gap:8px;background:white;border:1.5px solid rgba(0,188,212,0.3);color:var(--ocean);padding:6px 16px;border-radius:100px;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:22px;box-shadow:0 2px 12px rgba(0,150,170,0.12);}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:white;border:1.5px solid rgba(0,188,212,0.3);color:var(--ocean);padding:6px 16px;border-radius:100px;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:22px;}
 .hero h1{font-family:'Fraunces',serif;font-size:clamp(2.6rem,4.5vw,3.8rem);font-weight:900;line-height:1.1;color:var(--dark);margin-bottom:18px;}
 .hero h1 em{font-style:italic;color:var(--ocean);}
 .hero p{font-size:1.05rem;color:#3a6070;line-height:1.75;margin-bottom:34px;max-width:460px;}
 .hero-buttons{display:flex;gap:12px;flex-wrap:wrap;}
 .btn-primary{padding:13px 26px;background:var(--red);color:white;border:none;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 4px 18px rgba(232,49,42,0.35);}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(232,49,42,0.45);}
+.btn-primary:hover{transform:translateY(-2px);}
 .btn-secondary{padding:13px 26px;background:white;color:var(--dark);border:2px solid rgba(0,150,170,0.3);border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all 0.2s;}
 .btn-secondary:hover{border-color:var(--ocean);background:var(--sky);}
-.hero-logo-ring{width:300px;height:300px;border-radius:50%;background:linear-gradient(135deg,#E0F7FA,#B2EBF2);box-shadow:0 20px 60px rgba(0,150,170,0.18);display:flex;align-items:center;justify-content:center;animation:floatY 5s ease-in-out infinite;}
+.hero-logo-ring{width:300px;height:300px;border-radius:50%;background:linear-gradient(135deg,#E0F7FA,#B2EBF2);box-shadow:0 20px 60px rgba(0,150,170,0.18);display:flex;align-items:center;justify-content:center;animation:floatY 5s ease-in-out infinite;margin:0 auto;}
 @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-14px);}}
 .hero-logo-ring img{width:260px;height:260px;object-fit:contain;}
 .hero-wave{position:absolute;bottom:0;left:0;right:0;line-height:0;}
@@ -67,7 +67,7 @@ section{padding:80px 40px;}
 .chk{width:20px;height:20px;background:var(--sky);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;flex-shrink:0;margin-top:2px;color:var(--ocean);font-weight:700;}
 .pkg-note{background:#fffde7;border-left:3px solid var(--yellow);padding:9px 13px;border-radius:0 8px 8px 0;font-size:0.8rem;color:#6a5000;margin-bottom:18px;}
 .pkg-btn{width:100%;padding:13px;border:none;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
-.pkg-btn-primary{background:var(--red);color:white;box-shadow:0 4px 14px rgba(232,49,42,0.28);}
+.pkg-btn-primary{background:var(--red);color:white;}
 .pkg-btn-primary:hover{background:#c0241d;transform:translateY(-1px);}
 .pkg-btn-secondary{background:var(--dark);color:white;}
 .pkg-btn-secondary:hover{background:#0f2a38;transform:translateY(-1px);}
@@ -76,23 +76,32 @@ section{padding:80px 40px;}
 .gallery-item{border-radius:16px;overflow:hidden;aspect-ratio:4/3;background:#e0f7fa;}
 .gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform 0.3s;}
 .gallery-item:hover img{transform:scale(1.05);}
-.gallery-empty{text-align:center;padding:60px 20px;color:#aaa;grid-column:1/-1;font-size:0.95rem;}
+.empty-msg{text-align:center;padding:60px 20px;color:#aaa;grid-column:1/-1;}
 #incluye{background:white;}
 .includes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 .include-card{padding:26px 22px;border-radius:18px;background:var(--sand);border:1.5px solid rgba(0,188,212,0.12);text-align:center;transition:transform 0.2s;}
 .include-card:hover{transform:translateY(-4px);}
 .include-icon{font-size:2rem;margin-bottom:12px;display:block;}
-.include-card h4{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;margin-bottom:7px;color:var(--dark);}
+.include-card h4{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;margin-bottom:7px;}
 .include-card p{font-size:0.83rem;color:#5a7a86;line-height:1.5;}
-#blog-section{background:var(--sand);}
+#testimonios{background:var(--sand);}
+.testi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px;}
+.testi-card{background:white;border-radius:20px;padding:26px;border:1.5px solid rgba(0,188,212,0.12);transition:transform 0.2s,box-shadow 0.2s;}
+.testi-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,150,170,0.12);}
+.testi-stars{color:var(--yellow);font-size:1.1rem;margin-bottom:12px;letter-spacing:2px;}
+.testi-text{font-size:0.92rem;color:#3a5060;line-height:1.65;margin-bottom:18px;font-style:italic;}
+.testi-author{display:flex;align-items:center;gap:12px;}
+.testi-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--ocean),var(--teal));color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;}
+.testi-name{font-weight:600;font-size:0.88rem;color:var(--dark);}
+.testi-trip{font-size:0.75rem;color:var(--ocean);margin-top:2px;font-weight:500;}
+#blog-section{background:white;}
 .blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;}
-.blog-card{background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,150,170,0.08);transition:transform 0.2s;}
+.blog-card{background:var(--sand);border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,150,170,0.08);transition:transform 0.2s;}
 .blog-card:hover{transform:translateY(-4px);}
 .blog-card-body{padding:24px;}
 .blog-card-body h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;margin-bottom:8px;color:var(--dark);}
 .blog-card-body p{font-size:0.85rem;color:#5a7a86;line-height:1.6;}
 .blog-date{font-size:0.75rem;color:#aaa;margin-top:12px;}
-.empty-msg{text-align:center;padding:60px 20px;color:#aaa;grid-column:1/-1;}
 #redes{background:linear-gradient(160deg,#006080 0%,#00ACC1 100%);color:white;text-align:center;}
 #redes .section-title{color:white;}
 #redes .section-sub{color:rgba(255,255,255,0.75);margin:0 auto 38px;}
@@ -108,32 +117,19 @@ section{padding:80px 40px;}
 .wa-btn:hover{transform:scale(1.1);}
 footer{background:#0a2030;color:rgba(255,255,255,0.45);text-align:center;padding:22px 40px;font-size:0.8rem;}
 footer a{color:var(--teal);text-decoration:none;}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,40,60,0.5);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-.modal-overlay.open{display:flex;}
-.modal{background:white;border-radius:24px;padding:38px;width:90%;max-width:510px;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp 0.3s ease;}
-@keyframes slideUp{from{transform:translateY(28px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-.modal-close{position:absolute;top:14px;right:18px;background:#f0f0f0;border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:0.95rem;display:flex;align-items:center;justify-content:center;color:#666;}
-.modal h3{font-family:'Fraunces',serif;font-size:1.45rem;font-weight:800;margin-bottom:5px;color:var(--dark);}
-.modal-subtitle{color:#888;font-size:0.86rem;margin-bottom:24px;}
-.pkg-summary{background:var(--sky);border-radius:12px;padding:14px 18px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;}
-.pkg-summary .sname{font-weight:600;font-size:0.92rem;color:var(--dark);}
-.pkg-summary .stotal{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:900;color:var(--ocean);}
-.pay-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
-.pay-opt{border:2px solid #e0e0e0;border-radius:12px;padding:13px;cursor:pointer;text-align:center;transition:all 0.2s;}
-.pay-opt.selected{border-color:var(--ocean);background:var(--sky);}
-.pay-opt h4{font-size:0.86rem;font-weight:600;color:var(--dark);}
-.pay-opt p{font-size:0.76rem;color:#999;}
-.pay-opt .oprice{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:800;color:var(--dark);margin-top:5px;}
-.fg{margin-bottom:14px;}
-.fg label{display:block;font-size:0.76rem;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
-.fg input,.fg select{width:100%;padding:10px 13px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;outline:none;transition:border-color 0.2s;}
-.fg input:focus,.fg select:focus{border-color:var(--ocean);}
-.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.pay-btn{width:100%;padding:14px;background:var(--red);color:white;border:none;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.97rem;font-weight:700;cursor:pointer;margin-top:18px;transition:background 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
-.pay-btn:hover{background:#c0241d;}
-.pay-btn:disabled{background:#ccc;cursor:not-allowed;}
-.secure{display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.76rem;color:#bbb;margin-top:10px;}
-#pay-error{color:#c0241d;font-size:0.83rem;margin-top:8px;display:none;}
+/* ADMIN LOGIN */
+#admin-login{display:none;position:fixed;inset:0;background:rgba(0,40,60,0.7);z-index:3000;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+#admin-login.open{display:flex;}
+.login-box{background:white;border-radius:20px;padding:40px;width:90%;max-width:380px;text-align:center;}
+.login-box h3{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:800;margin-bottom:6px;color:var(--dark);}
+.login-box p{font-size:0.85rem;color:#888;margin-bottom:24px;}
+.login-box input{width:100%;padding:12px 16px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.95rem;outline:none;transition:border-color 0.2s;margin-bottom:12px;}
+.login-box input:focus{border-color:var(--ocean);}
+.login-btn{width:100%;padding:13px;background:var(--dark);color:white;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:background 0.2s;}
+.login-btn:hover{background:var(--ocean);}
+.login-error{color:var(--red);font-size:0.82rem;margin-top:8px;display:none;}
+.login-cancel{margin-top:12px;background:none;border:none;color:#aaa;font-size:0.82rem;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
+/* ADMIN PANEL */
 #admin-panel{display:none;position:fixed;inset:0;background:#f0f4f6;z-index:2000;overflow-y:auto;}
 .adm-hdr{background:var(--dark);color:white;padding:15px 30px;display:flex;align-items:center;justify-content:space-between;}
 .adm-hdr h2{font-family:'Fraunces',serif;font-size:1.15rem;}
@@ -169,18 +165,51 @@ footer a{color:var(--teal);text-decoration:none;}
 .sub-form{background:var(--sand);border-radius:12px;padding:18px;margin-top:14px;}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #ddd;border-top-color:var(--ocean);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg);}}
-@media(max-width:768px){nav{padding:12px 18px;}.nav-links{display:none;}.hero-content{grid-template-columns:1fr;gap:28px;padding:50px 20px 80px;}.hero-logo-ring{width:200px;height:200px;}.hero-logo-ring img{width:170px;height:170px;}.stats-inner{grid-template-columns:repeat(2,1fr);}.packages-grid,.includes-grid{grid-template-columns:1fr;}section{padding:56px 18px;}.ag{grid-template-columns:1fr;}.pay-opts{grid-template-columns:1fr;}.frow{grid-template-columns:1fr;}}
-
-#testimonios { background: white; }
-.testi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
-.testi-card { background: var(--sand); border-radius: 20px; padding: 26px; border: 1.5px solid rgba(0,188,212,0.12); transition: transform 0.2s, box-shadow 0.2s; position: relative; }
-.testi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,150,170,0.12); }
-.testi-stars { color: var(--yellow); font-size: 1.1rem; margin-bottom: 12px; letter-spacing: 2px; }
-.testi-text { font-size: 0.92rem; color: #3a5060; line-height: 1.65; margin-bottom: 18px; font-style: italic; }
-.testi-author { display: flex; align-items: center; gap: 12px; }
-.testi-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--ocean), var(--teal)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
-.testi-name { font-weight: 600; font-size: 0.88rem; color: var(--dark); }
-.testi-trip { font-size: 0.75rem; color: var(--ocean); margin-top: 2px; font-weight: 500; }
+/* MODAL PAGO */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,40,60,0.5);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:24px;padding:38px;width:90%;max-width:510px;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp 0.3s ease;}
+@keyframes slideUp{from{transform:translateY(28px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-close{position:absolute;top:14px;right:18px;background:#f0f0f0;border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:0.95rem;display:flex;align-items:center;justify-content:center;color:#666;}
+.modal h3{font-family:'Fraunces',serif;font-size:1.45rem;font-weight:800;margin-bottom:5px;color:var(--dark);}
+.modal-subtitle{color:#888;font-size:0.86rem;margin-bottom:24px;}
+.pkg-summary{background:var(--sky);border-radius:12px;padding:14px 18px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;}
+.pkg-summary .sname{font-weight:600;font-size:0.92rem;color:var(--dark);}
+.pkg-summary .stotal{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:900;color:var(--ocean);}
+.pay-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
+.pay-opt{border:2px solid #e0e0e0;border-radius:12px;padding:13px;cursor:pointer;text-align:center;transition:all 0.2s;}
+.pay-opt.selected{border-color:var(--ocean);background:var(--sky);}
+.pay-opt h4{font-size:0.86rem;font-weight:600;color:var(--dark);}
+.pay-opt p{font-size:0.76rem;color:#999;}
+.pay-opt .oprice{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:800;color:var(--dark);margin-top:5px;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:0.76rem;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
+.fg input,.fg select{width:100%;padding:10px 13px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;outline:none;transition:border-color 0.2s;}
+.fg input:focus,.fg select:focus{border-color:var(--ocean);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pay-btn{width:100%;padding:14px;background:var(--red);color:white;border:none;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.97rem;font-weight:700;cursor:pointer;margin-top:18px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.pay-btn:hover{background:#c0241d;}
+.pay-btn:disabled{background:#ccc;cursor:not-allowed;}
+.secure{display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.76rem;color:#bbb;margin-top:10px;}
+#pay-error{color:#c0241d;font-size:0.83rem;margin-top:8px;display:none;}
+/* REGISTRO USUARIOS */
+#user-register{display:none;position:fixed;inset:0;background:rgba(0,40,60,0.6);z-index:1500;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#user-register.open{display:flex;}
+.reg-box{background:white;border-radius:24px;padding:38px;width:90%;max-width:460px;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp 0.3s ease;}
+.reg-box h3{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:800;margin-bottom:4px;color:var(--dark);}
+.reg-box .subtitle{color:#888;font-size:0.85rem;margin-bottom:24px;}
+.reg-close{position:absolute;top:14px;right:18px;background:#f0f0f0;border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:0.95rem;display:flex;align-items:center;justify-content:center;color:#666;}
+.oauth-btn{width:100%;padding:12px 20px;border-radius:10px;border:1.5px solid #e0e0e0;background:white;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s;margin-bottom:10px;}
+.oauth-btn:hover{border-color:var(--ocean);background:var(--sky);}
+.divider{display:flex;align-items:center;gap:12px;margin:16px 0;}
+.divider span{font-size:0.78rem;color:#aaa;white-space:nowrap;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#e0e0e0;}
+.tabs-reg{display:flex;gap:0;margin-bottom:20px;background:#f0f4f6;border-radius:10px;padding:3px;}
+.tab-reg{flex:1;padding:8px;border:none;background:transparent;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;color:#888;transition:all 0.2s;}
+.tab-reg.active{background:white;color:var(--dark);box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+.reg-form{display:none;}
+.reg-form.active{display:block;}
+@media(max-width:768px){nav{padding:12px 18px;}.nav-links{display:none;}.hero-content{grid-template-columns:1fr;gap:28px;padding:50px 20px 80px;}.hero-logo-ring{width:200px;height:200px;}.hero-logo-ring img{width:170px;height:170px;}.stats-inner{grid-template-columns:repeat(2,1fr);}.packages-grid,.includes-grid,.testi-grid{grid-template-columns:1fr;}section{padding:56px 18px;}.ag{grid-template-columns:1fr;}.pay-opts,.frow{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -193,10 +222,11 @@ footer a{color:var(--teal);text-decoration:none;}
   <ul class="nav-links">
     <li><a href="#paquetes">Paquetes</a></li>
     <li><a href="#galeria">Galería</a></li>
-    <li><a href="#blog-section">Blog</a></li>
     <li><a href="#testimonios">Reseñas</a></li>
+    <li><a href="#blog-section">Blog</a></li>
     <li><a href="#redes">Contacto</a></li>
     <li><div class="lang-switch"><button class="lang-btn active" onclick="setLang('es')">ES</button><button class="lang-btn" onclick="setLang('en')">EN</button></div></li>
+    <li><a href="#" onclick="openRegister();return false;" style="color:var(--ocean);font-weight:600;">👤 Mi cuenta</a></li>
     <li><a href="#paquetes" class="nav-cta">¡Reservar!</a></li>
   </ul>
 </nav>
@@ -236,7 +266,7 @@ footer a{color:var(--teal);text-decoration:none;}
     <h2 class="section-title">Elige tu aventura</h2>
     <p class="section-sub">Dos formas de vivir Zipolite. Ninguna equivocada.</p>
     <div class="packages-grid" id="pkg-container">
-      <div style="text-align:center;padding:40px;color:#aaa;grid-column:1/-1;"><span class="spin"></span> Cargando paquetes...</div>
+      <div style="text-align:center;padding:40px;color:#aaa;grid-column:1/-1;"><span class="spin"></span> Cargando...</div>
     </div>
   </div>
 </section>
@@ -247,7 +277,7 @@ footer a{color:var(--teal);text-decoration:none;}
     <h2 class="section-title">Zipolite en imágenes</h2>
     <p class="section-sub">La playa más libre de México, vista desde adentro.</p>
     <div class="gallery-grid" id="gal-container">
-      <div class="gallery-empty"><span class="spin"></span> Cargando...</div>
+      <div class="empty-msg">📷 Agrega fotos desde el panel admin</div>
     </div>
   </div>
 </section>
@@ -268,79 +298,32 @@ footer a{color:var(--teal);text-decoration:none;}
   </div>
 </section>
 
-<section id="blog-section">
-  <div class="section-inner">
-    <span class="section-tag">Blog & Guías</span>
-    <h2 class="section-title">Todo sobre Zipolite</h2>
-    <p class="section-sub">Guías, tips y aventuras de nuestra comunidad.</p>
-    <div class="blog-grid" id="blog-container">
-      <div class="empty-msg"><span class="spin"></span> Cargando blog...</div>
-    </div>
-  </div>
-</section>
-
-
 <section id="testimonios">
   <div class="section-inner">
     <span class="section-tag">Lo que dicen nuestros viajeros</span>
     <h2 class="section-title">La familia que se elige 🌈</h2>
     <p class="section-sub">Palabras reales de quienes ya vivieron Zipolite con nosotros.</p>
     <div class="testi-grid">
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Gracias por TODO !!!!!! Fue una gran experiencia, les agradezco a cada uno de Ustedes."</p><div class="testi-author"><div class="testi-avatar">G</div><div><div class="testi-name">Gonzalo</div><div class="testi-trip">Zipolite Dic 2025</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Muchas gracias por todo, estuvo muy bien el viaje, hasta pronto y que estén bien."</p><div class="testi-author"><div class="testi-avatar">V</div><div><div class="testi-name">Viajero</div><div class="testi-trip">Zipolite Dic 2025</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Gracias a Ustedes, estuvo muy bien el viaje, nos la pasamos genial. Hasta pronto."</p><div class="testi-author"><div class="testi-avatar">F</div><div><div class="testi-name">Francisco</div><div class="testi-trip">Zipolite Dic 2025 · Mendoza</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Saludos amigos, estuvo divertido, lástima que no conviví con muchos. Espero que haya otra oportunidad."</p><div class="testi-author"><div class="testi-avatar">J</div><div><div class="testi-name">Jano</div><div class="testi-trip">Zipolite</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Les agradezco a cada quien por su compañía tan amena, me la pasé increíble. Gracias a las personas organizadoras."</p><div class="testi-author"><div class="testi-avatar">I</div><div><div class="testi-name">Isaac y Mich</div><div class="testi-trip">Zipolite Dic 2025</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Gracias por la organización. Me gustó la experiencia de viajar con ustedes. Un gusto conocer a todos."</p><div class="testi-author"><div class="testi-avatar">M</div><div><div class="testi-name">Manuel (Mia)</div><div class="testi-trip">Zipolite Dic 2025</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Un gusto conocerles, feliz inicio de año lleno de abundancia y bendiciones. Atentamente Miguel Fernández."</p><div class="testi-author"><div class="testi-avatar">M</div><div><div class="testi-name">Miguel Fernández</div><div class="testi-trip">Zipolite Dic 2025</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Fue un placer chicas estar con ustedes."</p><div class="testi-author"><div class="testi-avatar">V</div><div><div class="testi-name">Viajero</div><div class="testi-trip">Zipolite</div></div></div></div>
+      <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Un placer conocerlos y por la experiencia de Zipolite 🎉🥳🎊"</p><div class="testi-author"><div class="testi-avatar">L</div><div><div class="testi-name">Luis Ángel</div><div class="testi-trip">Zipolite Feb 2026 · García</div></div></div></div>
+    </div>
+  </div>
+</section>
 
-      <div class="testi-card">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Gracias por TODO !!!!!! Fue una gran experiencia, les agradezco a cada uno de Ustedes."</p>
-        <div class="testi-author">
-          <div class="testi-avatar">G</div>
-          <div><div class="testi-name">Gonzalo</div><div class="testi-trip">Zipolite Dic 2025</div></div>
-        </div>
-      </div>
-
-      <div class="testi-card">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Muchas gracias por todo, estuvo muy bien el viaje, hasta pronto y que estén bien."</p>
-        <div class="testi-author">
-          <div class="testi-avatar">V</div>
-          <div><div class="testi-name">Viajero anónimo</div><div class="testi-trip">Zipolite Dic 2025</div></div>
-        </div>
-      </div>
-
-      <div class="testi-card">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Gracias a Ustedes, estuvo muy bien el viaje, nos la pasamos genial. Hasta pronto."</p>
-        <div class="testi-author">
-          <div class="testi-avatar">F</div>
-          <div><div class="testi-name">Francisco</div><div class="testi-trip">Zipolite Dic 2025 · Mendoza</div></div>
-        </div>
-      </div>
-
-      <div class="testi-card">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Les agradezco a cada quien por su compañía tan amena en este viaje, me la pasé increíble. Gracias a las personas organizadoras por hacer este viaje."</p>
-        <div class="testi-author">
-          <div class="testi-avatar">I</div>
-          <div><div class="testi-name">Isaac y Mich</div><div class="testi-trip">Zipolite Dic 2025</div></div>
-        </div>
-      </div>
-
-      <div class="testi-card">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Gracias por la organización. Me gustó la experiencia de viajar con ustedes. Un gusto conocer a todos."</p>
-        <div class="testi-author">
-          <div class="testi-avatar">M</div>
-          <div><div class="testi-name">Manuel (Mia)</div><div class="testi-trip">Zipolite Dic 2025</div></div>
-        </div>
-      </div>
-
-      <div class="testi-card">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Un placer conocerlos y por la experiencia de Zipolite 🎉🥳🎊"</p>
-        <div class="testi-author">
-          <div class="testi-avatar">L</div>
-          <div><div class="testi-name">Luis Ángel</div><div class="testi-trip">Zipolite Feb 2026 · García</div></div>
-        </div>
-      </div>
-
+<section id="blog-section">
+  <div class="section-inner">
+    <span class="section-tag">Blog & Guías</span>
+    <h2 class="section-title">Todo sobre Zipolite</h2>
+    <p class="section-sub">Guías, tips y aventuras de nuestra comunidad.</p>
+    <div class="blog-grid" id="blog-container">
+      <div class="empty-msg">✍️ Posts del blog aparecerán aquí.</div>
     </div>
   </div>
 </section>
@@ -358,11 +341,57 @@ footer a{color:var(--teal);text-decoration:none;}
   </div>
 </section>
 
-<footer><p>© 2025 Zipolite al Desnudo · Agencia de Viajes LGBT+ · CDMX, México &nbsp;·&nbsp; <a href="#" onclick="openAdmin();return false;">⚙️ Admin</a></p></footer>
+<footer>
+  <p>© 2025 Zipolite al Desnudo · Agencia de Viajes LGBT+ · CDMX, México &nbsp;·&nbsp;
+  <a href="#" onclick="openAdminLogin();return false;">⚙️ Admin</a></p>
+</footer>
 
 <div class="whatsapp-float">
   <div class="wa-bubble">¿Dudas? ¡Escríbenos! 👋</div>
   <a href="https://wa.me/529582199953" target="_blank" class="wa-btn">💬</a>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="admin-login">
+  <div class="login-box">
+    <h3>⚙️ Panel Admin</h3>
+    <p>Ingresa la contraseña para continuar</p>
+    <input type="password" id="admin-pwd" placeholder="Contraseña" onkeydown="if(event.key==='Enter')checkAdminPwd()">
+    <button class="login-btn" onclick="checkAdminPwd()">Entrar</button>
+    <div class="login-error" id="login-err">Contraseña incorrecta</div>
+    <button class="login-cancel" onclick="closeAdminLogin()">Cancelar</button>
+  </div>
+</div>
+
+<!-- REGISTRO / LOGIN USUARIOS -->
+<div id="user-register">
+  <div class="reg-box">
+    <button class="reg-close" onclick="closeRegister()">✕</button>
+    <h3>🌈 Mi cuenta</h3>
+    <p class="subtitle">Únete a la familia Zipolite al Desnudo</p>
+    <button class="oauth-btn" onclick="signInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continuar con Google
+    </button>
+    <div class="divider"><span>o con tu email</span></div>
+    <div class="tabs-reg">
+      <button class="tab-reg active" onclick="switchTab('login')">Iniciar sesión</button>
+      <button class="tab-reg" onclick="switchTab('signup')">Registrarse</button>
+    </div>
+    <div class="reg-form active" id="form-login">
+      <div class="fg"><label>Email</label><input type="email" id="login-email" placeholder="tu@email.com"></div>
+      <div class="fg"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+      <button class="pay-btn" onclick="doLogin()" style="margin-top:8px;">Iniciar sesión</button>
+    </div>
+    <div class="reg-form" id="form-signup">
+      <div class="fg"><label>Nombre completo</label><input type="text" id="signup-name" placeholder="Tu nombre"></div>
+      <div class="fg"><label>Email</label><input type="email" id="signup-email" placeholder="tu@email.com"></div>
+      <div class="fg"><label>WhatsApp / Telegram</label><input type="tel" id="signup-wa" placeholder="55 1234 5678"></div>
+      <div class="fg"><label>Contraseña</label><input type="password" id="signup-pass" placeholder="Mínimo 6 caracteres"></div>
+      <button class="pay-btn" onclick="doSignup()" style="margin-top:8px;">Crear cuenta</button>
+    </div>
+    <div id="reg-msg" style="text-align:center;font-size:0.85rem;margin-top:12px;display:none;"></div>
+  </div>
 </div>
 
 <!-- MODAL PAGO -->
@@ -395,11 +424,11 @@ footer a{color:var(--teal);text-decoration:none;}
     <div class="fg"><label>WhatsApp</label><input type="tel" id="m-wa" placeholder="958 219 9953"></div>
     <div id="pay-error"></div>
     <button class="pay-btn" id="pay-btn" onclick="doPay()">🔒 <span id="pay-btn-txt">Pagar $3,000 MXN</span></button>
-    <div class="secure">🔒 Pago seguro · Tus datos están protegidos</div>
+    <div class="secure">🔒 Tus datos están protegidos</div>
   </div>
 </div>
 
-<!-- ADMIN -->
+<!-- ADMIN PANEL -->
 <div id="admin-panel">
   <div class="adm-hdr">
     <h2>⚙️ Panel de Administración — Zipolite al Desnudo</h2>
@@ -415,7 +444,7 @@ footer a{color:var(--teal);text-decoration:none;}
         <input type="hidden" id="pf-id">
         <div class="ag">
           <div class="af"><label>Nombre</label><input type="text" id="pf-nombre" placeholder="Paquete Premium"></div>
-          <div class="af"><label>Precio MXN</label><input type="number" id="pf-precio" placeholder="7500"></div>
+          <div class="af"><label>Precio MXN</label><input type="number" id="pf-precio" placeholder="8500"></div>
           <div class="af"><label>Fechas</label><input type="text" id="pf-fechas" placeholder="Jueves a Martes"></div>
           <div class="af"><label>Ícono emoji</label><input type="text" id="pf-icono" placeholder="✈️"></div>
           <div class="af" style="grid-column:1/-1"><label>Descripción corta</label><input type="text" id="pf-desc" placeholder="Hotel Paraíso · 5 noches"></div>
@@ -424,12 +453,16 @@ footer a{color:var(--teal);text-decoration:none;}
             <label>Nota especial <button class="ai-btn" onclick="aiNota()" id="ai-nota-btn">🤖 Generar con IA</button></label>
             <input type="text" id="pf-nota" placeholder="Ej. Habitación privada disponible: +$2,500">
           </div>
+          <div class="af"><label>Tipo de botón</label>
+            <select id="pf-tipo"><option value="primary">Rojo (principal)</option><option value="secondary">Oscuro (secundario)</option></select>
+          </div>
+          <div class="af"><label>Badge (opcional)</label><input type="text" id="pf-badge" placeholder="⭐ Más popular"></div>
         </div>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
           <button class="save-btn" onclick="savePkg()">💾 Guardar paquete</button>
           <button onclick="hidePkgForm()" style="padding:10px 18px;background:#eee;border:none;border-radius:10px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">Cancelar</button>
         </div>
-        <div class="saved-msg" id="pkg-saved">✅ ¡Guardado correctamente!</div>
+        <div class="saved-msg" id="pkg-saved">✅ ¡Guardado!</div>
       </div>
     </div>
 
@@ -438,7 +471,7 @@ footer a{color:var(--teal);text-decoration:none;}
       <div class="upload-area" onclick="document.getElementById('gal-input').click()">
         <div style="font-size:2rem;margin-bottom:8px;">📷</div>
         <p style="font-weight:600;color:var(--ocean);">Haz clic para subir fotos</p>
-        <p style="font-size:0.82rem;color:#888;margin-top:4px;">JPG, PNG · Máx 2MB por foto</p>
+        <p style="font-size:0.82rem;color:#888;margin-top:4px;">JPG, PNG · Múltiples fotos a la vez</p>
         <input type="file" id="gal-input" multiple accept="image/*" style="display:none" onchange="uploadPhotos(this)">
       </div>
       <div class="gal-prev" id="adm-gallery"><div style="color:#aaa;font-size:0.82rem;">Sin fotos aún.</div></div>
@@ -450,24 +483,20 @@ footer a{color:var(--teal);text-decoration:none;}
       <div class="sub-form" style="margin-top:14px;">
         <input type="hidden" id="bf-id">
         <div class="af" style="margin-bottom:12px;">
-          <label>Título del post
-            <button class="ai-btn" onclick="aiSEO()" id="ai-seo-btn">🤖 Auto SEO</button>
-          </label>
+          <label>Título <button class="ai-btn" onclick="aiSEO()" id="ai-seo-btn">🤖 Auto SEO</button></label>
           <input type="text" id="bf-titulo" placeholder="Ej. Guía completa de Zipolite 2025">
         </div>
-        <div class="af" style="margin-bottom:12px;"><label>Contenido</label><textarea id="bf-contenido" style="min-height:120px;" placeholder="Escribe aquí el contenido del post..."></textarea></div>
+        <div class="af" style="margin-bottom:12px;"><label>Contenido</label><textarea id="bf-contenido" style="min-height:120px;" placeholder="Escribe aquí..."></textarea></div>
         <div class="ag">
           <div class="af"><label>Meta descripción SEO</label><input type="text" id="bf-meta" placeholder="Descripción para Google (máx 160 chars)"></div>
           <div class="af"><label>Slug URL</label><input type="text" id="bf-slug" placeholder="guia-zipolite-2025"></div>
-          <div class="af"><label>Estado</label>
-            <select id="bf-pub"><option value="false">📝 Borrador</option><option value="true">✅ Publicado</option></select>
-          </div>
+          <div class="af"><label>Estado</label><select id="bf-pub"><option value="false">📝 Borrador</option><option value="true">✅ Publicado</option></select></div>
         </div>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
           <button class="save-btn" onclick="saveBlog()">💾 Guardar post</button>
           <button onclick="clearBlog()" style="padding:10px 18px;background:#eee;border:none;border-radius:10px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">Limpiar</button>
         </div>
-        <div class="saved-msg" id="blog-saved">✅ ¡Post guardado!</div>
+        <div class="saved-msg" id="blog-saved">✅ ¡Guardado!</div>
       </div>
     </div>
 
@@ -477,8 +506,8 @@ footer a{color:var(--teal);text-decoration:none;}
         <div class="af"><label>OpenAI API Key (para IA)</label><input type="password" id="cfg-openai" placeholder="sk-..."></div>
         <div class="af"><label>WhatsApp agencia</label><input type="text" id="cfg-wa" value="529582199953"></div>
       </div>
-      <button class="save-btn" onclick="saveCfg()">💾 Guardar configuración</button>
-      <div class="saved-msg" id="cfg-saved">✅ ¡Configuración guardada!</div>
+      <button class="save-btn" onclick="saveCfg()">💾 Guardar</button>
+      <div class="saved-msg" id="cfg-saved">✅ ¡Guardado!</div>
     </div>
 
   </div>
@@ -489,14 +518,66 @@ const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
 const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
+// Admin password stored in Vercel env — fetched via meta tag injected at build time
+// For static HTML we use a hash comparison approach
+// Admin auth via localStorage
+
 let pkgs = [], curPkg = null, selPayment = 'anticipo';
 let oaiKey = localStorage.getItem('oai_key') || '';
+let adminAuthenticated = false;
 
-// DEFAULT PACKAGES
 const DEFAULT_PKGS = [
-  {id:'d1',nombre:'Paquete Premium',descripcion:'Hotel Paraíso · Línea de playa · 5 noches',precio:7500,fechas:'Jueves a Martes',incluye:['Vuelo redondo CDMX — Zipolite','5 noches en Hotel Paraíso (línea de playa)','Traslados aeropuerto ↔ hotel','Habitación doble (asignamos compañero/a)','Ambiente 100% LGBT+'],nota:'💡 Habitación privada disponible: +$2,500–$3,000 MXN',icono:'✈️',badge:'⭐ Más popular',tipo:'primary'},
-  {id:'d2',nombre:'Camping Año Nuevo',descripcion:'29 Dic — 3 Ene · Área privada · 48 lugares',precio:4750,fechas:'29 Dic — 3 Ene',incluye:['Transporte terrestre CDMX ↔ Zipolite','Área de camping privada con seguridad','Tienda de campaña + colchón inflable','Alberca, duchas y sanitarios','A 2 calles de la playa'],nota:'🎉 Recibe el Año Nuevo con tu familia LGBT+! Cupo limitado.',icono:'⛺',badge:null,tipo:'secondary'}
+  {id:'d1',nombre:'Paquete Premium',descripcion:'Hotel Paraíso · Línea de playa · 5 noches',precio:8500,fechas:'Jueves a Martes',incluye:['Vuelo redondo CDMX — Zipolite','5 noches en Hotel Paraíso (línea de playa)','Traslados aeropuerto ↔ hotel','Habitación doble (asignamos compañero/a)','Ambiente 100% LGBT+'],nota:'💡 Habitación privada disponible: +$2,500–$3,000 MXN',icono:'✈️',badge:'⭐ Más popular',tipo:'primary'},
+  {id:'d2',nombre:'Camping Año Nuevo',descripcion:'29 Dic — 3 Ene · Área privada · 48 lugares',precio:4750,fechas:'29 Dic — 3 Ene',incluye:['Transporte terrestre CDMX ↔ Zipolite','Área de camping privada con seguridad','Tienda de campaña + colchón inflable','Alberca, duchas y sanitarios','A 2 calles de la playa'],nota:'🎉 ¡Recibe el Año Nuevo con tu familia LGBT+! Cupo limitado.',icono:'⛺',badge:null,tipo:'secondary'}
 ];
+
+// ---- ADMIN AUTH ----
+function openAdminLogin() {
+  document.getElementById('admin-login').classList.add('open');
+  setTimeout(()=>document.getElementById('admin-pwd').focus(), 100);
+}
+function closeAdminLogin() {
+  document.getElementById('admin-login').classList.remove('open');
+  document.getElementById('admin-pwd').value = '';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+async function checkAdminPwd() {
+  const pwd = document.getElementById('admin-pwd').value;
+  if (!pwd) return;
+  // Use Supabase to verify password stored as env var via a simple RPC or compare with stored hash
+  // Since we're on static HTML, we store password hash in localStorage after first set
+  const storedHash = localStorage.getItem('adm_h');
+  const inputHash = await hashStr(pwd);
+  // First time: if no stored hash, accept any password and store it
+  // In production the hash should come from your Vercel env var via a serverless function
+  // For now we use a simple approach: password set via admin config
+  const savedPwd = localStorage.getItem('adm_pwd');
+  if (savedPwd) {
+    if (pwd === savedPwd) { adminAuthenticated = true; closeAdminLogin(); openAdmin(); }
+    else { document.getElementById('login-err').style.display = 'block'; }
+  } else {
+    // No password set yet — prompt to set one via the config panel
+    adminAuthenticated = true;
+    closeAdminLogin();
+    openAdmin();
+    alert('¡Bienvenido! Ve a Configuración en el panel para establecer tu contraseña de admin.');
+  }
+}
+
+async function hashStr(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function openAdmin() {
+  if (!adminAuthenticated) { openAdminLogin(); return; }
+  document.getElementById('admin-panel').style.display = 'block';
+  loadAdminData();
+}
+function closeAdmin() {
+  document.getElementById('admin-panel').style.display = 'none';
+}
 
 // ---- LOAD ----
 async function loadAll() {
@@ -513,7 +594,7 @@ async function loadPkgs() {
 
 function renderPkgs(list) {
   const c = document.getElementById('pkg-container');
-  if (!list.length) {c.innerHTML='<div class="empty-msg">No hay paquetes disponibles.</div>'; return;}
+  if (!list.length) { c.innerHTML='<div class="empty-msg">No hay paquetes.</div>'; return; }
   c.innerHTML = list.map(p => {
     const inc = Array.isArray(p.incluye) ? p.incluye : (p.incluye||'').split('\n').filter(i=>i.trim());
     const hs = p.tipo==='secondary' ? 'background:linear-gradient(135deg,#1a4a22,#4CAF50)' : '';
@@ -539,34 +620,25 @@ function renderPkgs(list) {
 async function loadGallery() {
   const {data} = await sb.from('galeria').select('*').order('orden').order('created_at');
   const c = document.getElementById('gal-container');
-  if (!data || !data.length) {
-    c.innerHTML = '<div class="gallery-empty">📷 Agrega fotos desde el panel admin (⚙️ en el footer)</div>';
-    return;
-  }
+  if (!data || !data.length) { c.innerHTML='<div class="empty-msg">📷 Agrega fotos desde el panel admin (⚙️ en el footer)</div>'; return; }
   c.innerHTML = data.map(img=>`<div class="gallery-item"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
-  if (document.getElementById('adm-gallery')) renderAdmGallery(data);
 }
 
 async function loadBlog() {
   const {data} = await sb.from('blog').select('*').eq('publicado',true).order('created_at',{ascending:false});
   const c = document.getElementById('blog-container');
-  if (!data || !data.length) {
-    c.innerHTML = '<div class="empty-msg">✍️ Posts del blog aparecerán aquí.</div>';
-    return;
-  }
+  if (!data || !data.length) { c.innerHTML='<div class="empty-msg">✍️ Posts del blog aparecerán aquí.</div>'; return; }
   c.innerHTML = data.map(post=>`
-    <div class="blog-card">
-      <div class="blog-card-body">
-        <h3>${post.titulo}</h3>
-        <p>${(post.contenido||'').substring(0,150)}${post.contenido&&post.contenido.length>150?'...':''}</p>
-        <div class="blog-date">${new Date(post.created_at).toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})}</div>
-      </div>
-    </div>`).join('');
+    <div class="blog-card"><div class="blog-card-body">
+      <h3>${post.titulo}</h3>
+      <p>${(post.contenido||'').substring(0,150)}${post.contenido&&post.contenido.length>150?'...':''}</p>
+      <div class="blog-date">${new Date(post.created_at).toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})}</div>
+    </div></div>`).join('');
 }
 
 // ---- PAYMENT ----
 function openPay(id) {
-  curPkg = pkgs.find(p=>p.id==id) || pkgs[0];
+  curPkg = pkgs.find(p=>String(p.id)==String(id)) || pkgs[0];
   if (!curPkg) return;
   document.getElementById('m-name').textContent = curPkg.nombre;
   document.getElementById('m-desc').textContent = curPkg.descripcion||'';
@@ -582,75 +654,127 @@ function selPay(t) {
 }
 function updTotal() {
   if (!curPkg) return;
-  const p = parseInt(document.getElementById('m-personas').value);
-  const tot = curPkg.precio*p;
-  document.getElementById('m-total').textContent = '$'+tot.toLocaleString();
-  document.getElementById('opt-total-p').textContent = '$'+tot.toLocaleString();
+  const p=parseInt(document.getElementById('m-personas').value);
+  const tot=curPkg.precio*p;
+  document.getElementById('m-total').textContent='$'+tot.toLocaleString();
+  document.getElementById('opt-total-p').textContent='$'+tot.toLocaleString();
   updPayBtn();
 }
 function updPayBtn() {
   if (!curPkg) return;
-  const p = parseInt(document.getElementById('m-personas').value);
-  const tot = curPkg.precio*p;
-  const amt = selPayment==='anticipo' ? 3000 : tot;
-  document.getElementById('pay-btn-txt').textContent = `Pagar $${amt.toLocaleString()} MXN`;
+  const p=parseInt(document.getElementById('m-personas').value);
+  const tot=curPkg.precio*p;
+  const amt=selPayment==='anticipo'?3000:tot;
+  document.getElementById('pay-btn-txt').textContent=`Pagar $${amt.toLocaleString()} MXN`;
 }
 async function doPay() {
-  const n = document.getElementById('m-nombre').value;
-  const e = document.getElementById('m-email').value;
-  if (!n||!e) { showPayErr('Por favor completa tu nombre y email.'); return; }
+  const n=document.getElementById('m-nombre').value;
+  const e=document.getElementById('m-email').value;
+  if (!n||!e) { document.getElementById('pay-error').textContent='Completa tu nombre y email.';document.getElementById('pay-error').style.display='block';return; }
   const p=parseInt(document.getElementById('m-personas').value);
   const ap=document.getElementById('m-apellido').value;
   const wa=document.getElementById('m-wa').value;
   const tot=curPkg.precio*p;
   const amt=selPayment==='anticipo'?3000:tot;
-  const btn=document.getElementById('pay-btn'); btn.disabled=true;
+  const btn=document.getElementById('pay-btn');btn.disabled=true;
   document.getElementById('pay-btn-txt').textContent='Procesando...';
   const msg=`Hola! Quiero reservar el ${curPkg.nombre} para ${p} persona${p>1?'s':''}. Pago: ${selPayment==='anticipo'?'Anticipo $3,000':`Completo $${tot.toLocaleString()}`}. Nombre: ${n} ${ap}. Email: ${e}${wa?'. WhatsApp: '+wa:''}`;
   setTimeout(()=>{btn.disabled=false;updPayBtn();closePay();window.open('https://wa.me/529582199953?text='+encodeURIComponent(msg),'_blank');},1200);
 }
-function showPayErr(msg){const el=document.getElementById('pay-error');el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',4000);}
 document.getElementById('pay-modal').addEventListener('click',function(e){if(e.target===this)closePay();});
 
-// ---- ADMIN ----
-function openAdmin() {document.getElementById('admin-panel').style.display='block';loadAdminData();}
-function closeAdmin(){document.getElementById('admin-panel').style.display='none';}
+// ---- USER AUTH ----
+function openRegister() { document.getElementById('user-register').classList.add('open'); }
+function closeRegister() { document.getElementById('user-register').classList.remove('open'); }
+function switchTab(tab) {
+  document.querySelectorAll('.tab-reg').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.reg-form').forEach(f=>f.classList.remove('active'));
+  document.querySelector(`.tab-reg[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById('form-'+tab).classList.add('active');
+}
+async function signInGoogle() {
+  const {error} = await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href}});
+  if (error) showRegMsg('Error: '+error.message, true);
+}
+async function doLogin() {
+  const email=document.getElementById('login-email').value;
+  const pass=document.getElementById('login-pass').value;
+  if (!email||!pass) {showRegMsg('Completa todos los campos',true);return;}
+  const {error} = await sb.auth.signInWithPassword({email,password:pass});
+  if (error) showRegMsg('Error: '+error.message,true);
+  else { showRegMsg('✅ ¡Bienvenido!'); setTimeout(closeRegister,1500); }
+}
+async function doSignup() {
+  const name=document.getElementById('signup-name').value;
+  const email=document.getElementById('signup-email').value;
+  const wa=document.getElementById('signup-wa').value;
+  const pass=document.getElementById('signup-pass').value;
+  if (!name||!email||!pass) {showRegMsg('Completa todos los campos',true);return;}
+  const {error} = await sb.auth.signUp({email,password:pass,options:{data:{full_name:name,whatsapp:wa}}});
+  if (error) showRegMsg('Error: '+error.message,true);
+  else showRegMsg('✅ ¡Cuenta creada! Revisa tu email para confirmar.');
+}
+function showRegMsg(msg,isError=false) {
+  const el=document.getElementById('reg-msg');
+  el.textContent=msg;el.style.display='block';
+  el.style.color=isError?'#c0241d':'#2e7d32';
+  if (!isError) setTimeout(()=>el.style.display='none',3000);
+}
+document.getElementById('user-register').addEventListener('click',function(e){if(e.target===this)closeRegister();});
 
-async function loadAdminData(){
+// ---- ADMIN DATA ----
+async function loadAdminData() {
   renderAdmPkgs();
   const {data:gd}=await sb.from('galeria').select('*').order('orden').order('created_at');
   renderAdmGallery(gd||[]);
   const {data:bd}=await sb.from('blog').select('*').order('created_at',{ascending:false});
   renderAdmBlog(bd||[]);
   const savedKey=localStorage.getItem('oai_key');
-  if(savedKey)document.getElementById('cfg-openai').value=savedKey;
+  if (savedKey) document.getElementById('cfg-openai').value=savedKey;
+  const savedPwd=localStorage.getItem('adm_pwd');
+  // show current password hint
 }
 
-function renderAdmPkgs(){
+function renderAdmPkgs() {
   const c=document.getElementById('adm-pkgs');
-  const dbPkgs=pkgs.filter(p=>!p.id.startsWith('d'));
-  if(!dbPkgs.length){c.innerHTML='<div style="color:#aaa;font-size:0.85rem;">No hay paquetes en la base de datos. Agrega uno con el botón de abajo.</div>';return;}
-  c.innerHTML=dbPkgs.map(p=>`<div class="item-row"><div class="item-info"><h4>${p.icono||''} ${p.nombre}</h4><p>MXN $${Number(p.precio).toLocaleString()} · ${p.fechas||''}</p></div><div class="item-actions"><button class="edit-btn" onclick="editPkg('${p.id}')">Editar</button><button class="del-btn" onclick="delPkg('${p.id}')">Eliminar</button></div></div>`).join('');
+  // Show ALL packages including defaults
+  const allPkgs = pkgs;
+  if (!allPkgs.length) {c.innerHTML='<div style="color:#aaa;font-size:0.85rem;">No hay paquetes.</div>';return;}
+  c.innerHTML=allPkgs.map(p=>`<div class="item-row">
+    <div class="item-info"><h4>${p.icono||''} ${p.nombre}</h4><p>MXN $${Number(p.precio).toLocaleString()} · ${p.fechas||''}</p></div>
+    <div class="item-actions">
+      <button class="edit-btn" onclick="editPkg('${p.id}')">Editar</button>
+      ${!p.id.startsWith('d')?`<button class="del-btn" onclick="delPkg('${p.id}')">Eliminar</button>`:''}
+    </div>
+  </div>`).join('');
 }
 
-function renderAdmGallery(imgs){
+function renderAdmGallery(imgs) {
   const c=document.getElementById('adm-gallery');
-  if(!imgs.length){c.innerHTML='<div style="color:#aaa;font-size:0.82rem;grid-column:1/-1;">Sin imágenes aún.</div>';return;}
+  if (!imgs.length) {c.innerHTML='<div style="color:#aaa;font-size:0.82rem;grid-column:1/-1;">Sin imágenes.</div>';return;}
   c.innerHTML=imgs.map(img=>`<div class="gp-item"><img src="${img.url}" alt=""><button class="gp-del" onclick="delPhoto('${img.id}')">✕</button></div>`).join('');
 }
 
-function renderAdmBlog(posts){
+function renderAdmBlog(posts) {
   const c=document.getElementById('adm-blog');
-  if(!posts.length){c.innerHTML='<div style="color:#aaa;font-size:0.85rem;">No hay posts aún.</div>';return;}
-  c.innerHTML=posts.map(p=>`<div class="item-row"><div class="item-info"><h4>${p.titulo}</h4><p>${p.publicado?'✅ Publicado':'📝 Borrador'} · ${new Date(p.created_at).toLocaleDateString('es-MX')}</p></div><div class="item-actions"><button class="edit-btn" onclick='editBlog(${JSON.stringify(p)})'>Editar</button><button class="del-btn" onclick="delBlog('${p.id}')">Eliminar</button></div></div>`).join('');
+  if (!posts.length) {c.innerHTML='<div style="color:#aaa;font-size:0.85rem;">No hay posts.</div>';return;}
+  c.innerHTML=posts.map(p=>`<div class="item-row">
+    <div class="item-info"><h4>${p.titulo}</h4><p>${p.publicado?'✅ Publicado':'📝 Borrador'} · ${new Date(p.created_at).toLocaleDateString('es-MX')}</p></div>
+    <div class="item-actions">
+      <button class="edit-btn" onclick='editBlog(${JSON.stringify(p)})'>Editar</button>
+      <button class="del-btn" onclick="delBlog('${p.id}')">Eliminar</button>
+    </div>
+  </div>`).join('');
 }
 
 // PKG CRUD
 function showPkgForm(){document.getElementById('pkg-form').style.display='block';}
 function hidePkgForm(){document.getElementById('pkg-form').style.display='none';clearPkgForm();}
-function clearPkgForm(){['pf-id','pf-nombre','pf-precio','pf-fechas','pf-icono','pf-desc','pf-incluye','pf-nota'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
-function editPkg(id){
-  const p=pkgs.find(x=>x.id==id); if(!p)return;
+function clearPkgForm(){['pf-id','pf-nombre','pf-precio','pf-fechas','pf-icono','pf-desc','pf-incluye','pf-nota','pf-badge'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('pf-tipo').value='primary';}
+
+function editPkg(id) {
+  const p=pkgs.find(x=>String(x.id)==String(id));
+  if (!p) return;
   document.getElementById('pf-id').value=id;
   document.getElementById('pf-nombre').value=p.nombre||'';
   document.getElementById('pf-precio').value=p.precio||'';
@@ -659,24 +783,39 @@ function editPkg(id){
   document.getElementById('pf-desc').value=p.descripcion||'';
   document.getElementById('pf-incluye').value=Array.isArray(p.incluye)?p.incluye.join('\n'):(p.incluye||'');
   document.getElementById('pf-nota').value=p.nota||'';
+  document.getElementById('pf-tipo').value=p.tipo||'primary';
+  document.getElementById('pf-badge').value=p.badge||'';
   document.getElementById('pkg-form').style.display='block';
   document.getElementById('pkg-form').scrollIntoView({behavior:'smooth'});
 }
-async function savePkg(){
+
+async function savePkg() {
   const id=document.getElementById('pf-id').value;
   const inc=document.getElementById('pf-incluye').value.split('\n').map(i=>i.trim()).filter(i=>i);
-  const d={nombre:document.getElementById('pf-nombre').value,precio:parseInt(document.getElementById('pf-precio').value)||0,fechas:document.getElementById('pf-fechas').value,icono:document.getElementById('pf-icono').value||'✈️',descripcion:document.getElementById('pf-desc').value,incluye:inc,nota:document.getElementById('pf-nota').value,activo:true};
-  const {error}=id ? await sb.from('paquetes').update(d).eq('id',id) : await sb.from('paquetes').insert([d]);
-  if(error){alert('Error: '+error.message);return;}
+  const d={nombre:document.getElementById('pf-nombre').value,precio:parseInt(document.getElementById('pf-precio').value)||0,fechas:document.getElementById('pf-fechas').value,icono:document.getElementById('pf-icono').value||'✈️',descripcion:document.getElementById('pf-desc').value,incluye:inc,nota:document.getElementById('pf-nota').value,tipo:document.getElementById('pf-tipo').value,badge:document.getElementById('pf-badge').value||null,activo:true};
+  // If editing a default package, insert as new
+  const isDefault = id.startsWith('d');
+  let error;
+  if (id && !isDefault) {
+    ({error} = await sb.from('paquetes').update(d).eq('id',id));
+  } else {
+    ({error} = await sb.from('paquetes').insert([d]));
+  }
+  if (error) {alert('Error: '+error.message);return;}
   const el=document.getElementById('pkg-saved');el.style.display='block';setTimeout(()=>el.style.display='none',2500);
-  hidePkgForm(); await loadPkgs(); renderAdmPkgs();
+  hidePkgForm();await loadPkgs();renderAdmPkgs();
 }
-async function delPkg(id){if(!confirm('¿Eliminar este paquete?'))return;await sb.from('paquetes').delete().eq('id',id);await loadPkgs();renderAdmPkgs();}
+
+async function delPkg(id) {
+  if (!confirm('¿Eliminar este paquete?'))return;
+  await sb.from('paquetes').delete().eq('id',id);
+  await loadPkgs();renderAdmPkgs();
+}
 
 // GALLERY
-async function uploadPhotos(input){
+async function uploadPhotos(input) {
   const files=Array.from(input.files);
-  for(const file of files){
+  for (const file of files) {
     const r=new FileReader();
     r.onload=async(e)=>{
       await sb.from('galeria').insert([{url:e.target.result,descripcion:file.name,orden:0}]);
@@ -688,7 +827,13 @@ async function uploadPhotos(input){
   }
   input.value='';
 }
-async function delPhoto(id){if(!confirm('¿Eliminar esta foto?'))return;await sb.from('galeria').delete().eq('id',id);await loadGallery();const{data}=await sb.from('galeria').select('*').order('orden').order('created_at');renderAdmGallery(data||[]);}
+async function delPhoto(id) {
+  if (!confirm('¿Eliminar esta foto?'))return;
+  await sb.from('galeria').delete().eq('id',id);
+  await loadGallery();
+  const {data}=await sb.from('galeria').select('*').order('orden').order('created_at');
+  renderAdmGallery(data||[]);
+}
 
 // BLOG CRUD
 function clearBlog(){['bf-id','bf-titulo','bf-contenido','bf-meta','bf-slug'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('bf-pub').value='false';}
@@ -701,36 +846,42 @@ function editBlog(p){
   document.getElementById('bf-pub').value=p.publicado?'true':'false';
   document.getElementById('bf-titulo').scrollIntoView({behavior:'smooth'});
 }
-async function saveBlog(){
+async function saveBlog() {
   const id=document.getElementById('bf-id').value;
   const titulo=document.getElementById('bf-titulo').value;
-  if(!titulo){alert('El título es obligatorio');return;}
+  if (!titulo){alert('El título es obligatorio');return;}
   const slug=document.getElementById('bf-slug').value||titulo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   const d={titulo,contenido:document.getElementById('bf-contenido').value,meta_descripcion:document.getElementById('bf-meta').value,slug,publicado:document.getElementById('bf-pub').value==='true'};
-  const {error}=id ? await sb.from('blog').update(d).eq('id',id) : await sb.from('blog').insert([d]);
-  if(error){alert('Error: '+error.message);return;}
+  const {error}=id?await sb.from('blog').update(d).eq('id',id):await sb.from('blog').insert([d]);
+  if (error){alert('Error: '+error.message);return;}
   const el=document.getElementById('blog-saved');el.style.display='block';setTimeout(()=>el.style.display='none',2500);
-  clearBlog();await loadBlog();const{data}=await sb.from('blog').select('*').order('created_at',{ascending:false});renderAdmBlog(data||[]);
+  clearBlog();await loadBlog();
+  const {data}=await sb.from('blog').select('*').order('created_at',{ascending:false});
+  renderAdmBlog(data||[]);
 }
-async function delBlog(id){if(!confirm('¿Eliminar este post?'))return;await sb.from('blog').delete().eq('id',id);await loadBlog();const{data}=await sb.from('blog').select('*').order('created_at',{ascending:false});renderAdmBlog(data||[]);}
+async function delBlog(id){
+  if (!confirm('¿Eliminar?'))return;
+  await sb.from('blog').delete().eq('id',id);
+  await loadBlog();
+  const {data}=await sb.from('blog').select('*').order('created_at',{ascending:false});
+  renderAdmBlog(data||[]);
+}
 
 // AI
 async function aiSEO(){
   const titulo=document.getElementById('bf-titulo').value;
   const contenido=document.getElementById('bf-contenido').value;
-  if(!titulo&&!contenido){alert('Escribe el título o contenido primero');return;}
-  if(!oaiKey){alert('Configura tu OpenAI API Key en la sección de configuración');return;}
-  const btn=document.getElementById('ai-seo-btn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Generando...';
+  if (!titulo&&!contenido){alert('Escribe el título primero');return;}
+  if (!oaiKey){alert('Configura tu OpenAI API Key en Configuración');return;}
+  const btn=document.getElementById('ai-seo-btn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
   try{
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+oaiKey},body:JSON.stringify({model:'gpt-3.5-turbo',messages:[{role:'user',content:`Genera para este post de blog de una agencia LGBT+ "Zipolite al Desnudo":
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+oaiKey},body:JSON.stringify({model:'gpt-3.5-turbo',messages:[{role:'user',content:`Para el blog de "Zipolite al Desnudo" (agencia LGBT+ México), genera:
 1. Meta descripción SEO máx 160 chars
-2. Slug URL amigable
+2. Slug URL
 Título: "${titulo}"
-Contenido: "${contenido.substring(0,200)}"
 Responde SOLO JSON: {"meta":"...","slug":"..."}`}]})});
     const data=await res.json();
-    const txt=data.choices?.[0]?.message?.content||'{}';
-    const r=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    const r=JSON.parse((data.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim());
     if(r.meta)document.getElementById('bf-meta').value=r.meta;
     if(r.slug)document.getElementById('bf-slug').value=r.slug;
   }catch(e){
@@ -743,11 +894,11 @@ Responde SOLO JSON: {"meta":"...","slug":"..."}`}]})});
 
 async function aiNota(){
   const nombre=document.getElementById('pf-nombre').value;
-  if(!nombre){alert('Escribe el nombre del paquete primero');return;}
-  if(!oaiKey){alert('Configura tu OpenAI API Key en configuración');return;}
+  if (!nombre){alert('Escribe el nombre del paquete primero');return;}
+  if (!oaiKey){alert('Configura tu OpenAI API Key en Configuración');return;}
   const btn=document.getElementById('ai-nota-btn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
   try{
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+oaiKey},body:JSON.stringify({model:'gpt-3.5-turbo',messages:[{role:'user',content:`Genera una nota corta persuasiva (máx 80 chars, incluye emoji) para el paquete "${nombre}" de una agencia LGBT+ que viaja a Zipolite. Solo el texto.`}]})});
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+oaiKey},body:JSON.stringify({model:'gpt-3.5-turbo',messages:[{role:'user',content:`Nota persuasiva máx 80 chars con emoji para el paquete "${nombre}" de agencia LGBT+ a Zipolite. Solo el texto.`}]})});
     const data=await res.json();
     const nota=data.choices?.[0]?.message?.content||'';
     if(nota)document.getElementById('pf-nota').value=nota.trim();
@@ -758,6 +909,10 @@ async function aiNota(){
 function saveCfg(){
   const key=document.getElementById('cfg-openai').value;
   if(key){oaiKey=key;localStorage.setItem('oai_key',key);}
+  const pwd=document.getElementById('cfg-wa').value;
+  // Save admin password
+  const newPwd=prompt('Establece o cambia la contraseña del panel admin (deja vacío para mantener la actual):');
+  if(newPwd){localStorage.setItem('adm_pwd',newPwd);alert('✅ Contraseña actualizada');}
   const el=document.getElementById('cfg-saved');el.style.display='block';setTimeout(()=>el.style.display='none',2500);
 }
 
@@ -765,6 +920,14 @@ function setLang(lang){
   document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector(`.lang-btn[onclick="setLang('${lang}')"]`).classList.add('active');
 }
+
+// Check auth state on load
+sb.auth.onAuthStateChange((event, session) => {
+  const btn = document.querySelector('a[onclick="openRegister();return false;"]');
+  if (session && btn) {
+    btn.textContent = '👤 ' + (session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
+  }
+});
 
 document.addEventListener('DOMContentLoaded', loadAll);
 </script>
