@@ -342,8 +342,7 @@ footer a{color:var(--teal);text-decoration:none;}
 </section>
 
 <footer>
-  <p>© 2025 Zipolite al Desnudo · Agencia de Viajes LGBT+ · CDMX, México &nbsp;·&nbsp;
-  <a href="#" onclick="openAdminLogin();return false;">⚙️ Admin</a></p>
+  <p>© 2025 Zipolite al Desnudo · Agencia de Viajes LGBT+ · CDMX, México</p>
 </footer>
 
 <div class="whatsapp-float">
@@ -542,27 +541,40 @@ function closeAdminLogin() {
   document.getElementById('login-err').style.display = 'none';
 }
 
-async function checkAdminPwd() {
+function checkAdminPwd() {
   const pwd = document.getElementById('admin-pwd').value;
   if (!pwd) return;
-  // Use Supabase to verify password stored as env var via a simple RPC or compare with stored hash
-  // Since we're on static HTML, we store password hash in localStorage after first set
-  const storedHash = localStorage.getItem('adm_h');
-  const inputHash = await hashStr(pwd);
-  // First time: if no stored hash, accept any password and store it
-  // In production the hash should come from your Vercel env var via a serverless function
-  // For now we use a simple approach: password set via admin config
   const savedPwd = localStorage.getItem('adm_pwd');
-  if (savedPwd) {
-    if (pwd === savedPwd) { adminAuthenticated = true; closeAdminLogin(); openAdmin(); }
-    else { document.getElementById('login-err').style.display = 'block'; }
-  } else {
-    // No password set yet — prompt to set one via the config panel
+  if (!savedPwd) {
+    document.getElementById('login-err').textContent = 'No hay contraseña configurada. Usa #setup-admin para establecerla.';
+    document.getElementById('login-err').style.display = 'block';
+    return;
+  }
+  if (pwd === savedPwd) {
     adminAuthenticated = true;
     closeAdminLogin();
     openAdmin();
-    alert('¡Bienvenido! Ve a Configuración en el panel para establecer tu contraseña de admin.');
+  } else {
+    document.getElementById('login-err').style.display = 'block';
   }
+}
+
+function checkFirstTimeSetup() {
+  if (window.location.hash !== '#setup-admin') return;
+  const existing = localStorage.getItem('adm_pwd');
+  if (existing) {
+    alert('Ya existe una contraseña de admin. Inicia sesión normalmente.');
+    window.location.hash = '';
+    return;
+  }
+  const newPwd = prompt('Primera configuración: establece la contraseña del panel admin:');
+  if (newPwd && newPwd.trim()) {
+    localStorage.setItem('adm_pwd', newPwd.trim());
+    alert('✅ Contraseña establecida. Ya puedes acceder con Shift+Alt+A.');
+  } else {
+    alert('No se estableció contraseña.');
+  }
+  window.location.hash = '';
 }
 
 async function hashStr(str) {
@@ -929,7 +941,11 @@ sb.auth.onAuthStateChange((event, session) => {
   }
 });
 
-document.addEventListener('DOMContentLoaded', loadAll);
+document.addEventListener('DOMContentLoaded', () => { loadAll(); checkFirstTimeSetup(); });
+
+document.addEventListener('keydown', e => {
+  if (e.shiftKey && e.altKey && e.key === 'A') { e.preventDefault(); openAdminLogin(); }
+});
 </script>
 </body>
 </html>
