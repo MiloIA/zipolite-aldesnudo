@@ -76,6 +76,12 @@ section{padding:80px 40px;}
 .gallery-item{border-radius:16px;overflow:hidden;aspect-ratio:4/3;background:#e0f7fa;}
 .gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform 0.3s;}
 .gallery-item:hover img{transform:scale(1.05);}
+.gallery-item{cursor:pointer;}
+.lb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;}
+.lb-overlay.active{display:flex;}
+.lb-overlay img{max-width:92vw;max-height:88vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,0.5);object-fit:contain;}
+.lb-close{position:fixed;top:16px;right:20px;font-size:2rem;color:#fff;cursor:pointer;background:none;border:none;line-height:1;padding:4px 10px;opacity:0.85;}
+.lb-close:hover{opacity:1;}
 .empty-msg{text-align:center;padding:60px 20px;color:#aaa;grid-column:1/-1;}
 #incluye{background:white;}
 .includes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
@@ -659,7 +665,7 @@ async function loadGallery() {
   const {data} = await sb.from('galeria').select('*').order('orden').order('created_at');
   const c = document.getElementById('gal-container');
   if (!data || !data.length) { c.innerHTML='<div class="empty-msg">📷 Agrega fotos desde el panel admin (⚙️ en el footer)</div>'; return; }
-  c.innerHTML = data.map(img=>`<div class="gallery-item"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
+  c.innerHTML = data.map(img=>`<div class="gallery-item" onclick="openLightbox('${img.url}','${(img.descripcion||'Zipolite').replace(/'/g,"\\'")}')"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
 }
 
 async function loadBlog() {
@@ -1001,6 +1007,23 @@ document.querySelectorAll('#nav-links a').forEach(function(link) {
     btn.setAttribute('aria-expanded', 'false');
   });
 });
+
+function openLightbox(src, alt) {
+  const lb = document.getElementById('lb-overlay');
+  document.getElementById('lb-img').src = src;
+  document.getElementById('lb-img').alt = alt;
+  lb.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lb-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 </script>
+<div class="lb-overlay" id="lb-overlay" onclick="closeLightbox()">
+  <button class="lb-close" onclick="closeLightbox()" aria-label="Cerrar">&#10005;</button>
+  <img id="lb-img" src="" alt="" onclick="event.stopPropagation()">
+</div>
 </body>
 </html>
