@@ -852,18 +852,19 @@ async function delPkg(id) {
 
 // GALLERY
 async function uploadPhotos(input) {
-  const files=Array.from(input.files);
+  const files = Array.from(input.files);
   for (const file of files) {
-    const r=new FileReader();
-    r.onload=async(e)=>{
-      await sb.from('galeria').insert([{url:e.target.result,descripcion:file.name,orden:0}]);
-      await loadGallery();
-      const {data}=await sb.from('galeria').select('*').order('orden').order('created_at');
-      renderAdmGallery(data||[]);
-    };
-    r.readAsDataURL(file);
+    const ext = file.name.split('.').pop();
+    const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await sb.storage.from('galeria').upload(path, file, { contentType: file.type });
+    if (upErr) { alert('Error al subir imagen: ' + upErr.message); continue; }
+    const { data: { publicUrl } } = sb.storage.from('galeria').getPublicUrl(path);
+    await sb.from('galeria').insert([{ url: publicUrl, descripcion: file.name, orden: 0 }]);
+    await loadGallery();
+    const { data } = await sb.from('galeria').select('*').order('orden').order('created_at');
+    renderAdmGallery(data || []);
   }
-  input.value='';
+  input.value = '';
 }
 async function delPhoto(id) {
   if (!confirm('¿Eliminar esta foto?'))return;
