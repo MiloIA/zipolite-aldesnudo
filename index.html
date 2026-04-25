@@ -541,20 +541,25 @@ function closeAdminLogin() {
   document.getElementById('login-err').style.display = 'none';
 }
 
-function checkAdminPwd() {
+async function checkAdminPwd() {
   const pwd = document.getElementById('admin-pwd').value;
   if (!pwd) return;
-  const savedPwd = localStorage.getItem('adm_pwd');
-  if (!savedPwd) {
-    document.getElementById('login-err').textContent = 'No hay contraseña configurada. Usa #setup-admin para establecerla.';
-    document.getElementById('login-err').style.display = 'block';
-    return;
-  }
-  if (pwd === savedPwd) {
-    adminAuthenticated = true;
-    closeAdminLogin();
-    openAdmin();
-  } else {
+  try {
+    const res = await fetch('/api/admin-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      adminAuthenticated = true;
+      closeAdminLogin();
+      openAdmin();
+    } else {
+      document.getElementById('login-err').style.display = 'block';
+    }
+  } catch {
+    document.getElementById('login-err').textContent = 'Error de conexión. Intenta de nuevo.';
     document.getElementById('login-err').style.display = 'block';
   }
 }
