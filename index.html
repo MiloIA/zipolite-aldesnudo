@@ -984,7 +984,7 @@ sb.auth.onAuthStateChange((event, session) => {
   }
 });
 
-document.addEventListener('DOMContentLoaded', () => { loadAll(); checkFirstTimeSetup(); });
+document.addEventListener('DOMContentLoaded', () => { loadAll(); checkFirstTimeSetup(); if (sessionStorage.getItem('adminAuthenticated') === 'true') openAdmin(); });
 
 document.addEventListener('keydown', e => {
   if (e.shiftKey && e.altKey && e.key === 'A') { e.preventDefault(); openAdminLogin(); }
