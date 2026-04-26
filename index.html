@@ -465,17 +465,24 @@ section{padding:56px 18px;}
       <button class="pay-btn" onclick="document.getElementById('modal-step-1').style.display='none';document.getElementById('modal-step-2').style.display='block';">Quiero este paquete →</button>
     </div>
 
-    <!-- PASO 2: Cotizador -->
+    <!-- PASO 2: Formulario de reserva -->
     <div id="modal-step-2" style="display:none;">
       <a href="#" onclick="document.getElementById('modal-step-2').style.display='none';document.getElementById('modal-step-1').style.display='block';return false;" style="font-size:0.82rem;color:var(--ocean);text-decoration:none;font-weight:600;display:inline-block;margin-bottom:14px;">← Ver detalles</a>
-      <h3>Cotiza tu viaje</h3>
-      <p class="modal-subtitle">Elige personas y forma de pago para ver tu precio</p>
-      <div class="pkg-summary">
+      <div class="pkg-summary" style="margin-bottom:16px;">
         <div><div class="sname" id="m-name">Paquete</div><div style="font-size:0.76rem;color:#888;" id="m-desc"></div><div class="m-lugares" id="m-lugares"></div></div>
         <div class="stotal" id="m-price-base">$0</div>
       </div>
+      <div class="fg"><label>Nombre completo</label><input type="text" id="r-nombre" placeholder="Tu nombre completo"></div>
+      <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="tu@email.com"></div>
+      <div class="fg"><label>WhatsApp</label><input type="tel" id="r-whatsapp" placeholder="55 1234 5678"></div>
       <div class="fg"><label>Número de personas</label>
         <select id="m-personas" onchange="calcCotizador()"></select>
+      </div>
+      <div class="fg"><label>¿Cuánto pagas hoy?</label>
+        <select id="r-cuanto" onchange="calcCotizador()">
+          <option value="anticipo">Anticipo $3,000 — aparta tu lugar</option>
+          <option value="total">Total completo</option>
+        </select>
       </div>
       <div class="fg"><label>Método de pago</label>
         <select id="m-metodo" onchange="calcCotizador()">
@@ -499,19 +506,15 @@ section{padding:56px 18px;}
         <div id="m-disc-msg"></div>
       </div>
       <div class="cot-result" id="cot-result"></div>
-      <button class="btn-anticipo" id="btn-anticipo" onclick="handleAnticipo()">🏖️ Aparta hoy con solo $3,000</button>
       <div class="bank-info" id="bank-info">
         <div class="bank-row"><span>Banco</span><strong id="bank-name-display">—</strong></div>
         <div class="bank-row"><span>CLABE interbancaria</span><strong id="bank-clabe-display">—</strong></div>
       </div>
-      <div id="contact-fields" style="display:none;">
-        <div class="frow">
-          <div class="fg"><label>Tu nombre</label><input type="text" id="m-nombre" placeholder="Nombre"></div>
-          <div class="fg"><label>WhatsApp</label><input type="tel" id="m-contact-wa" placeholder="55 1234 5678"></div>
-        </div>
-      </div>
-      <button class="pay-btn" id="pay-btn" onclick="goWhatsApp()">💬 Contactar por WhatsApp</button>
+      <button class="pay-btn" onclick="confirmarReserva()" style="margin-top:4px;">Confirmar reserva</button>
     </div>
+
+    <!-- PASO 3: Confirmación -->
+    <div id="modal-step-3" style="display:none;"></div>
   </div>
 </div>
 
@@ -803,7 +806,7 @@ const STRIPE_RATES = {
   '18': {rate:21.1, flat:3, months:18},
   '24': {rate:25.1, flat:3, months:24},
 };
-let activeDiscount = null;
+let activeDiscount = null, lastTotal = 0;
 
 function grossUp(base, rate, flat) { return Math.ceil((base + flat) / (1 - rate / 100)); }
 function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX'); }
@@ -856,17 +859,76 @@ function openPay(id) {
   document.getElementById('disc-clear-btn').style.display = 'none';
   calcCotizador();
 
+  // Reset campos formulario paso 2
+  ['r-nombre','r-email','r-whatsapp'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('r-cuanto').value = 'anticipo';
+  document.getElementById('modal-step-3').style.display = 'none';
+
   // Siempre abrir en paso 1
   document.getElementById('modal-step-1').style.display = 'block';
   document.getElementById('modal-step-2').style.display = 'none';
   document.getElementById('pay-modal').classList.add('open');
 }
 
-function closePay() { document.getElementById('pay-modal').classList.remove('open'); }
+function closePay() {
+  document.getElementById('pay-modal').classList.remove('open');
+  document.getElementById('modal-step-1').style.display = 'block';
+  document.getElementById('modal-step-2').style.display = 'none';
+  document.getElementById('modal-step-3').style.display = 'none';
+}
 
-function handleAnticipo() {
-  // TODO: conectar Stripe — iniciar flujo de pago de anticipo $3,000
-  alert('Próximamente: aparta tu lugar con $3,000 via Stripe. Por ahora contáctanos por WhatsApp.');
+async function confirmarReserva() {
+  const nombre = document.getElementById('r-nombre').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const whatsapp = document.getElementById('r-whatsapp').value.trim();
+  if (!nombre || !email || !whatsapp) { alert('Por favor completa nombre, email y WhatsApp.'); return; }
+  const metodo = document.getElementById('m-metodo').value;
+  if (metodo !== 'transfer') {
+    alert('Pago con tarjeta próximamente disponible. Por ahora selecciona transferencia.');
+    return;
+  }
+  const p = parseInt(document.getElementById('m-personas').value);
+  const cuanto = document.getElementById('r-cuanto').value;
+  const anticipo = cuanto === 'anticipo' ? 3000 : lastTotal;
+  const {data, error} = await sb.from('reservaciones').insert([{
+    paquete_id: String(curPkg.id),
+    paquete_nombre: curPkg.nombre,
+    nombre, email, whatsapp,
+    personas: p,
+    metodo_pago: metodo,
+    total: lastTotal,
+    anticipo,
+    estado: 'pendiente'
+  }]).select().single();
+  if (error) { alert('Error al guardar reserva: ' + error.message); return; }
+  mostrarStep3(data, {nombre, p, metodo, cuanto, anticipo});
+}
+
+function mostrarStep3(res, info) {
+  const shortId = (res.id || '').substring(0, 8).toUpperCase();
+  const metodosLabel = {transfer:'Transferencia / Depósito',card:'Contado con tarjeta','3':'Financiamiento 3 meses','6':'Financiamiento 6 meses','9':'Financiamiento 9 meses','12':'Financiamiento 12 meses','18':'Financiamiento 18 meses','24':'Financiamiento 24 meses'};
+  const metodoLabel = metodosLabel[info.metodo] || info.metodo;
+  let html = `<h3 style="color:#2e7d32;font-family:'Fraunces',serif;font-size:1.4rem;margin-bottom:6px;">✅ ¡Reserva recibida!</h3>
+    <p style="font-size:0.82rem;color:#888;margin-bottom:18px;">Tu número de reserva: <strong style="font-size:1rem;color:var(--dark);font-family:monospace;">${shortId}</strong></p>
+    <div class="cot-result">
+      <div class="cot-row"><span>Paquete</span><strong>${curPkg.nombre}</strong></div>
+      <div class="cot-row"><span>Personas</span><strong>${info.p}</strong></div>
+      <div class="cot-row"><span>Método de pago</span><strong>${metodoLabel}</strong></div>
+      <div class="cot-row highlight"><span>Total</span><strong>${fmt(lastTotal)}</strong></div>
+      <div class="cot-row" style="color:#2e7d32;"><span>Pagas hoy</span><strong>${fmt(info.anticipo)}</strong></div>
+    </div>`;
+  if (info.metodo === 'transfer') {
+    html += `<div class="bank-info" style="display:block;margin-top:12px;">
+      <div class="bank-row"><span>Banco</span><strong>${localStorage.getItem('bank_name')||'—'}</strong></div>
+      <div class="bank-row"><span>CLABE</span><strong>${localStorage.getItem('bank_clabe')||'—'}</strong></div>
+    </div>`;
+  }
+  const waNum = localStorage.getItem('cfg_wa') || '';
+  const waMsg = encodeURIComponent(`Hola, acabo de hacer una reserva. Paquete: ${curPkg.nombre}, Personas: ${info.p}, No. reserva: ${shortId}, Nombre: ${info.nombre}, Pago: ${metodoLabel}, Total: ${fmt(lastTotal)}, Pago hoy: ${fmt(info.anticipo)}`);
+  html += `<button class="pay-btn" style="margin-top:18px;background:linear-gradient(135deg,#25D366,#128C7E);" onclick="window.open('https://wa.me/${waNum}?text=${waMsg}','_blank')">💬 Avisar por WhatsApp</button>`;
+  document.getElementById('modal-step-3').innerHTML = html;
+  document.getElementById('modal-step-2').style.display = 'none';
+  document.getElementById('modal-step-3').style.display = 'block';
 }
 
 function clearDiscountMsg() { if (!activeDiscount) document.getElementById('m-disc-msg').textContent = ''; }
@@ -910,6 +972,7 @@ function calcCotizador() {
   if (!curPkg) return;
   const p = parseInt(document.getElementById('m-personas').value);
   const metodo = document.getElementById('m-metodo').value;
+  const cuanto = document.getElementById('r-cuanto')?.value || 'total';
   const precioBase = curPkg.precio;
   const totalSinDesc = precioBase * p;
   const base = applyDiscountToBase(precioBase, p);
@@ -917,32 +980,40 @@ function calcCotizador() {
   const resultEl = document.getElementById('cot-result');
   const bankEl = document.getElementById('bank-info');
   document.getElementById('m-price-base').textContent = fmt(totalSinDesc);
-  document.getElementById('contact-fields').style.display = metodo !== 'card' ? 'block' : 'none';
 
   let rows = `<div class="cot-row"><span>Precio base</span><strong>${fmt(precioBase)} × ${p} ${p === 1 ? 'persona' : 'personas'} = ${fmt(totalSinDesc)}</strong></div>`;
   if (descuento > 0) {
     rows += `<div class="cot-row" style="color:#2e7d32;"><span>Descuento aplicado</span><strong>-${fmt(descuento)}</strong></div>`;
   }
 
+  let finalTotal = base;
   if (metodo === 'transfer') {
     document.getElementById('bank-clabe-display').textContent = localStorage.getItem('bank_clabe') || '—';
     document.getElementById('bank-name-display').textContent = localStorage.getItem('bank_name') || '—';
     bankEl.style.display = 'block';
-    rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(base)}</strong></div>`;
+    finalTotal = base;
     rows += `<div class="cot-row"><span>Comisión</span><strong style="color:#2e7d32;">Sin comisión ✓</strong></div>`;
   } else {
     bankEl.style.display = 'none';
     const cfg = STRIPE_RATES[metodo];
-    const total = grossUp(base, cfg.rate, cfg.flat);
+    finalTotal = grossUp(base, cfg.rate, cfg.flat);
     if (cfg.months === 0) {
-      rows += `<div class="cot-row"><span>Comisión bancaria</span><strong>+${fmt(total - base)}</strong></div>`;
-      rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>`;
+      rows += `<div class="cot-row"><span>Comisión bancaria</span><strong>+${fmt(finalTotal - base)}</strong></div>`;
     } else {
-      rows += `<div class="cot-row"><span>Costo de financiamiento</span><strong>+${fmt(total - base)}</strong></div>`;
-      rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>`;
-      rows += `<div class="cot-row"><span>Mensualidad</span><strong>${fmt(total / cfg.months)} × ${cfg.months} meses</strong></div>`;
+      rows += `<div class="cot-row"><span>Costo de financiamiento</span><strong>+${fmt(finalTotal - base)}</strong></div>`;
+      rows += `<div class="cot-row"><span>Mensualidad</span><strong>${fmt(finalTotal / STRIPE_RATES[metodo].months)} × ${STRIPE_RATES[metodo].months} meses</strong></div>`;
     }
   }
+
+  if (cuanto === 'anticipo') {
+    rows += `<div class="cot-row"><span>Total a pagar</span><strong>${fmt(finalTotal)}</strong></div>`;
+    rows += `<div class="cot-row highlight" style="color:#2e7d32;"><span>Pagas hoy</span><strong>$3,000</strong></div>`;
+    rows += `<div class="cot-row"><span>Resto al llegar</span><strong>${fmt(Math.max(0, finalTotal - 3000))}</strong></div>`;
+  } else {
+    rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(finalTotal)}</strong></div>`;
+  }
+
+  lastTotal = finalTotal;
   resultEl.innerHTML = rows;
 }
 
