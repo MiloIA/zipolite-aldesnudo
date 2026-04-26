@@ -1198,38 +1198,39 @@ function renderReservaciones(list) {
   const c = document.getElementById('adm-reservaciones');
   if (!list.length) { c.innerHTML='<p style="color:#aaa;font-size:0.85rem;">Sin reservaciones aún.</p>'; return; }
   const fmt = n => '$'+Math.round(Number(n)||0).toLocaleString('es-MX');
-  const metodosLabel = {transfer:'Transferencia',card:'Tarjeta','3':'3 MSI','6':'6 MSI','9':'9 MSI','12':'12 MSI','18':'18 MSI','24':'24 MSI'};
   const badgeClass = e => e==='confirmado'?'badge-conf':e==='cancelado'?'badge-canc':'badge-pend';
+  const thS = 'style="background:#f0f4f6;padding:8px 10px;text-align:left;font-size:0.75rem;font-weight:700;color:#666;white-space:nowrap;"';
+  const tdS = 'style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;"';
   const rows = list.map(r => {
     const fecha = r.created_at ? r.created_at.substring(0,10) : '—';
     const shortId = (r.id||'').substring(0,8).toUpperCase();
     const estado = r.estado || 'pendiente';
-    const metodo = metodosLabel[r.metodo_pago] || r.metodo_pago || '—';
+    const emailRaw = r.email || '—';
+    const email = emailRaw.length > 20 ? emailRaw.substring(0,20)+'…' : emailRaw;
     const btnConfirm = estado !== 'confirmado'
       ? `<button class="btn-res-ok" onclick="confirmarReservacion('${r.id}')">✅ Confirmar</button>` : '';
     const btnDel = `<button class="btn-res-del" onclick="eliminarReservacion('${r.id}')">🗑 Eliminar</button>`;
+    const td = (extra,content) => `<td style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;${extra||''}">${content}</td>`;
     return `<tr>
-      <td>${fecha}</td>
-      <td style="font-family:monospace;font-weight:700;color:#0097A7;">#${shortId}</td>
-      <td>${r.nombre||'—'}</td>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;">${r.email||'—'}</td>
-      <td>${r.whatsapp||r.telefono||'—'}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;">${r.paquete_nombre||'—'}</td>
-      <td style="text-align:center;">${r.personas||'—'}</td>
-      <td style="font-weight:700;">${fmt(r.total)}</td>
-      <td class="res-col-anticipo" style="font-weight:700;color:#006064;">${fmt(r.anticipo)}</td>
-      <td>${metodo}</td>
-      <td><span class="${badgeClass(estado)}">${estado}</span></td>
-      <td style="white-space:nowrap;">${btnConfirm}${btnDel}</td>
+      ${td('',fecha)}
+      ${td('font-family:monospace;font-weight:700;color:#0097A7;','#'+shortId)}
+      ${td('',r.nombre||'—')}
+      <td style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;" title="${r.email||''}">${email}</td>
+      ${td('',r.whatsapp||r.telefono||'—')}
+      ${td('max-width:160px;overflow:hidden;text-overflow:ellipsis;',r.paquete_nombre||'—')}
+      ${td('text-align:center;',r.personas||'—')}
+      ${td('font-weight:700;',fmt(r.total))}
+      ${td('','<span class="'+badgeClass(estado)+'">'+estado+'</span>')}
+      ${td('',btnConfirm+btnDel)}
     </tr>`;
   }).join('');
-  c.innerHTML = `<table class="res-table">
+  c.innerHTML = `<div style="overflow-x:auto;width:100%;"><table style="width:100%;border-collapse:collapse;min-width:600px;">
     <thead><tr>
-      <th>Fecha</th><th>No. Reserva</th><th>Nombre</th><th>Email</th><th>WhatsApp</th><th>Paquete</th>
-      <th>Pers.</th><th>Total</th><th class="res-col-anticipo">Pagas hoy</th><th>Método</th><th>Estado</th><th>Acciones</th>
+      <th ${thS}>Fecha</th><th ${thS}>No. Reserva</th><th ${thS}>Nombre</th><th ${thS}>Email</th><th ${thS}>WhatsApp</th><th ${thS}>Paquete</th>
+      <th ${thS}>Pers.</th><th ${thS}>Total</th><th ${thS}>Estado</th><th ${thS}>Acciones</th>
     </tr></thead>
     <tbody>${rows}</tbody>
-  </table>`;
+  </table></div>`;
 }
 
 async function confirmarReservacion(id) {
