@@ -480,7 +480,7 @@ section{padding:56px 18px;}
       </div>
       <div class="fg"><label>¿Cuánto pagas hoy?</label>
         <select id="r-cuanto" onchange="calcCotizador()">
-          <option value="anticipo">Anticipo $3,000 — aparta tu lugar</option>
+          <option value="anticipo" id="r-cuanto-anticipo-opt">Anticipo $3,000 — aparta tu lugar</option>
           <option value="total">Total completo</option>
         </select>
       </div>
@@ -863,6 +863,7 @@ function openPay(id) {
   // Reset campos formulario paso 2
   ['r-nombre','r-email','r-whatsapp'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('r-cuanto').value = 'anticipo';
+  document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(curPkg.monto_anticipo||3000)} — aparta tu lugar`;
   document.getElementById('modal-step-3').style.display = 'none';
 
   // Siempre abrir en paso 1
@@ -890,7 +891,7 @@ async function confirmarReserva() {
   }
   const p = parseInt(document.getElementById('m-personas').value);
   const cuanto = document.getElementById('r-cuanto').value;
-  const anticipo = cuanto === 'anticipo' ? 3000 : lastTotal;
+  const anticipo = cuanto === 'anticipo' ? (curPkg.monto_anticipo || 3000) : lastTotal;
   const {data, error} = await sb.from('reservaciones').insert([{
     paquete_id: String(curPkg.id),
     paquete_nombre: curPkg.nombre,
@@ -1008,8 +1009,9 @@ function calcCotizador() {
 
   if (cuanto === 'anticipo') {
     rows += `<div class="cot-row"><span>Total a pagar</span><strong>${fmt(finalTotal)}</strong></div>`;
-    rows += `<div class="cot-row highlight" style="color:#2e7d32;"><span>Pagas hoy</span><strong>$3,000</strong></div>`;
-    rows += `<div class="cot-row"><span>Resto al llegar</span><strong>${fmt(Math.max(0, finalTotal - 3000))}</strong></div>`;
+    const montoAnticipo = curPkg.monto_anticipo || 3000;
+    rows += `<div class="cot-row highlight" style="color:#2e7d32;"><span>Pagas hoy</span><strong>${fmt(montoAnticipo)}</strong></div>`;
+    rows += `<div class="cot-row"><span>Resto al llegar</span><strong>${fmt(Math.max(0, finalTotal - montoAnticipo))}</strong></div>`;
   } else {
     rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(finalTotal)}</strong></div>`;
   }
