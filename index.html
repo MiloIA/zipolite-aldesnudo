@@ -741,7 +741,7 @@ function renderPkgs(list) {
       ${header}
       <div class="pkg-body">
         <div class="pkg-price"><span class="currency">MXN $</span><span class="amount">${Number(p.precio).toLocaleString()}</span><span class="per">/ persona</span></div>
-        <ul class="pkg-features">${inc.map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}</ul>
+        <ul class="pkg-features">${inc.slice(0,5).map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}${inc.length>5?`<li style="color:#aaa;font-size:0.78rem;">+ ${inc.length-5} más incluidos</li>`:''}</ul>
         ${p.nota ? `<div class="pkg-note">${p.nota}</div>` : ''}
         <button class="pkg-btn pkg-btn-${p.tipo||'primary'}" onclick="openPay('${p.id}')">
           ${p.tipo==='secondary'?'⛺ Apartar mi lugar':'🏖️ Reservar ahora'}
