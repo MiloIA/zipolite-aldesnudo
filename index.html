@@ -1028,7 +1028,7 @@ function calcCotizador() {
     rows += `<div class="cot-row"><span>Total a pagar</span><strong>${fmt(finalTotal)}</strong></div>`;
     const montoAnticipo = curPkg.monto_anticipo || 3000;
     rows += `<div class="cot-row highlight" style="color:#2e7d32;"><span>Pagas hoy</span><strong>${fmt(montoAnticipo)}</strong></div>`;
-    rows += `<div class="cot-row"><span>Resto al llegar</span><strong>${fmt(Math.max(0, finalTotal - montoAnticipo))}</strong></div>`;
+    rows += `<div class="cot-row"><span>Resto (10 días antes del viaje)</span><strong>${fmt(Math.max(0, finalTotal - montoAnticipo))}</strong></div>`;
   } else {
     rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(finalTotal)}</strong></div>`;
   }
