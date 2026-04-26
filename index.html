@@ -531,6 +531,16 @@ section{padding:56px 18px;}
             <select id="pf-tipo"><option value="primary">Rojo (principal)</option><option value="secondary">Oscuro (secundario)</option></select>
           </div>
           <div class="af"><label>Badge (opcional)</label><input type="text" id="pf-badge" placeholder="⭐ Más popular"></div>
+          <div class="af" style="grid-column:1/-1">
+            <label>Foto del paquete</label>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="pf-foto-url" placeholder="URL de la foto (se llena al subir)" style="flex:1;">
+              <label style="padding:9px 16px;background:var(--ocean);color:#fff;border-radius:10px;cursor:pointer;font-size:0.88rem;font-weight:600;white-space:nowrap;">
+                📷 Subir foto
+                <input type="file" id="pf-foto-input" accept="image/*" style="display:none;" onchange="uploadPkgPhoto(this)">
+              </label>
+            </div>
+          </div>
         </div>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
           <button class="save-btn" onclick="savePkg()">💾 Guardar paquete</button>
