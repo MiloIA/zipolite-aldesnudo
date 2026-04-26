@@ -453,49 +453,65 @@ section{padding:56px 18px;}
 <div class="modal-overlay" id="pay-modal">
   <div class="modal">
     <button class="modal-close" onclick="closePay()">✕</button>
-    <h3>Cotiza tu viaje</h3>
-    <p class="modal-subtitle">Elige personas y forma de pago para ver tu precio</p>
-    <div class="pkg-summary">
-      <div><div class="sname" id="m-name">Paquete</div><div style="font-size:0.76rem;color:#888;" id="m-desc"></div><div class="m-lugares" id="m-lugares"></div></div>
-      <div class="stotal" id="m-price-base">$0</div>
+
+    <!-- PASO 1: Detalles del paquete -->
+    <div id="modal-step-1">
+      <h3 id="s1-name" style="font-family:'Fraunces',serif;font-size:1.35rem;font-weight:800;color:var(--dark);margin-bottom:4px;"></h3>
+      <p id="s1-desc" style="font-size:0.85rem;color:#888;margin-bottom:6px;"></p>
+      <div id="s1-lugares" class="m-lugares" style="margin-bottom:8px;"></div>
+      <div id="s1-fechas" style="font-size:0.82rem;color:var(--ocean);font-weight:600;margin-bottom:14px;display:none;">📅 <span id="s1-fechas-text"></span></div>
+      <ul id="s1-incluye" style="list-style:none;margin-bottom:16px;padding:0;"></ul>
+      <div id="s1-nota" style="background:#f0feff;border-left:3px solid var(--ocean);padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.83rem;color:#2a6a7a;margin-bottom:18px;display:none;"></div>
+      <button class="pay-btn" onclick="document.getElementById('modal-step-1').style.display='none';document.getElementById('modal-step-2').style.display='block';">Quiero este paquete →</button>
     </div>
-    <div class="fg"><label>Número de personas</label>
-      <select id="m-personas" onchange="calcCotizador()"></select>
-    </div>
-    <div class="fg"><label>Método de pago</label>
-      <select id="m-metodo" onchange="calcCotizador()">
-        <option value="transfer">Transferencia / Depósito</option>
-        <option value="card">Contado con tarjeta</option>
-        <option value="3">Financiamiento 3 meses</option>
-        <option value="6">Financiamiento 6 meses</option>
-        <option value="9">Financiamiento 9 meses</option>
-        <option value="12">Financiamiento 12 meses</option>
-        <option value="18">Financiamiento 18 meses</option>
-        <option value="24">Financiamiento 24 meses</option>
-      </select>
-    </div>
-    <div class="fg">
-      <label>Código de descuento</label>
-      <div class="disc-row">
-        <input type="text" id="m-disc-code" placeholder="Ingresa tu código" oninput="clearDiscountMsg()">
-        <button class="disc-btn" onclick="applyDiscount()">Aplicar</button>
-        <button class="disc-btn" id="disc-clear-btn" onclick="clearDiscount()" style="display:none;background:#888;" title="Quitar descuento">✕</button>
+
+    <!-- PASO 2: Cotizador -->
+    <div id="modal-step-2" style="display:none;">
+      <a href="#" onclick="document.getElementById('modal-step-2').style.display='none';document.getElementById('modal-step-1').style.display='block';return false;" style="font-size:0.82rem;color:var(--ocean);text-decoration:none;font-weight:600;display:inline-block;margin-bottom:14px;">← Ver detalles</a>
+      <h3>Cotiza tu viaje</h3>
+      <p class="modal-subtitle">Elige personas y forma de pago para ver tu precio</p>
+      <div class="pkg-summary">
+        <div><div class="sname" id="m-name">Paquete</div><div style="font-size:0.76rem;color:#888;" id="m-desc"></div><div class="m-lugares" id="m-lugares"></div></div>
+        <div class="stotal" id="m-price-base">$0</div>
       </div>
-      <div id="m-disc-msg"></div>
-    </div>
-    <div class="cot-result" id="cot-result"></div>
-    <button class="btn-anticipo" id="btn-anticipo" onclick="handleAnticipo()">🏖️ Aparta hoy con solo $3,000</button>
-    <div class="bank-info" id="bank-info">
-      <div class="bank-row"><span>Banco</span><strong id="bank-name-display">—</strong></div>
-      <div class="bank-row"><span>CLABE interbancaria</span><strong id="bank-clabe-display">—</strong></div>
-    </div>
-    <div id="contact-fields" style="display:none;">
-      <div class="frow">
-        <div class="fg"><label>Tu nombre</label><input type="text" id="m-nombre" placeholder="Nombre"></div>
-        <div class="fg"><label>WhatsApp</label><input type="tel" id="m-contact-wa" placeholder="55 1234 5678"></div>
+      <div class="fg"><label>Número de personas</label>
+        <select id="m-personas" onchange="calcCotizador()"></select>
       </div>
+      <div class="fg"><label>Método de pago</label>
+        <select id="m-metodo" onchange="calcCotizador()">
+          <option value="transfer">Transferencia / Depósito</option>
+          <option value="card">Contado con tarjeta</option>
+          <option value="3">Financiamiento 3 meses</option>
+          <option value="6">Financiamiento 6 meses</option>
+          <option value="9">Financiamiento 9 meses</option>
+          <option value="12">Financiamiento 12 meses</option>
+          <option value="18">Financiamiento 18 meses</option>
+          <option value="24">Financiamiento 24 meses</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Código de descuento</label>
+        <div class="disc-row">
+          <input type="text" id="m-disc-code" placeholder="Ingresa tu código" oninput="clearDiscountMsg()">
+          <button class="disc-btn" onclick="applyDiscount()">Aplicar</button>
+          <button class="disc-btn" id="disc-clear-btn" onclick="clearDiscount()" style="display:none;background:#888;" title="Quitar descuento">✕</button>
+        </div>
+        <div id="m-disc-msg"></div>
+      </div>
+      <div class="cot-result" id="cot-result"></div>
+      <button class="btn-anticipo" id="btn-anticipo" onclick="handleAnticipo()">🏖️ Aparta hoy con solo $3,000</button>
+      <div class="bank-info" id="bank-info">
+        <div class="bank-row"><span>Banco</span><strong id="bank-name-display">—</strong></div>
+        <div class="bank-row"><span>CLABE interbancaria</span><strong id="bank-clabe-display">—</strong></div>
+      </div>
+      <div id="contact-fields" style="display:none;">
+        <div class="frow">
+          <div class="fg"><label>Tu nombre</label><input type="text" id="m-nombre" placeholder="Nombre"></div>
+          <div class="fg"><label>WhatsApp</label><input type="tel" id="m-contact-wa" placeholder="55 1234 5678"></div>
+        </div>
+      </div>
+      <button class="pay-btn" id="pay-btn" onclick="goWhatsApp()">💬 Contactar por WhatsApp</button>
     </div>
-    <button class="pay-btn" id="pay-btn" onclick="goWhatsApp()">💬 Contactar por WhatsApp</button>
   </div>
 </div>
 
@@ -809,16 +825,29 @@ function buildPersonasOptions(max) {
 function openPay(id) {
   curPkg = pkgs.find(p=>String(p.id)===String(id)) || pkgs[0];
   if (!curPkg) return;
+
+  // Poblar paso 1
+  const s1inc = Array.isArray(curPkg.incluye) ? curPkg.incluye : (curPkg.incluye||'').split('\n').filter(i=>i.trim());
+  document.getElementById('s1-name').textContent = curPkg.nombre;
+  document.getElementById('s1-desc').textContent = curPkg.descripcion || '';
+  const s1fechas = document.getElementById('s1-fechas');
+  s1fechas.style.display = curPkg.fechas ? 'block' : 'none';
+  document.getElementById('s1-fechas-text').textContent = curPkg.fechas || '';
+  document.getElementById('s1-incluye').innerHTML = s1inc.map(i=>`<li style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f0f9fa;font-size:0.9rem;"><span style="color:var(--ocean);flex-shrink:0;">✓</span><span>${i.trim()}</span></li>`).join('');
+  const s1nota = document.getElementById('s1-nota');
+  s1nota.textContent = curPkg.nota || '';
+  s1nota.style.display = curPkg.nota ? 'block' : 'none';
+  const lugaresHtml = curPkg.lugares_totales != null ? (() => {
+    const disp = curPkg.lugares_totales - (curPkg.lugares_vendidos || 0);
+    const u = disp < 10;
+    return `<span style="color:${u?'#c0241d':'#2e7d32'};">${u?'⚠️':'✓'} Quedan ${disp} lugares${u?' — ¡Cupo muy limitado!':''}</span>`;
+  })() : '';
+  document.getElementById('s1-lugares').innerHTML = lugaresHtml;
+
+  // Poblar paso 2
   document.getElementById('m-name').textContent = curPkg.nombre;
   document.getElementById('m-desc').textContent = curPkg.descripcion || '';
-  const lugaresEl = document.getElementById('m-lugares');
-  if (curPkg.lugares_totales != null) {
-    const disp = curPkg.lugares_totales - (curPkg.lugares_vendidos || 0);
-    const urgente = disp < 10;
-    lugaresEl.innerHTML = `<span style="color:${urgente?'#c0241d':'#2e7d32'};">${urgente?'⚠️':'✓'} Quedan ${disp} lugares${urgente?' — ¡Cupo muy limitado!':''}</span>`;
-  } else {
-    lugaresEl.textContent = '';
-  }
+  document.getElementById('m-lugares').innerHTML = lugaresHtml;
   buildPersonasOptions(curPkg.nombre.toLowerCase().includes('camping') ? 48 : (curPkg.lugares_totales || 10));
   document.getElementById('m-metodo').value = 'transfer';
   activeDiscount = null;
@@ -826,6 +855,10 @@ function openPay(id) {
   document.getElementById('m-disc-msg').textContent = '';
   document.getElementById('disc-clear-btn').style.display = 'none';
   calcCotizador();
+
+  // Siempre abrir en paso 1
+  document.getElementById('modal-step-1').style.display = 'block';
+  document.getElementById('modal-step-2').style.display = 'none';
   document.getElementById('pay-modal').classList.add('open');
 }
 
