@@ -765,9 +765,9 @@ function buildPersonasOptions(max) {
   for (let i = 1; i <= max; i++) {
     const o = document.createElement('option');
     o.value = i; o.textContent = i === 1 ? '1 persona' : `${i} personas`;
-    if (i === 2) o.selected = true;
     sel.appendChild(o);
   }
+  sel.value = max >= 2 ? '2' : '1';
 }
 
 function openPay(id) {
@@ -827,32 +827,40 @@ function calcCotizador() {
   if (!curPkg) return;
   const p = parseInt(document.getElementById('m-personas').value);
   const metodo = document.getElementById('m-metodo').value;
-  const base = applyDiscountToBase(curPkg.precio, p);
+  const precioBase = curPkg.precio;
+  const totalSinDesc = precioBase * p;
+  const base = applyDiscountToBase(precioBase, p);
+  const descuento = totalSinDesc - base;
   const resultEl = document.getElementById('cot-result');
   const bankEl = document.getElementById('bank-info');
-  document.getElementById('m-price-base').textContent = fmt(base);
+  document.getElementById('m-price-base').textContent = fmt(totalSinDesc);
   document.getElementById('contact-fields').style.display = metodo !== 'card' ? 'block' : 'none';
+
+  let rows = `<div class="cot-row"><span>Precio base</span><strong>${fmt(precioBase)} × ${p} ${p === 1 ? 'persona' : 'personas'} = ${fmt(totalSinDesc)}</strong></div>`;
+  if (descuento > 0) {
+    rows += `<div class="cot-row" style="color:#2e7d32;"><span>Descuento aplicado</span><strong>-${fmt(descuento)}</strong></div>`;
+  }
+
   if (metodo === 'transfer') {
     document.getElementById('bank-clabe-display').textContent = localStorage.getItem('bank_clabe') || '—';
     document.getElementById('bank-name-display').textContent = localStorage.getItem('bank_name') || '—';
     bankEl.style.display = 'block';
-    resultEl.innerHTML = `
-      <div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(base)}</strong></div>
-      <div class="cot-row"><span>Comisión</span><strong style="color:#2e7d32;">Sin comisión ✓</strong></div>`;
+    rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(base)}</strong></div>`;
+    rows += `<div class="cot-row"><span>Comisión</span><strong style="color:#2e7d32;">Sin comisión ✓</strong></div>`;
   } else {
     bankEl.style.display = 'none';
     const cfg = STRIPE_RATES[metodo];
     const total = grossUp(base, cfg.rate, cfg.flat);
     if (cfg.months === 0) {
-      resultEl.innerHTML = `
-        <div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>
-        <div class="cot-row"><span>Comisión bancaria</span><strong>${fmt(total - base)}</strong></div>`;
+      rows += `<div class="cot-row"><span>Comisión bancaria</span><strong>+${fmt(total - base)}</strong></div>`;
+      rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>`;
     } else {
-      resultEl.innerHTML = `
-        <div class="cot-row highlight"><span>Mensualidad</span><strong>${fmt(total / cfg.months)} × ${cfg.months}</strong></div>
-        <div class="cot-row"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>`;
+      rows += `<div class="cot-row"><span>Costo de financiamiento</span><strong>+${fmt(total - base)}</strong></div>`;
+      rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>`;
+      rows += `<div class="cot-row"><span>Mensualidad</span><strong>${fmt(total / cfg.months)} × ${cfg.months} meses</strong></div>`;
     }
   }
+  resultEl.innerHTML = rows;
 }
 
 function goWhatsApp() {
@@ -891,7 +899,7 @@ function renderDiscounts(list) {
   const c = document.getElementById('adm-disc-list');
   if (!list.length) { c.innerHTML='<div style="color:#aaa;font-size:0.85rem;">Sin códigos aún.</div>'; return; }
   c.innerHTML = list.map(d=>{
-    const usosInfo = d.usos_maximos !== null ? `${d.usos_actuales??0}/${d.usos_maximos} usos` : 'usos ilimitados';
+    const usosInfo = d.usos_maximos != null ? `${d.usos_actuales??0}/${d.usos_maximos} usos` : `${d.usos_actuales??0}/ilimitado usos`;
     return `<div class="item-row">
       <div class="item-info"><h4>${d.codigo} — ${d.tipo==='percent'?d.valor+'%':fmt(d.valor)+' MXN'}</h4><p>${d.activo?'✅ Activo':'⏸ Inactivo'} · ${usosInfo}</p></div>
       <div class="item-actions"><button class="del-btn" onclick="delDiscount('${d.id}')">Eliminar</button></div>
@@ -913,7 +921,8 @@ async function saveDiscount() {
 }
 async function delDiscount(id) {
   if (!confirm('¿Eliminar este código?')) return;
-  await sb.from('descuentos').delete().eq('id',id);
+  const {error} = await sb.from('descuentos').delete().eq('id', id);
+  if (error) { alert('Error al eliminar: ' + error.message); return; }
   loadDiscounts();
 }
 
