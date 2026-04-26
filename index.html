@@ -768,6 +768,7 @@ function buildPersonasOptions(max) {
     sel.appendChild(o);
   }
   sel.value = max >= 2 ? '2' : '1';
+  sel.selectedIndex = max >= 2 ? 1 : 0;
 }
 
 function openPay(id) {
@@ -921,9 +922,10 @@ async function saveDiscount() {
 }
 async function delDiscount(id) {
   if (!confirm('¿Eliminar este código?')) return;
-  const {error} = await sb.from('descuentos').delete().eq('id', id);
+  const { data, error } = await sb.from('descuentos').delete().eq('id', id).select();
   if (error) { alert('Error al eliminar: ' + error.message); return; }
-  loadDiscounts();
+  if (!data || data.length === 0) { alert('No se pudo eliminar. Verifica los permisos en Supabase (RLS).'); }
+  await loadDiscounts();
 }
 
 // ---- USER AUTH ----
