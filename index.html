@@ -202,7 +202,10 @@ footer a{color:var(--teal);text-decoration:none;}
 .disc-btn{padding:10px 16px;background:var(--ocean);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.88rem;font-weight:600;white-space:nowrap;}
 .disc-btn:hover{opacity:0.88;}
 #m-disc-msg{font-size:0.82rem;margin-top:5px;min-height:1em;}
-.anticipo-badge{background:linear-gradient(135deg,var(--ocean),#0097a7);color:#fff;border-radius:10px;padding:10px 16px;text-align:center;font-size:0.88rem;font-weight:700;margin-bottom:14px;}
+.btn-anticipo{display:block;width:100%;padding:14px 20px;background:linear-gradient(135deg,#F5831F,#E8312A);color:#fff;border:none;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;margin-bottom:14px;text-align:center;transition:opacity 0.2s,transform 0.1s;letter-spacing:0.01em;}
+.btn-anticipo:hover{opacity:0.92;transform:translateY(-1px);}
+.btn-anticipo:active{transform:translateY(0);}
+.m-lugares{font-size:0.78rem;font-weight:700;margin-top:4px;min-height:1.1em;}
 .fg{margin-bottom:14px;}
 .fg label{display:block;font-size:0.76rem;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
 .fg input,.fg select{width:100%;padding:10px 13px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;outline:none;transition:border-color 0.2s;}
@@ -446,7 +449,7 @@ section{padding:56px 18px;}
     <h3>Cotiza tu viaje</h3>
     <p class="modal-subtitle">Elige personas y forma de pago para ver tu precio</p>
     <div class="pkg-summary">
-      <div><div class="sname" id="m-name">Paquete</div><div style="font-size:0.76rem;color:#888;" id="m-desc"></div></div>
+      <div><div class="sname" id="m-name">Paquete</div><div style="font-size:0.76rem;color:#888;" id="m-desc"></div><div class="m-lugares" id="m-lugares"></div></div>
       <div class="stotal" id="m-price-base">$0</div>
     </div>
     <div class="fg"><label>Número de personas</label>
@@ -474,7 +477,7 @@ section{padding:56px 18px;}
       <div id="m-disc-msg"></div>
     </div>
     <div class="cot-result" id="cot-result"></div>
-    <div class="anticipo-badge">🏖️ Aparta hoy con solo $3,000</div>
+    <button class="btn-anticipo" id="btn-anticipo" onclick="handleAnticipo()">🏖️ Aparta hoy con solo $3,000</button>
     <div class="bank-info" id="bank-info">
       <div class="bank-row"><span>Banco</span><strong id="bank-name-display">—</strong></div>
       <div class="bank-row"><span>CLABE interbancaria</span><strong id="bank-clabe-display">—</strong></div>
@@ -514,6 +517,9 @@ section{padding:56px 18px;}
             <label>Nota especial <button class="ai-btn" onclick="aiNota()" id="ai-nota-btn">🤖 Generar con IA</button></label>
             <input type="text" id="pf-nota" placeholder="Ej. Habitación privada disponible: +$2,500">
           </div>
+          <div class="af"><label>Lugares totales</label><input type="number" id="pf-lugares" placeholder="Ej. 48" min="1"></div>
+          <div class="af"><label>Fecha de inicio</label><input type="date" id="pf-fecha-inicio"></div>
+          <div class="af"><label>Fecha de fin</label><input type="date" id="pf-fecha-fin"><small style="color:#888;font-size:0.75rem;">Al pasar esta fecha el paquete se oculta automáticamente</small></div>
           <div class="af"><label>Tipo de botón</label>
             <select id="pf-tipo"><option value="primary">Rojo (principal)</option><option value="secondary">Oscuro (secundario)</option></select>
           </div>
@@ -608,7 +614,7 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 // For static HTML we use a hash comparison approach
 // Admin auth via localStorage
 
-let pkgs = [], curPkg = null, selPayment = 'anticipo';
+let pkgs = [], adminPkgs = [], curPkg = null, selPayment = 'anticipo';
 let oaiKey = localStorage.getItem('oai_key') || '';
 let adminAuthenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
 
@@ -692,8 +698,10 @@ async function loadAll() {
 }
 
 async function loadPkgs() {
-  const {data,error} = await sb.from('paquetes').select('*').eq('activo',true).order('created_at');
-  pkgs = (data && data.length > 0) ? data : DEFAULT_PKGS;
+  const {data} = await sb.from('paquetes').select('*').eq('activo',true).order('created_at');
+  const today = new Date().toISOString().split('T')[0];
+  const vigentes = (data||[]).filter(p => !p.fecha_fin || p.fecha_fin >= today);
+  pkgs = vigentes.length > 0 ? vigentes : DEFAULT_PKGS;
   renderPkgs(pkgs);
 }
 
@@ -762,13 +770,15 @@ function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX'); }
 function buildPersonasOptions(max) {
   const sel = document.getElementById('m-personas');
   sel.innerHTML = '';
+  const def = max >= 2 ? 2 : 1;
   for (let i = 1; i <= max; i++) {
     const o = document.createElement('option');
-    o.value = i; o.textContent = i === 1 ? '1 persona' : `${i} personas`;
+    o.value = i;
+    o.textContent = i === 1 ? '1 persona' : `${i} personas`;
+    o.selected = (i === def);
     sel.appendChild(o);
   }
-  sel.value = max >= 2 ? '2' : '1';
-  sel.selectedIndex = max >= 2 ? 1 : 0;
+  sel.value = String(def);
 }
 
 function openPay(id) {
@@ -776,7 +786,15 @@ function openPay(id) {
   if (!curPkg) return;
   document.getElementById('m-name').textContent = curPkg.nombre;
   document.getElementById('m-desc').textContent = curPkg.descripcion || '';
-  buildPersonasOptions(curPkg.nombre.toLowerCase().includes('camping') ? 48 : 10);
+  const lugaresEl = document.getElementById('m-lugares');
+  if (curPkg.lugares_totales != null) {
+    const disp = curPkg.lugares_totales - (curPkg.lugares_vendidos || 0);
+    const urgente = disp < 10;
+    lugaresEl.innerHTML = `<span style="color:${urgente?'#c0241d':'#2e7d32'};">${urgente?'⚠️':'✓'} Quedan ${disp} lugares${urgente?' — ¡Cupo muy limitado!':''}</span>`;
+  } else {
+    lugaresEl.textContent = '';
+  }
+  buildPersonasOptions(curPkg.nombre.toLowerCase().includes('camping') ? 48 : (curPkg.lugares_totales || 10));
   document.getElementById('m-metodo').value = 'transfer';
   activeDiscount = null;
   document.getElementById('m-disc-code').value = '';
@@ -787,6 +805,12 @@ function openPay(id) {
 }
 
 function closePay() { document.getElementById('pay-modal').classList.remove('open'); }
+
+function handleAnticipo() {
+  // TODO: conectar Stripe — iniciar flujo de pago de anticipo $3,000
+  alert('Próximamente: aparta tu lugar con $3,000 via Stripe. Por ahora contáctanos por WhatsApp.');
+}
+
 function clearDiscountMsg() { if (!activeDiscount) document.getElementById('m-disc-msg').textContent = ''; }
 
 function clearDiscount() {
@@ -967,9 +991,21 @@ function showRegMsg(msg,isError=false) {
 }
 document.getElementById('user-register').addEventListener('click',function(e){if(e.target===this)closeRegister();});
 
+// SQL (ejecutar en Supabase para agregar columnas a paquetes):
+// alter table paquetes add column if not exists lugares_totales integer default null;
+// alter table paquetes add column if not exists lugares_vendidos integer default 0;
+// alter table paquetes add column if not exists fecha_inicio date default null;
+// alter table paquetes add column if not exists fecha_fin date default null;
+
 // ---- ADMIN DATA ----
-async function loadAdminData() {
+async function loadAdminPkgs() {
+  const {data} = await sb.from('paquetes').select('*').order('created_at');
+  adminPkgs = data || [];
   renderAdmPkgs();
+}
+
+async function loadAdminData() {
+  await loadAdminPkgs();
   const {data:gd}=await sb.from('galeria').select('*').order('orden').order('created_at');
   renderAdmGallery(gd||[]);
   const {data:bd}=await sb.from('blog').select('*').order('created_at',{ascending:false});
@@ -987,16 +1023,18 @@ async function loadAdminData() {
 
 function renderAdmPkgs() {
   const c=document.getElementById('adm-pkgs');
-  // Show ALL packages including defaults
-  const allPkgs = pkgs;
-  if (!allPkgs.length) {c.innerHTML='<div style="color:#aaa;font-size:0.85rem;">No hay paquetes.</div>';return;}
-  c.innerHTML=allPkgs.map(p=>`<div class="item-row">
-    <div class="item-info"><h4>${p.icono||''} ${p.nombre}</h4><p>MXN $${Number(p.precio).toLocaleString()} · ${p.fechas||''}</p></div>
+  if (!adminPkgs.length) {c.innerHTML='<div style="color:#aaa;font-size:0.85rem;">No hay paquetes en Supabase aún.</div>';return;}
+  c.innerHTML=adminPkgs.map(p=>{
+    const lugares = p.lugares_totales != null ? ` · ${p.lugares_totales-(p.lugares_vendidos||0)} lugares disp.` : '';
+    const fechas = p.fecha_fin ? ` · hasta ${p.fecha_fin}` : (p.fechas ? ` · ${p.fechas}` : '');
+    return `<div class="item-row">
+    <div class="item-info"><h4>${p.icono||''} ${p.nombre}</h4><p>${p.activo?'✅ Activo':'⏸ Inactivo'} · MXN $${Number(p.precio).toLocaleString()}${fechas}${lugares}</p></div>
     <div class="item-actions">
       <button class="edit-btn" onclick="editPkg('${p.id}')">Editar</button>
-      ${!p.id.startsWith('d')?`<button class="del-btn" onclick="delPkg('${p.id}')">Eliminar</button>`:''}
+      <button class="del-btn" onclick="delPkg('${p.id}')">Eliminar</button>
     </div>
-  </div>`).join('');
+  </div>`;
+  }).join('');
 }
 
 function renderAdmGallery(imgs) {
@@ -1020,10 +1058,10 @@ function renderAdmBlog(posts) {
 // PKG CRUD
 function showPkgForm(){document.getElementById('pkg-form').style.display='block';}
 function hidePkgForm(){document.getElementById('pkg-form').style.display='none';clearPkgForm();}
-function clearPkgForm(){['pf-id','pf-nombre','pf-precio','pf-fechas','pf-icono','pf-desc','pf-incluye','pf-nota','pf-badge'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('pf-tipo').value='primary';}
+function clearPkgForm(){['pf-id','pf-nombre','pf-precio','pf-fechas','pf-icono','pf-desc','pf-incluye','pf-nota','pf-badge','pf-lugares','pf-fecha-inicio','pf-fecha-fin'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('pf-tipo').value='primary';}
 
 function editPkg(id) {
-  const p=pkgs.find(x=>String(x.id)==String(id));
+  const p=adminPkgs.find(x=>String(x.id)==String(id));
   if (!p) return;
   document.getElementById('pf-id').value=id;
   document.getElementById('pf-nombre').value=p.nombre||'';
@@ -1035,6 +1073,9 @@ function editPkg(id) {
   document.getElementById('pf-nota').value=p.nota||'';
   document.getElementById('pf-tipo').value=p.tipo||'primary';
   document.getElementById('pf-badge').value=p.badge||'';
+  document.getElementById('pf-lugares').value=p.lugares_totales!=null?p.lugares_totales:'';
+  document.getElementById('pf-fecha-inicio').value=p.fecha_inicio||'';
+  document.getElementById('pf-fecha-fin').value=p.fecha_fin||'';
   document.getElementById('pkg-form').style.display='block';
   document.getElementById('pkg-form').scrollIntoView({behavior:'smooth'});
 }
@@ -1042,9 +1083,25 @@ function editPkg(id) {
 async function savePkg() {
   const id=document.getElementById('pf-id').value;
   const inc=document.getElementById('pf-incluye').value.split('\n').map(i=>i.trim()).filter(i=>i);
-  const d={nombre:document.getElementById('pf-nombre').value,precio:parseInt(document.getElementById('pf-precio').value)||0,fechas:document.getElementById('pf-fechas').value,icono:document.getElementById('pf-icono').value||'✈️',descripcion:document.getElementById('pf-desc').value,incluye:inc,nota:document.getElementById('pf-nota').value,tipo:document.getElementById('pf-tipo').value,badge:document.getElementById('pf-badge').value||null,activo:true};
-  // If editing a default package, insert as new
-  const isDefault = id.startsWith('d');
+  const lugaresVal = document.getElementById('pf-lugares').value.trim();
+  const fechaFin = document.getElementById('pf-fecha-fin').value || null;
+  const today = new Date().toISOString().split('T')[0];
+  const d={
+    nombre:document.getElementById('pf-nombre').value,
+    precio:parseInt(document.getElementById('pf-precio').value)||0,
+    fechas:document.getElementById('pf-fechas').value,
+    icono:document.getElementById('pf-icono').value||'✈️',
+    descripcion:document.getElementById('pf-desc').value,
+    incluye:inc,
+    nota:document.getElementById('pf-nota').value,
+    tipo:document.getElementById('pf-tipo').value,
+    badge:document.getElementById('pf-badge').value||null,
+    lugares_totales:lugaresVal?parseInt(lugaresVal):null,
+    fecha_inicio:document.getElementById('pf-fecha-inicio').value||null,
+    fecha_fin:fechaFin,
+    activo: fechaFin ? fechaFin >= today : true
+  };
+  const isDefault = !id || id.startsWith('d');
   let error;
   if (id && !isDefault) {
     ({error} = await sb.from('paquetes').update(d).eq('id',id));
@@ -1053,13 +1110,14 @@ async function savePkg() {
   }
   if (error) {alert('Error: '+error.message);return;}
   const el=document.getElementById('pkg-saved');el.style.display='block';setTimeout(()=>el.style.display='none',2500);
-  hidePkgForm();await loadPkgs();renderAdmPkgs();
+  hidePkgForm();await loadPkgs();await loadAdminPkgs();
 }
 
 async function delPkg(id) {
   if (!confirm('¿Eliminar este paquete?'))return;
-  await sb.from('paquetes').delete().eq('id',id);
-  await loadPkgs();renderAdmPkgs();
+  const {error} = await sb.from('paquetes').delete().eq('id',id).select();
+  if (error) {alert('Error al eliminar: '+error.message);return;}
+  await loadPkgs();await loadAdminPkgs();
 }
 
 // GALLERY
