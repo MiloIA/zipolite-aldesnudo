@@ -741,7 +741,7 @@ function renderPkgs(list) {
         </div>`
       : `<div class="pkg-img-wrap">
           ${p.badge ? `<span class="pkg-badge">${p.badge}</span>` : ''}
-          <div class="pkg-img-placeholder" style="${placeholderBg}">${p.icono||'✈️'}</div>
+          <div class="pkg-img-placeholder" style="${placeholderBg};"></div>
           <div class="pkg-img-overlay">
             <h3>${p.nombre}</h3>
             <p>${p.descripcion||''}</p>
