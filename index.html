@@ -186,12 +186,17 @@ footer a{color:var(--teal);text-decoration:none;}
 .pkg-summary{background:var(--sky);border-radius:12px;padding:14px 18px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;}
 .pkg-summary .sname{font-weight:600;font-size:0.92rem;color:var(--dark);}
 .pkg-summary .stotal{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:900;color:var(--ocean);}
-.pay-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
-.pay-opt{border:2px solid #e0e0e0;border-radius:12px;padding:13px;cursor:pointer;text-align:center;transition:all 0.2s;}
-.pay-opt.selected{border-color:var(--ocean);background:var(--sky);}
-.pay-opt h4{font-size:0.86rem;font-weight:600;color:var(--dark);}
-.pay-opt p{font-size:0.76rem;color:#999;}
-.pay-opt .oprice{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:800;color:var(--dark);margin-top:5px;}
+.cot-result{display:flex;flex-direction:column;gap:8px;margin:16px 0;}
+.cot-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;background:var(--sky);border-radius:10px;}
+.cot-row span{color:#666;font-size:0.87rem;}
+.cot-row strong{font-size:0.95rem;color:var(--dark);font-weight:700;}
+.cot-row.highlight strong{font-family:'Fraunces',serif;font-size:1.3rem;color:var(--ocean);}
+.cot-savings{background:#e8f5e9;border-radius:10px;padding:11px 14px;font-size:0.85rem;color:#2e7d32;font-weight:600;}
+.bank-info{background:#fff8e1;border-radius:12px;padding:14px 18px;margin-bottom:14px;display:none;}
+.bank-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.07);}
+.bank-row:last-child{border-bottom:none;}
+.bank-row span{color:#888;font-size:0.83rem;}
+.bank-row strong{font-size:0.9rem;letter-spacing:0.03em;color:var(--dark);}
 .fg{margin-bottom:14px;}
 .fg label{display:block;font-size:0.76rem;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
 .fg input,.fg select{width:100%;padding:10px 13px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;outline:none;transition:border-color 0.2s;}
@@ -241,7 +246,7 @@ nav{padding:12px 18px;position:relative;}
 .packages-grid,.includes-grid,.testi-grid{grid-template-columns:1fr;}
 section{padding:56px 18px;}
 .ag{grid-template-columns:1fr;}
-.pay-opts,.frow{grid-template-columns:1fr;}
+.frow{grid-template-columns:1fr;}
 .gallery-grid{grid-template-columns:1fr;}
 }
 </style>
@@ -428,37 +433,41 @@ section{padding:56px 18px;}
   </div>
 </div>
 
-<!-- MODAL PAGO -->
+<!-- MODAL COTIZADOR -->
 <div class="modal-overlay" id="pay-modal">
   <div class="modal">
     <button class="modal-close" onclick="closePay()">✕</button>
-    <h3>Reserva tu lugar</h3>
-    <p class="modal-subtitle">Completa tus datos y elige cómo pagar</p>
+    <h3>Cotiza tu viaje</h3>
+    <p class="modal-subtitle">Elige personas y forma de pago para ver tu precio</p>
     <div class="pkg-summary">
       <div><div class="sname" id="m-name">Paquete</div><div style="font-size:0.76rem;color:#888;" id="m-desc"></div></div>
-      <div class="stotal" id="m-total">$0</div>
+      <div class="stotal" id="m-price-base">$0</div>
     </div>
     <div class="fg"><label>Número de personas</label>
-      <select id="m-personas" onchange="updTotal()">
+      <select id="m-personas" onchange="calcCotizador()">
         <option value="1">1 persona</option><option value="2" selected>2 personas</option>
         <option value="3">3 personas</option><option value="4">4 personas</option>
-        <option value="5">5 personas</option><option value="6">6+ personas</option>
+        <option value="5">5 personas</option><option value="6">6 personas</option>
       </select>
     </div>
-    <p style="font-size:0.78rem;font-weight:600;color:#777;margin-bottom:9px;text-transform:uppercase;letter-spacing:0.05em;">¿Cómo quieres pagar?</p>
-    <div class="pay-opts">
-      <div class="pay-opt selected" onclick="selPay('anticipo')" id="opt-anticipo"><h4>Solo anticipo</h4><p>Aparta tu lugar</p><div class="oprice">$3,000</div></div>
-      <div class="pay-opt" onclick="selPay('total')" id="opt-total"><h4>Pago completo</h4><p>Total del paquete</p><div class="oprice" id="opt-total-p">$0</div></div>
+    <div class="fg"><label>Método de pago</label>
+      <select id="m-metodo" onchange="calcCotizador()">
+        <option value="transfer">Transferencia / Depósito</option>
+        <option value="card">Contado con tarjeta</option>
+        <option value="3">Financiamiento 3 meses</option>
+        <option value="6">Financiamiento 6 meses</option>
+        <option value="9">Financiamiento 9 meses</option>
+        <option value="12">Financiamiento 12 meses</option>
+        <option value="18">Financiamiento 18 meses</option>
+        <option value="24">Financiamiento 24 meses</option>
+      </select>
     </div>
-    <div class="frow">
-      <div class="fg"><label>Nombre</label><input type="text" id="m-nombre" placeholder="Tu nombre"></div>
-      <div class="fg"><label>Apellido</label><input type="text" id="m-apellido" placeholder="Tu apellido"></div>
+    <div class="cot-result" id="cot-result"></div>
+    <div class="bank-info" id="bank-info">
+      <div class="bank-row"><span>Banco</span><strong id="bank-name-display">—</strong></div>
+      <div class="bank-row"><span>CLABE interbancaria</span><strong id="bank-clabe-display">—</strong></div>
     </div>
-    <div class="fg"><label>Email</label><input type="email" id="m-email" placeholder="tu@email.com"></div>
-    <div class="fg"><label>WhatsApp</label><input type="tel" id="m-wa" placeholder="958 219 9953"></div>
-    <div id="pay-error"></div>
-    <button class="pay-btn" id="pay-btn" onclick="doPay()">🔒 <span id="pay-btn-txt">Pagar $3,000 MXN</span></button>
-    <div class="secure">🔒 Tus datos están protegidos</div>
+    <button class="pay-btn" id="pay-btn" onclick="goWhatsApp()">💬 Contactar por WhatsApp</button>
   </div>
 </div>
 
@@ -538,7 +547,9 @@ section{padding:56px 18px;}
       <h3>🔑 Configuración</h3>
       <div class="ag">
         <div class="af"><label>OpenAI API Key (para IA)</label><input type="password" id="cfg-openai" placeholder="sk-..."></div>
-        <div class="af"><label>WhatsApp agencia</label><input type="text" id="cfg-wa" value="529582199953"></div>
+        <div class="af"><label>WhatsApp agencia</label><input type="text" id="cfg-wa" placeholder="529582199953"></div>
+        <div class="af"><label>Banco (para datos de transferencia)</label><input type="text" id="cfg-banco" placeholder="BBVA / Banamex / HSBC..."></div>
+        <div class="af"><label>CLABE interbancaria</label><input type="text" id="cfg-clabe" placeholder="18 dígitos"></div>
       </div>
       <button class="save-btn" onclick="saveCfg()">💾 Guardar</button>
       <div class="saved-msg" id="cfg-saved">✅ ¡Guardado!</div>
@@ -689,52 +700,86 @@ async function loadBlog() {
     </div></div>`).join('');
 }
 
-// ---- PAYMENT ----
+// ---- COTIZADOR ----
+const STRIPE_RATES = {
+  card: {rate:3.6,  flat:3, months:0},
+  '3':  {rate:8.6,  flat:3, months:3},
+  '6':  {rate:11.1, flat:3, months:6},
+  '9':  {rate:13.6, flat:3, months:9},
+  '12': {rate:16.1, flat:3, months:12},
+  '18': {rate:21.1, flat:3, months:18},
+  '24': {rate:25.1, flat:3, months:24},
+};
+function grossUp(base, rate, flat) { return Math.ceil((base + flat) / (1 - rate / 100)); }
+function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX'); }
 function openPay(id) {
-  curPkg = pkgs.find(p=>String(p.id)==String(id)) || pkgs[0];
+  curPkg = pkgs.find(p=>String(p.id)===String(id)) || pkgs[0];
   if (!curPkg) return;
   document.getElementById('m-name').textContent = curPkg.nombre;
-  document.getElementById('m-desc').textContent = curPkg.descripcion||'';
-  updTotal();
+  document.getElementById('m-desc').textContent = curPkg.descripcion || '';
+  document.getElementById('m-personas').value = '2';
+  document.getElementById('m-metodo').value = 'transfer';
+  calcCotizador();
   document.getElementById('pay-modal').classList.add('open');
 }
 function closePay() { document.getElementById('pay-modal').classList.remove('open'); }
-function selPay(t) {
-  selPayment=t;
-  document.querySelectorAll('.pay-opt').forEach(o=>o.classList.remove('selected'));
-  document.getElementById('opt-'+t).classList.add('selected');
-  updPayBtn();
-}
-function updTotal() {
+function calcCotizador() {
   if (!curPkg) return;
-  const p=parseInt(document.getElementById('m-personas').value);
-  const tot=curPkg.precio*p;
-  document.getElementById('m-total').textContent='$'+tot.toLocaleString();
-  document.getElementById('opt-total-p').textContent='$'+tot.toLocaleString();
-  updPayBtn();
+  const p = parseInt(document.getElementById('m-personas').value);
+  const metodo = document.getElementById('m-metodo').value;
+  const base = curPkg.precio * p;
+  const resultEl = document.getElementById('cot-result');
+  const bankEl = document.getElementById('bank-info');
+  document.getElementById('m-price-base').textContent = fmt(base);
+  if (metodo === 'transfer') {
+    const clabe = localStorage.getItem('bank_clabe') || '—';
+    const banco = localStorage.getItem('bank_name') || '—';
+    document.getElementById('bank-clabe-display').textContent = clabe;
+    document.getElementById('bank-name-display').textContent = banco;
+    bankEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(base)}</strong></div>
+      <div class="cot-row"><span>Comisión</span><strong style="color:#2e7d32;">Sin comisión ✓</strong></div>`;
+  } else {
+    bankEl.style.display = 'none';
+    const cfg = STRIPE_RATES[metodo];
+    const total = grossUp(base, cfg.rate, cfg.flat);
+    const extra = total - base;
+    if (cfg.months === 0) {
+      resultEl.innerHTML = `
+        <div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>
+        <div class="cot-row"><span>Comisión bancaria</span><strong>${fmt(extra)}</strong></div>
+        <div class="cot-savings">💡 Con transferencia ahorras ${fmt(extra)}</div>`;
+    } else {
+      const monthly = total / cfg.months;
+      resultEl.innerHTML = `
+        <div class="cot-row highlight"><span>Mensualidad</span><strong>${fmt(monthly)} × ${cfg.months}</strong></div>
+        <div class="cot-row"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>
+        <div class="cot-row"><span>Costo del financiamiento</span><strong>${fmt(extra)}</strong></div>
+        <div class="cot-savings">💡 Con transferencia ahorras ${fmt(extra)}</div>`;
+    }
+  }
 }
-function updPayBtn() {
+function goWhatsApp() {
   if (!curPkg) return;
-  const p=parseInt(document.getElementById('m-personas').value);
-  const tot=curPkg.precio*p;
-  const amt=selPayment==='anticipo'?3000:tot;
-  document.getElementById('pay-btn-txt').textContent=`Pagar $${amt.toLocaleString()} MXN`;
+  const p = parseInt(document.getElementById('m-personas').value);
+  const metodo = document.getElementById('m-metodo').value;
+  const base = curPkg.precio * p;
+  let payDesc;
+  if (metodo === 'transfer') {
+    payDesc = `Transferencia/Depósito — Total: ${fmt(base)}`;
+  } else if (metodo === 'card') {
+    payDesc = `Contado con tarjeta — Total: ${fmt(grossUp(base, STRIPE_RATES.card.rate, STRIPE_RATES.card.flat))}`;
+  } else {
+    const cfg = STRIPE_RATES[metodo];
+    const total = grossUp(base, cfg.rate, cfg.flat);
+    payDesc = `Financiamiento ${cfg.months} meses — ${fmt(total / cfg.months)}/mes — Total: ${fmt(total)}`;
+  }
+  const waNum = localStorage.getItem('cfg_wa') || '529582199953';
+  const msg = `Hola! Me interesa el *${curPkg.nombre}* para ${p} persona${p>1?'s':''}.\n\n💰 Cotización:\n${payDesc}\n\n¿Me pueden dar más información?`;
+  window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
 }
-async function doPay() {
-  const n=document.getElementById('m-nombre').value;
-  const e=document.getElementById('m-email').value;
-  if (!n||!e) { document.getElementById('pay-error').textContent='Completa tu nombre y email.';document.getElementById('pay-error').style.display='block';return; }
-  const p=parseInt(document.getElementById('m-personas').value);
-  const ap=document.getElementById('m-apellido').value;
-  const wa=document.getElementById('m-wa').value;
-  const tot=curPkg.precio*p;
-  const amt=selPayment==='anticipo'?3000:tot;
-  const btn=document.getElementById('pay-btn');btn.disabled=true;
-  document.getElementById('pay-btn-txt').textContent='Procesando...';
-  const msg=`Hola! Quiero reservar el ${curPkg.nombre} para ${p} persona${p>1?'s':''}. Pago: ${selPayment==='anticipo'?'Anticipo $3,000':`Completo $${tot.toLocaleString()}`}. Nombre: ${n} ${ap}. Email: ${e}${wa?'. WhatsApp: '+wa:''}`;
-  setTimeout(()=>{btn.disabled=false;updPayBtn();closePay();window.open('https://wa.me/529582199953?text='+encodeURIComponent(msg),'_blank');},1200);
-}
-document.getElementById('pay-modal').addEventListener('click',function(e){if(e.target===this)closePay();});
+document.getElementById('pay-modal').addEventListener('click', function(e) { if (e.target===this) closePay(); });
 
 // ---- USER AUTH ----
 function openRegister() { document.getElementById('user-register').classList.add('open'); }
@@ -784,8 +829,12 @@ async function loadAdminData() {
   renderAdmBlog(bd||[]);
   const savedKey=localStorage.getItem('oai_key');
   if (savedKey) document.getElementById('cfg-openai').value=savedKey;
-  const savedPwd=localStorage.getItem('adm_pwd');
-  // show current password hint
+  const savedWa=localStorage.getItem('cfg_wa');
+  if (savedWa) document.getElementById('cfg-wa').value=savedWa;
+  const savedBanco=localStorage.getItem('bank_name');
+  if (savedBanco) document.getElementById('cfg-banco').value=savedBanco;
+  const savedClabe=localStorage.getItem('bank_clabe');
+  if (savedClabe) document.getElementById('cfg-clabe').value=savedClabe;
 }
 
 function renderAdmPkgs() {
@@ -969,8 +1018,12 @@ async function aiNota(){
 function saveCfg(){
   const key=document.getElementById('cfg-openai').value;
   if(key){oaiKey=key;localStorage.setItem('oai_key',key);}
-  const pwd=document.getElementById('cfg-wa').value;
-  // Save admin password
+  const wa=document.getElementById('cfg-wa').value.trim();
+  if(wa) localStorage.setItem('cfg_wa',wa);
+  const banco=document.getElementById('cfg-banco').value.trim();
+  if(banco) localStorage.setItem('bank_name',banco);
+  const clabe=document.getElementById('cfg-clabe').value.trim();
+  if(clabe) localStorage.setItem('bank_clabe',clabe);
   const newPwd=prompt('Establece o cambia la contraseña del panel admin (deja vacío para mantener la actual):');
   if(newPwd){localStorage.setItem('adm_pwd',newPwd);alert('✅ Contraseña actualizada');}
   const el=document.getElementById('cfg-saved');el.style.display='block';setTimeout(()=>el.style.display='none',2500);
