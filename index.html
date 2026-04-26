@@ -540,6 +540,7 @@ section{padding:56px 18px;}
                 <input type="file" id="pf-foto-input" accept="image/*" style="display:none;" onchange="uploadPkgPhoto(this)">
               </label>
             </div>
+            <div id="pf-foto-preview"></div>
           </div>
         </div>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
@@ -1088,7 +1089,7 @@ function renderAdmBlog(posts) {
 // PKG CRUD
 function showPkgForm(){document.getElementById('pkg-form').style.display='block';}
 function hidePkgForm(){document.getElementById('pkg-form').style.display='none';clearPkgForm();}
-function clearPkgForm(){['pf-id','pf-nombre','pf-precio','pf-fechas','pf-icono','pf-desc','pf-incluye','pf-nota','pf-badge','pf-lugares','pf-fecha-inicio','pf-fecha-fin'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('pf-tipo').value='primary';}
+function clearPkgForm(){['pf-id','pf-nombre','pf-precio','pf-fechas','pf-icono','pf-desc','pf-incluye','pf-nota','pf-badge','pf-lugares','pf-fecha-inicio','pf-fecha-fin','pf-foto-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('pf-tipo').value='primary';document.getElementById('pf-foto-preview').innerHTML='';}
 
 function editPkg(id) {
   const p=adminPkgs.find(x=>String(x.id)==String(id));
@@ -1106,6 +1107,8 @@ function editPkg(id) {
   document.getElementById('pf-lugares').value=p.lugares_totales!=null?p.lugares_totales:'';
   document.getElementById('pf-fecha-inicio').value=p.fecha_inicio||'';
   document.getElementById('pf-fecha-fin').value=p.fecha_fin||'';
+  document.getElementById('pf-foto-url').value=p.foto_url||'';
+  document.getElementById('pf-foto-preview').innerHTML=p.foto_url?`<img src="${p.foto_url}" style="max-height:120px;border-radius:8px;margin-top:8px;object-fit:cover;">`:''
   document.getElementById('pkg-form').style.display='block';
   document.getElementById('pkg-form').scrollIntoView({behavior:'smooth'});
 }
@@ -1129,7 +1132,8 @@ async function savePkg() {
     lugares_totales:lugaresVal?parseInt(lugaresVal):null,
     fecha_inicio:document.getElementById('pf-fecha-inicio').value||null,
     fecha_fin:fechaFin,
-    activo: fechaFin ? fechaFin >= today : true
+    activo: fechaFin ? fechaFin >= today : true,
+    foto_url: document.getElementById('pf-foto-url').value.trim() || null
   };
   const isDefault = !id || id.startsWith('d');
   let error;
@@ -1148,6 +1152,18 @@ async function delPkg(id) {
   const {error} = await sb.from('paquetes').delete().eq('id',id).select();
   if (error) {alert('Error al eliminar: '+error.message);return;}
   await loadPkgs();await loadAdminPkgs();
+}
+
+async function uploadPkgPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop();
+  const path = `paquetes/${Date.now()}.${ext}`;
+  const {error} = await sb.storage.from('galeria').upload(path, file, {upsert: true});
+  if (error) { alert('Error al subir foto: ' + error.message); return; }
+  const {data: {publicUrl}} = sb.storage.from('galeria').getPublicUrl(path);
+  document.getElementById('pf-foto-url').value = publicUrl;
+  document.getElementById('pf-foto-preview').innerHTML = `<img src="${publicUrl}" style="max-height:120px;border-radius:8px;margin-top:8px;object-fit:cover;">`;
 }
 
 // GALLERY
