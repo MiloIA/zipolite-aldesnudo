@@ -197,6 +197,12 @@ footer a{color:var(--teal);text-decoration:none;}
 .bank-row:last-child{border-bottom:none;}
 .bank-row span{color:#888;font-size:0.83rem;}
 .bank-row strong{font-size:0.9rem;letter-spacing:0.03em;color:var(--dark);}
+.disc-row{display:flex;gap:8px;}
+.disc-row input{flex:1;}
+.disc-btn{padding:10px 16px;background:var(--ocean);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.88rem;font-weight:600;white-space:nowrap;}
+.disc-btn:hover{opacity:0.88;}
+#m-disc-msg{font-size:0.82rem;margin-top:5px;min-height:1em;}
+.anticipo-badge{background:linear-gradient(135deg,var(--ocean),#0097a7);color:#fff;border-radius:10px;padding:10px 16px;text-align:center;font-size:0.88rem;font-weight:700;margin-bottom:14px;}
 .fg{margin-bottom:14px;}
 .fg label{display:block;font-size:0.76rem;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
 .fg input,.fg select{width:100%;padding:10px 13px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;outline:none;transition:border-color 0.2s;}
@@ -444,11 +450,10 @@ section{padding:56px 18px;}
       <div class="stotal" id="m-price-base">$0</div>
     </div>
     <div class="fg"><label>Número de personas</label>
-      <select id="m-personas" onchange="calcCotizador()">
-        <option value="1">1 persona</option><option value="2" selected>2 personas</option>
-        <option value="3">3 personas</option><option value="4">4 personas</option>
-        <option value="5">5 personas</option><option value="6">6 personas</option>
-      </select>
+      <select id="m-personas" onchange="calcCotizador()"></select>
+    </div>
+    <div class="fg"><label>Fecha del viaje</label>
+      <select id="m-fecha"></select>
     </div>
     <div class="fg"><label>Método de pago</label>
       <select id="m-metodo" onchange="calcCotizador()">
@@ -462,10 +467,25 @@ section{padding:56px 18px;}
         <option value="24">Financiamiento 24 meses</option>
       </select>
     </div>
+    <div class="fg">
+      <label>Código de descuento</label>
+      <div class="disc-row">
+        <input type="text" id="m-disc-code" placeholder="Ingresa tu código" oninput="clearDiscountMsg()">
+        <button class="disc-btn" onclick="applyDiscount()">Aplicar</button>
+      </div>
+      <div id="m-disc-msg"></div>
+    </div>
     <div class="cot-result" id="cot-result"></div>
+    <div class="anticipo-badge">🏖️ Aparta hoy con solo $3,000</div>
     <div class="bank-info" id="bank-info">
       <div class="bank-row"><span>Banco</span><strong id="bank-name-display">—</strong></div>
       <div class="bank-row"><span>CLABE interbancaria</span><strong id="bank-clabe-display">—</strong></div>
+    </div>
+    <div id="contact-fields" style="display:none;">
+      <div class="frow">
+        <div class="fg"><label>Tu nombre</label><input type="text" id="m-nombre" placeholder="Nombre"></div>
+        <div class="fg"><label>WhatsApp</label><input type="tel" id="m-contact-wa" placeholder="55 1234 5678"></div>
+      </div>
     </div>
     <button class="pay-btn" id="pay-btn" onclick="goWhatsApp()">💬 Contactar por WhatsApp</button>
   </div>
@@ -553,6 +573,28 @@ section{padding:56px 18px;}
       </div>
       <button class="save-btn" onclick="saveCfg()">💾 Guardar</button>
       <div class="saved-msg" id="cfg-saved">✅ ¡Guardado!</div>
+    </div>
+
+    <div class="adm-sec">
+      <h3>🏷️ Códigos de Descuento</h3>
+      <div id="adm-disc-list"><div style="color:#aaa;font-size:0.85rem;">Cargando...</div></div>
+      <div class="sub-form" style="margin-top:14px;">
+        <div class="ag">
+          <div class="af"><label>Código</label><input type="text" id="disc-codigo" placeholder="VERANO20" style="text-transform:uppercase"></div>
+          <div class="af"><label>Tipo</label>
+            <select id="disc-tipo" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">
+              <option value="percent">Porcentaje (%)</option>
+              <option value="fixed">Monto fijo ($)</option>
+            </select>
+          </div>
+          <div class="af"><label>Valor</label><input type="number" id="disc-valor" placeholder="10" min="0"></div>
+          <div class="af" style="display:flex;align-items:center;gap:8px;padding-top:22px;">
+            <input type="checkbox" id="disc-activo" checked style="width:auto;">
+            <label for="disc-activo" style="font-size:0.88rem;cursor:pointer;">Activo</label>
+          </div>
+        </div>
+        <button class="add-btn" onclick="saveDiscount()" style="margin-top:10px;">+ Agregar código</button>
+      </div>
     </div>
 
   </div>
@@ -701,6 +743,8 @@ async function loadBlog() {
 }
 
 // ---- COTIZADOR ----
+// SQL para crear tabla en Supabase:
+// create table descuentos (id uuid default gen_random_uuid() primary key, codigo text not null unique, tipo text not null check (tipo in ('percent','fixed')), valor numeric not null, activo boolean default true, created_at timestamptz default now());
 const STRIPE_RATES = {
   card: {rate:3.6,  flat:3, months:0},
   '3':  {rate:8.6,  flat:3, months:3},
@@ -710,32 +754,90 @@ const STRIPE_RATES = {
   '18': {rate:21.1, flat:3, months:18},
   '24': {rate:25.1, flat:3, months:24},
 };
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+let activeDiscount = null;
+
 function grossUp(base, rate, flat) { return Math.ceil((base + flat) / (1 - rate / 100)); }
 function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX'); }
+
+function buildPersonasOptions(max) {
+  const sel = document.getElementById('m-personas');
+  sel.innerHTML = '';
+  for (let i = 1; i <= max; i++) {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = i === 1 ? '1 persona' : `${i} personas`;
+    if (i === 2) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+
+function buildFechaOptions() {
+  const sel = document.getElementById('m-fecha');
+  sel.innerHTML = '';
+  const now = new Date();
+  for (let i = 0; i < 18; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const o = document.createElement('option');
+    o.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    o.textContent = `${MESES[d.getMonth()]} ${d.getFullYear()}`;
+    sel.appendChild(o);
+  }
+}
+
 function openPay(id) {
   curPkg = pkgs.find(p=>String(p.id)===String(id)) || pkgs[0];
   if (!curPkg) return;
   document.getElementById('m-name').textContent = curPkg.nombre;
   document.getElementById('m-desc').textContent = curPkg.descripcion || '';
-  document.getElementById('m-personas').value = '2';
+  buildPersonasOptions(curPkg.nombre.toLowerCase().includes('camping') ? 48 : 10);
+  buildFechaOptions();
   document.getElementById('m-metodo').value = 'transfer';
+  activeDiscount = null;
+  document.getElementById('m-disc-code').value = '';
+  document.getElementById('m-disc-msg').textContent = '';
   calcCotizador();
   document.getElementById('pay-modal').classList.add('open');
 }
+
 function closePay() { document.getElementById('pay-modal').classList.remove('open'); }
+function clearDiscountMsg() { document.getElementById('m-disc-msg').textContent = ''; }
+
+async function applyDiscount() {
+  const code = document.getElementById('m-disc-code').value.trim().toUpperCase();
+  const msgEl = document.getElementById('m-disc-msg');
+  if (!code) return;
+  const {data} = await sb.from('descuentos').select('*').eq('codigo', code).eq('activo', true).single();
+  if (!data) {
+    msgEl.style.color = '#c0241d';
+    msgEl.textContent = '❌ Código no válido o inactivo.';
+    activeDiscount = null;
+  } else {
+    activeDiscount = data;
+    msgEl.style.color = '#2e7d32';
+    msgEl.textContent = data.tipo === 'percent' ? `✓ Descuento de ${data.valor}% aplicado` : `✓ Descuento de ${fmt(data.valor)} aplicado`;
+  }
+  calcCotizador();
+}
+
+function applyDiscountToBase(base) {
+  if (!activeDiscount) return base;
+  return Math.max(0, activeDiscount.tipo === 'percent'
+    ? base * (1 - activeDiscount.valor / 100)
+    : base - activeDiscount.valor);
+}
+
 function calcCotizador() {
   if (!curPkg) return;
   const p = parseInt(document.getElementById('m-personas').value);
   const metodo = document.getElementById('m-metodo').value;
-  const base = curPkg.precio * p;
+  const base = applyDiscountToBase(curPkg.precio * p);
   const resultEl = document.getElementById('cot-result');
   const bankEl = document.getElementById('bank-info');
   document.getElementById('m-price-base').textContent = fmt(base);
+  document.getElementById('contact-fields').style.display = metodo !== 'card' ? 'block' : 'none';
   if (metodo === 'transfer') {
-    const clabe = localStorage.getItem('bank_clabe') || '—';
-    const banco = localStorage.getItem('bank_name') || '—';
-    document.getElementById('bank-clabe-display').textContent = clabe;
-    document.getElementById('bank-name-display').textContent = banco;
+    document.getElementById('bank-clabe-display').textContent = localStorage.getItem('bank_clabe') || '—';
+    document.getElementById('bank-name-display').textContent = localStorage.getItem('bank_name') || '—';
     bankEl.style.display = 'block';
     resultEl.innerHTML = `
       <div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(base)}</strong></div>
@@ -744,24 +846,27 @@ function calcCotizador() {
     bankEl.style.display = 'none';
     const cfg = STRIPE_RATES[metodo];
     const total = grossUp(base, cfg.rate, cfg.flat);
-    const extra = total - base;
     if (cfg.months === 0) {
       resultEl.innerHTML = `
         <div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>
-        <div class="cot-row"><span>Comisión bancaria</span><strong>${fmt(extra)}</strong></div>`;
+        <div class="cot-row"><span>Comisión bancaria</span><strong>${fmt(total - base)}</strong></div>`;
     } else {
-      const monthly = total / cfg.months;
       resultEl.innerHTML = `
-        <div class="cot-row highlight"><span>Mensualidad</span><strong>${fmt(monthly)} × ${cfg.months}</strong></div>
+        <div class="cot-row highlight"><span>Mensualidad</span><strong>${fmt(total / cfg.months)} × ${cfg.months}</strong></div>
         <div class="cot-row"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>`;
     }
   }
 }
+
 function goWhatsApp() {
   if (!curPkg) return;
   const p = parseInt(document.getElementById('m-personas').value);
   const metodo = document.getElementById('m-metodo').value;
-  const base = curPkg.precio * p;
+  const [yr, mo] = document.getElementById('m-fecha').value.split('-');
+  const fechaStr = `${MESES[parseInt(mo)-1]} ${yr}`;
+  const nombre = document.getElementById('m-nombre')?.value.trim() || '';
+  const waContact = document.getElementById('m-contact-wa')?.value.trim() || '';
+  const base = applyDiscountToBase(curPkg.precio * p);
   let payDesc;
   if (metodo === 'transfer') {
     payDesc = `Transferencia/Depósito — Total: ${fmt(base)}`;
@@ -770,13 +875,49 @@ function goWhatsApp() {
   } else {
     const cfg = STRIPE_RATES[metodo];
     const total = grossUp(base, cfg.rate, cfg.flat);
-    payDesc = `Financiamiento ${cfg.months} meses — ${fmt(total / cfg.months)}/mes — Total: ${fmt(total)}`;
+    payDesc = `Financiamiento ${cfg.months} meses — ${fmt(total/cfg.months)}/mes — Total: ${fmt(total)}`;
   }
+  const discLine = activeDiscount
+    ? `\n🏷️ Descuento (${activeDiscount.codigo}): ${activeDiscount.tipo==='percent'?activeDiscount.valor+'%':fmt(activeDiscount.valor)}`
+    : '';
+  const contactLine = nombre ? `\n👤 ${nombre}${waContact ? ' · 📱 '+waContact : ''}` : '';
   const waNum = localStorage.getItem('cfg_wa') || '529582199953';
-  const msg = `Hola! Me interesa el *${curPkg.nombre}* para ${p} persona${p>1?'s':''}.\n\n💰 Cotización:\n${payDesc}\n\n¿Me pueden dar más información?`;
+  const msg = `Hola! Me interesa el *${curPkg.nombre}* para ${p} persona${p>1?'s':''}.${contactLine}\n📅 Fecha: ${fechaStr}\n💰 ${payDesc}${discLine}\n\n¿Me pueden confirmar disponibilidad?`;
   window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 document.getElementById('pay-modal').addEventListener('click', function(e) { if (e.target===this) closePay(); });
+
+// ---- DISCOUNTS ADMIN ----
+async function loadDiscounts() {
+  const {data} = await sb.from('descuentos').select('*').order('created_at',{ascending:false});
+  renderDiscounts(data||[]);
+}
+function renderDiscounts(list) {
+  const c = document.getElementById('adm-disc-list');
+  if (!list.length) { c.innerHTML='<div style="color:#aaa;font-size:0.85rem;">Sin códigos aún.</div>'; return; }
+  c.innerHTML = list.map(d=>`
+    <div class="item-row">
+      <div class="item-info"><h4>${d.codigo} — ${d.tipo==='percent'?d.valor+'%':fmt(d.valor)+' MXN'}</h4><p>${d.activo?'✅ Activo':'⏸ Inactivo'}</p></div>
+      <div class="item-actions"><button class="del-btn" onclick="delDiscount('${d.id}')">Eliminar</button></div>
+    </div>`).join('');
+}
+async function saveDiscount() {
+  const codigo = document.getElementById('disc-codigo').value.trim().toUpperCase();
+  const tipo = document.getElementById('disc-tipo').value;
+  const valor = parseFloat(document.getElementById('disc-valor').value);
+  const activo = document.getElementById('disc-activo').checked;
+  if (!codigo || isNaN(valor)) { alert('Completa código y valor.'); return; }
+  const {error} = await sb.from('descuentos').insert([{codigo, tipo, valor, activo}]);
+  if (error) { alert('Error: '+error.message); return; }
+  document.getElementById('disc-codigo').value='';
+  document.getElementById('disc-valor').value='';
+  loadDiscounts();
+}
+async function delDiscount(id) {
+  if (!confirm('¿Eliminar este código?')) return;
+  await sb.from('descuentos').delete().eq('id',id);
+  loadDiscounts();
+}
 
 // ---- USER AUTH ----
 function openRegister() { document.getElementById('user-register').classList.add('open'); }
@@ -832,6 +973,7 @@ async function loadAdminData() {
   if (savedBanco) document.getElementById('cfg-banco').value=savedBanco;
   const savedClabe=localStorage.getItem('bank_clabe');
   if (savedClabe) document.getElementById('cfg-clabe').value=savedClabe;
+  loadDiscounts();
 }
 
 function renderAdmPkgs() {
