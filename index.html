@@ -942,7 +942,7 @@ function mostrarStep3(res, info) {
       <div class="bank-row"><span>CLABE</span><strong>${localStorage.getItem('bank_clabe')||'—'}</strong></div>
     </div>`;
   }
-  const waNum = localStorage.getItem('cfg_wa') || '';
+  const waNum = localStorage.getItem('cfg_wa') || '529582199953';
   const waMsg = encodeURIComponent(`Hola, acabo de hacer una reserva. Paquete: ${curPkg.nombre}, Personas: ${info.p}, No. reserva: ${shortId}, Nombre: ${info.nombre}, Pago: ${metodoLabel}, Total: ${fmt(lastTotal)}, Pago hoy: ${fmt(info.anticipo)}`);
   html += `<button class="pay-btn" style="margin-top:18px;background:linear-gradient(135deg,#25D366,#128C7E);" onclick="window.open('https://wa.me/${waNum}?text=${waMsg}','_blank')">💬 Avisar por WhatsApp</button>`;
   document.getElementById('modal-step-3').innerHTML = html;
