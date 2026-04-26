@@ -452,9 +452,6 @@ section{padding:56px 18px;}
     <div class="fg"><label>Número de personas</label>
       <select id="m-personas" onchange="calcCotizador()"></select>
     </div>
-    <div class="fg"><label>Fecha del viaje</label>
-      <select id="m-fecha"></select>
-    </div>
     <div class="fg"><label>Método de pago</label>
       <select id="m-metodo" onchange="calcCotizador()">
         <option value="transfer">Transferencia / Depósito</option>
@@ -472,6 +469,7 @@ section{padding:56px 18px;}
       <div class="disc-row">
         <input type="text" id="m-disc-code" placeholder="Ingresa tu código" oninput="clearDiscountMsg()">
         <button class="disc-btn" onclick="applyDiscount()">Aplicar</button>
+        <button class="disc-btn" id="disc-clear-btn" onclick="clearDiscount()" style="display:none;background:#888;" title="Quitar descuento">✕</button>
       </div>
       <div id="m-disc-msg"></div>
     </div>
@@ -588,6 +586,7 @@ section{padding:56px 18px;}
             </select>
           </div>
           <div class="af"><label>Valor</label><input type="number" id="disc-valor" placeholder="10" min="0"></div>
+          <div class="af"><label>Usos máximos</label><input type="number" id="disc-usos" placeholder="Vacío = ilimitado" min="1"></div>
           <div class="af" style="display:flex;align-items:center;gap:8px;padding-top:22px;">
             <input type="checkbox" id="disc-activo" checked style="width:auto;">
             <label for="disc-activo" style="font-size:0.88rem;cursor:pointer;">Activo</label>
@@ -743,8 +742,9 @@ async function loadBlog() {
 }
 
 // ---- COTIZADOR ----
-// SQL para crear tabla en Supabase:
-// create table descuentos (id uuid default gen_random_uuid() primary key, codigo text not null unique, tipo text not null check (tipo in ('percent','fixed')), valor numeric not null, activo boolean default true, created_at timestamptz default now());
+// SQL tabla descuentos (añadir columnas si ya existe):
+// alter table descuentos add column usos_maximos integer default null;
+// alter table descuentos add column usos_actuales integer default 0;
 const STRIPE_RATES = {
   card: {rate:3.6,  flat:3, months:0},
   '3':  {rate:8.6,  flat:3, months:3},
@@ -754,7 +754,6 @@ const STRIPE_RATES = {
   '18': {rate:21.1, flat:3, months:18},
   '24': {rate:25.1, flat:3, months:24},
 };
-const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 let activeDiscount = null;
 
 function grossUp(base, rate, flat) { return Math.ceil((base + flat) / (1 - rate / 100)); }
@@ -771,66 +770,64 @@ function buildPersonasOptions(max) {
   }
 }
 
-function buildFechaOptions() {
-  const sel = document.getElementById('m-fecha');
-  sel.innerHTML = '';
-  const now = new Date();
-  for (let i = 0; i < 18; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const o = document.createElement('option');
-    o.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    o.textContent = `${MESES[d.getMonth()]} ${d.getFullYear()}`;
-    sel.appendChild(o);
-  }
-}
-
 function openPay(id) {
   curPkg = pkgs.find(p=>String(p.id)===String(id)) || pkgs[0];
   if (!curPkg) return;
   document.getElementById('m-name').textContent = curPkg.nombre;
   document.getElementById('m-desc').textContent = curPkg.descripcion || '';
   buildPersonasOptions(curPkg.nombre.toLowerCase().includes('camping') ? 48 : 10);
-  buildFechaOptions();
   document.getElementById('m-metodo').value = 'transfer';
   activeDiscount = null;
   document.getElementById('m-disc-code').value = '';
   document.getElementById('m-disc-msg').textContent = '';
+  document.getElementById('disc-clear-btn').style.display = 'none';
   calcCotizador();
   document.getElementById('pay-modal').classList.add('open');
 }
 
 function closePay() { document.getElementById('pay-modal').classList.remove('open'); }
-function clearDiscountMsg() { document.getElementById('m-disc-msg').textContent = ''; }
+function clearDiscountMsg() { if (!activeDiscount) document.getElementById('m-disc-msg').textContent = ''; }
+
+function clearDiscount() {
+  activeDiscount = null;
+  document.getElementById('m-disc-code').value = '';
+  document.getElementById('m-disc-msg').textContent = '';
+  document.getElementById('disc-clear-btn').style.display = 'none';
+  calcCotizador();
+}
 
 async function applyDiscount() {
   const code = document.getElementById('m-disc-code').value.trim().toUpperCase();
   const msgEl = document.getElementById('m-disc-msg');
+  const clearBtn = document.getElementById('disc-clear-btn');
   if (!code) return;
   const {data} = await sb.from('descuentos').select('*').eq('codigo', code).eq('activo', true).single();
-  if (!data) {
-    msgEl.style.color = '#c0241d';
-    msgEl.textContent = '❌ Código no válido o inactivo.';
-    activeDiscount = null;
-  } else {
+  const setErr = txt => { msgEl.style.color='#c0241d'; msgEl.textContent=txt; activeDiscount=null; clearBtn.style.display='none'; };
+  if (!data) { setErr('❌ Código no válido o inactivo.'); }
+  else if (data.usos_maximos !== null && data.usos_actuales >= data.usos_maximos) { setErr('❌ Código agotado.'); }
+  else {
     activeDiscount = data;
+    clearBtn.style.display = 'inline-block';
     msgEl.style.color = '#2e7d32';
     msgEl.textContent = data.tipo === 'percent' ? `✓ Descuento de ${data.valor}% aplicado` : `✓ Descuento de ${fmt(data.valor)} aplicado`;
   }
   calcCotizador();
 }
 
-function applyDiscountToBase(base) {
-  if (!activeDiscount) return base;
-  return Math.max(0, activeDiscount.tipo === 'percent'
-    ? base * (1 - activeDiscount.valor / 100)
-    : base - activeDiscount.valor);
+function applyDiscountToBase(basePorPersona, personas) {
+  const total = basePorPersona * personas;
+  if (!activeDiscount) return total;
+  const descPorPersona = activeDiscount.tipo === 'percent'
+    ? basePorPersona * (1 - activeDiscount.valor / 100)
+    : Math.max(0, basePorPersona - activeDiscount.valor);
+  return Math.max(0, descPorPersona * personas);
 }
 
 function calcCotizador() {
   if (!curPkg) return;
   const p = parseInt(document.getElementById('m-personas').value);
   const metodo = document.getElementById('m-metodo').value;
-  const base = applyDiscountToBase(curPkg.precio * p);
+  const base = applyDiscountToBase(curPkg.precio, p);
   const resultEl = document.getElementById('cot-result');
   const bankEl = document.getElementById('bank-info');
   document.getElementById('m-price-base').textContent = fmt(base);
@@ -862,11 +859,9 @@ function goWhatsApp() {
   if (!curPkg) return;
   const p = parseInt(document.getElementById('m-personas').value);
   const metodo = document.getElementById('m-metodo').value;
-  const [yr, mo] = document.getElementById('m-fecha').value.split('-');
-  const fechaStr = `${MESES[parseInt(mo)-1]} ${yr}`;
   const nombre = document.getElementById('m-nombre')?.value.trim() || '';
   const waContact = document.getElementById('m-contact-wa')?.value.trim() || '';
-  const base = applyDiscountToBase(curPkg.precio * p);
+  const base = applyDiscountToBase(curPkg.precio, p);
   let payDesc;
   if (metodo === 'transfer') {
     payDesc = `Transferencia/Depósito — Total: ${fmt(base)}`;
@@ -882,7 +877,7 @@ function goWhatsApp() {
     : '';
   const contactLine = nombre ? `\n👤 ${nombre}${waContact ? ' · 📱 '+waContact : ''}` : '';
   const waNum = localStorage.getItem('cfg_wa') || '529582199953';
-  const msg = `Hola! Me interesa el *${curPkg.nombre}* para ${p} persona${p>1?'s':''}.${contactLine}\n📅 Fecha: ${fechaStr}\n💰 ${payDesc}${discLine}\n\n¿Me pueden confirmar disponibilidad?`;
+  const msg = `Hola! Me interesa el *${curPkg.nombre}* para ${p} persona${p>1?'s':''}.${contactLine}\n💰 ${payDesc}${discLine}\n\n¿Me pueden confirmar disponibilidad?`;
   window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 document.getElementById('pay-modal').addEventListener('click', function(e) { if (e.target===this) closePay(); });
@@ -895,22 +890,25 @@ async function loadDiscounts() {
 function renderDiscounts(list) {
   const c = document.getElementById('adm-disc-list');
   if (!list.length) { c.innerHTML='<div style="color:#aaa;font-size:0.85rem;">Sin códigos aún.</div>'; return; }
-  c.innerHTML = list.map(d=>`
-    <div class="item-row">
-      <div class="item-info"><h4>${d.codigo} — ${d.tipo==='percent'?d.valor+'%':fmt(d.valor)+' MXN'}</h4><p>${d.activo?'✅ Activo':'⏸ Inactivo'}</p></div>
+  c.innerHTML = list.map(d=>{
+    const usosInfo = d.usos_maximos !== null ? `${d.usos_actuales??0}/${d.usos_maximos} usos` : 'usos ilimitados';
+    return `<div class="item-row">
+      <div class="item-info"><h4>${d.codigo} — ${d.tipo==='percent'?d.valor+'%':fmt(d.valor)+' MXN'}</h4><p>${d.activo?'✅ Activo':'⏸ Inactivo'} · ${usosInfo}</p></div>
       <div class="item-actions"><button class="del-btn" onclick="delDiscount('${d.id}')">Eliminar</button></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 async function saveDiscount() {
   const codigo = document.getElementById('disc-codigo').value.trim().toUpperCase();
   const tipo = document.getElementById('disc-tipo').value;
   const valor = parseFloat(document.getElementById('disc-valor').value);
   const activo = document.getElementById('disc-activo').checked;
+  const usosTxt = document.getElementById('disc-usos').value.trim();
+  const usos_maximos = usosTxt ? parseInt(usosTxt) : null;
   if (!codigo || isNaN(valor)) { alert('Completa código y valor.'); return; }
-  const {error} = await sb.from('descuentos').insert([{codigo, tipo, valor, activo}]);
+  const {error} = await sb.from('descuentos').insert([{codigo, tipo, valor, activo, usos_maximos}]);
   if (error) { alert('Error: '+error.message); return; }
-  document.getElementById('disc-codigo').value='';
-  document.getElementById('disc-valor').value='';
+  ['disc-codigo','disc-valor','disc-usos'].forEach(id=>document.getElementById(id).value='');
   loadDiscounts();
 }
 async function delDiscount(id) {
