@@ -883,6 +883,11 @@ async function uploadPhotos(input) {
 }
 async function delPhoto(id) {
   if (!confirm('¿Eliminar esta foto?')) return;
+  const { data: row } = await sb.from('galeria').select('url').eq('id', id).single();
+  if (row?.url) {
+    const filename = row.url.split('/').pop();
+    await sb.storage.from('galeria').remove([filename]);
+  }
   const { error } = await sb.from('galeria').delete().eq('id', id);
   if (error) { alert('Error al eliminar: ' + error.message); return; }
   const { data } = await sb.from('galeria').select('*').order('orden').order('created_at');
