@@ -717,14 +717,27 @@ function renderPkgs(list) {
   if (!list.length) { c.innerHTML='<div class="empty-msg">No hay paquetes.</div>'; return; }
   c.innerHTML = list.map(p => {
     const inc = Array.isArray(p.incluye) ? p.incluye : (p.incluye||'').split('\n').filter(i=>i.trim());
-    const hs = p.tipo==='secondary' ? 'background:linear-gradient(135deg,#1a4a22,#4CAF50)' : '';
+    const placeholderBg = p.tipo==='secondary' ? 'background:linear-gradient(135deg,#1a4a22,#4CAF50)' : 'background:linear-gradient(135deg,#006080,#00BCD4)';
+    const header = p.foto_url
+      ? `<div class="pkg-img-wrap">
+          ${p.badge ? `<span class="pkg-badge">${p.badge}</span>` : ''}
+          <img class="pkg-img" src="${p.foto_url}" alt="${p.nombre}" loading="lazy">
+          <div class="pkg-img-overlay">
+            <div class="pkg-icon">${p.icono||'✈️'}</div>
+            <h3>${p.nombre}</h3>
+            <p>${p.descripcion||''}</p>
+          </div>
+        </div>`
+      : `<div class="pkg-img-wrap">
+          ${p.badge ? `<span class="pkg-badge">${p.badge}</span>` : ''}
+          <div class="pkg-img-placeholder" style="${placeholderBg}">${p.icono||'✈️'}</div>
+          <div class="pkg-img-overlay">
+            <h3>${p.nombre}</h3>
+            <p>${p.descripcion||''}</p>
+          </div>
+        </div>`;
     return `<div class="pkg-card">
-      ${p.badge ? `<span class="pkg-badge">${p.badge}</span>` : ''}
-      <div class="pkg-header" style="${hs}">
-        <div class="pkg-icon">${p.icono||'✈️'}</div>
-        <h3>${p.nombre}</h3>
-        <p>${p.descripcion||''}</p>
-      </div>
+      ${header}
       <div class="pkg-body">
         <div class="pkg-price"><span class="currency">MXN $</span><span class="amount">${Number(p.precio).toLocaleString()}</span><span class="per">/ persona</span></div>
         <ul class="pkg-features">${inc.map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}</ul>
