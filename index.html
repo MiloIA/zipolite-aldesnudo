@@ -548,6 +548,7 @@ section{padding:56px 18px;}
             <input type="text" id="pf-nota" placeholder="Ej. Habitación privada disponible: +$2,500">
           </div>
           <div class="af"><label>Lugares totales</label><input type="number" id="pf-lugares" placeholder="Ej. 48" min="1"></div>
+          <div class="af"><label>Monto de anticipo (MXN)</label><input type="number" id="pf-anticipo" placeholder="3000"></div>
           <div class="af"><label>Fecha de inicio</label><input type="date" id="pf-fecha-inicio"></div>
           <div class="af"><label>Fecha de fin</label><input type="date" id="pf-fecha-fin"><small style="color:#888;font-size:0.75rem;">Al pasar esta fecha el paquete se oculta automáticamente</small></div>
           <div class="af"><label>Tipo de botón</label>
@@ -1187,7 +1188,7 @@ function renderAdmBlog(posts) {
 // PKG CRUD
 function showPkgForm(){document.getElementById('pkg-form').style.display='block';}
 function hidePkgForm(){document.getElementById('pkg-form').style.display='none';clearPkgForm();}
-function clearPkgForm(){['pf-id','pf-nombre','pf-precio','pf-fechas','pf-icono','pf-desc','pf-incluye','pf-nota','pf-badge','pf-lugares','pf-fecha-inicio','pf-fecha-fin','pf-foto-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('pf-tipo').value='primary';document.getElementById('pf-foto-preview').innerHTML='';}
+function clearPkgForm(){['pf-id','pf-nombre','pf-precio','pf-fechas','pf-icono','pf-desc','pf-incluye','pf-nota','pf-badge','pf-lugares','pf-anticipo','pf-fecha-inicio','pf-fecha-fin','pf-foto-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('pf-tipo').value='primary';document.getElementById('pf-foto-preview').innerHTML='';}
 
 function editPkg(id) {
   const p=adminPkgs.find(x=>String(x.id)==String(id));
@@ -1203,6 +1204,7 @@ function editPkg(id) {
   document.getElementById('pf-tipo').value=p.tipo||'primary';
   document.getElementById('pf-badge').value=p.badge||'';
   document.getElementById('pf-lugares').value=p.lugares_totales!=null?p.lugares_totales:'';
+  document.getElementById('pf-anticipo').value=p.monto_anticipo||3000;
   document.getElementById('pf-fecha-inicio').value=p.fecha_inicio||'';
   document.getElementById('pf-fecha-fin').value=p.fecha_fin||'';
   document.getElementById('pf-foto-url').value=p.foto_url||'';
@@ -1231,7 +1233,8 @@ async function savePkg() {
     fecha_inicio:document.getElementById('pf-fecha-inicio').value||null,
     fecha_fin:fechaFin,
     activo: fechaFin ? fechaFin >= today : true,
-    foto_url: document.getElementById('pf-foto-url').value.trim() || null
+    foto_url: document.getElementById('pf-foto-url').value.trim() || null,
+    monto_anticipo: parseInt(document.getElementById('pf-anticipo').value)||3000
   };
   const isDefault = !id || id.startsWith('d');
   let error;
