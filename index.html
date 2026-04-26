@@ -904,6 +904,23 @@ async function confirmarReserva() {
   }]).select().single();
   if (error) { alert('Error al guardar reserva: ' + error.message); return; }
   mostrarStep3(data, {nombre, p, metodo, cuanto, anticipo});
+  fetch('/api/send-confirmation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      reservacion_id: data.id,
+      paquete_nombre: curPkg.nombre,
+      nombre, email, whatsapp,
+      personas: p,
+      metodo_pago: metodo,
+      total: lastTotal,
+      anticipo,
+      bank_name: localStorage.getItem('bank_name') || '',
+      bank_clabe: localStorage.getItem('bank_clabe') || '',
+      fecha_inicio: curPkg.fecha_inicio || '',
+      fecha_fin: curPkg.fecha_fin || '',
+    }),
+  }).catch(e => console.error('send-confirmation:', e));
 }
 
 function mostrarStep3(res, info) {
