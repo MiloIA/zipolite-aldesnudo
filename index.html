@@ -748,15 +748,12 @@ function calcCotizador() {
     if (cfg.months === 0) {
       resultEl.innerHTML = `
         <div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>
-        <div class="cot-row"><span>Comisión bancaria</span><strong>${fmt(extra)}</strong></div>
-        <div class="cot-savings">💡 Con transferencia ahorras ${fmt(extra)}</div>`;
+        <div class="cot-row"><span>Comisión bancaria</span><strong>${fmt(extra)}</strong></div>`;
     } else {
       const monthly = total / cfg.months;
       resultEl.innerHTML = `
         <div class="cot-row highlight"><span>Mensualidad</span><strong>${fmt(monthly)} × ${cfg.months}</strong></div>
-        <div class="cot-row"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>
-        <div class="cot-row"><span>Costo del financiamiento</span><strong>${fmt(extra)}</strong></div>
-        <div class="cot-savings">💡 Con transferencia ahorras ${fmt(extra)}</div>`;
+        <div class="cot-row"><span>Total a pagar</span><strong>${fmt(total)}</strong></div>`;
     }
   }
 }
