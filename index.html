@@ -770,7 +770,7 @@ function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX'); }
 function buildPersonasOptions(max) {
   const sel = document.getElementById('m-personas');
   sel.innerHTML = '';
-  const def = max >= 2 ? 2 : 1;
+  const def = 1;
   for (let i = 1; i <= max; i++) {
     const o = document.createElement('option');
     o.value = i;
