@@ -558,7 +558,7 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
 let pkgs = [], curPkg = null, selPayment = 'anticipo';
 let oaiKey = localStorage.getItem('oai_key') || '';
-let adminAuthenticated = false;
+let adminAuthenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
 
 const DEFAULT_PKGS = [
   {id:'d1',nombre:'Paquete Premium',descripcion:'Hotel Paraíso · Línea de playa · 5 noches',precio:8500,fechas:'Jueves a Martes',incluye:['Vuelo redondo CDMX — Zipolite','5 noches en Hotel Paraíso (línea de playa)','Traslados aeropuerto ↔ hotel','Habitación doble (asignamos compañero/a)','Ambiente 100% LGBT+'],nota:'💡 Habitación privada disponible: +$2,500–$3,000 MXN',icono:'✈️',badge:'⭐ Más popular',tipo:'primary'},
@@ -588,6 +588,7 @@ async function checkAdminPwd() {
     const data = await res.json();
     if (data.ok) {
       adminAuthenticated = true;
+      sessionStorage.setItem('adminAuthenticated', 'true');
       closeAdminLogin();
       openAdmin();
     } else {
@@ -881,11 +882,12 @@ async function uploadPhotos(input) {
   input.value = '';
 }
 async function delPhoto(id) {
-  if (!confirm('¿Eliminar esta foto?'))return;
-  await sb.from('galeria').delete().eq('id',id);
-  await loadGallery();
-  const {data}=await sb.from('galeria').select('*').order('orden').order('created_at');
-  renderAdmGallery(data||[]);
+  if (!confirm('¿Eliminar esta foto?')) return;
+  const { error } = await sb.from('galeria').delete().eq('id', id);
+  if (error) { alert('Error al eliminar: ' + error.message); return; }
+  const { data } = await sb.from('galeria').select('*').order('orden').order('created_at');
+  renderAdmGallery(data || []);
+  loadGallery();
 }
 
 // BLOG CRUD
