@@ -524,7 +524,7 @@ section{padding:56px 18px;}
         <div class="bank-row"><span>Banco</span><strong id="bank-name-display">—</strong></div>
         <div class="bank-row"><span>CLABE interbancaria</span><strong id="bank-clabe-display">—</strong></div>
       </div>
-      <button class="pay-btn" onclick="confirmarReserva()" style="margin-top:4px;">Confirmar reserva</button>
+      <button id="confirm-btn" class="pay-btn" onclick="confirmarReserva()" style="margin-top:4px;">Confirmar reserva</button>
     </div>
 
     <!-- PASO 3: Confirmación -->
@@ -660,7 +660,7 @@ section{padding:56px 18px;}
 const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
 const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
-const stripeClient = typeof Stripe !== 'undefined' ? Stripe('STRIPE_PUBLISHABLE_KEY_PLACEHOLDER') : null;
+let stripeClient;
 
 // Admin password stored in Vercel env — fetched via meta tag injected at build time
 // For static HTML we use a hash comparison approach
@@ -932,6 +932,8 @@ async function confirmarReserva() {
   const anticipo = cuanto === 'anticipo' ? (curPkg.monto_anticipo || 3000) : lastTotal;
 
   if (metodo !== 'transfer') {
+    if (!stripeClient) { alert('Error: Stripe no está disponible. Intenta de nuevo.'); return; }
+
     const {data: resData, error: resError} = await sb.from('reservaciones').insert([{
       paquete_id: String(curPkg.id),
       paquete_nombre: curPkg.nombre,
@@ -943,19 +945,64 @@ async function confirmarReserva() {
       estado: 'pendiente_pago'
     }]).select().single();
     if (resError) { alert('Error al guardar reserva: ' + resError.message); return; }
+
+    let clientSecret;
     try {
-      await fetch('/api/create-payment', {
+      const resp = await fetch('/api/create-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: lastTotal,
-          paquete_nombre: curPkg.nombre,
-          nombre, email,
-          reservacion_id: resData.id,
-        }),
+        body: JSON.stringify({ amount: lastTotal, paquete_nombre: curPkg.nombre, nombre, email, reservacion_id: resData.id }),
       });
-    } catch (e) { console.error('create-payment:', e); }
-    alert('Pago con tarjeta próximamente — el endpoint está listo');
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error || 'Error al crear pago');
+      clientSecret = json.clientSecret;
+    } catch (e) {
+      alert('Error al iniciar pago: ' + e.message);
+      return;
+    }
+
+    // Montar card element
+    const btn = document.getElementById('confirm-btn');
+    let cardDiv = document.getElementById('stripe-card-element');
+    if (!cardDiv) {
+      cardDiv = document.createElement('div');
+      cardDiv.id = 'stripe-card-element';
+      cardDiv.style.cssText = 'border:1.5px solid #cce0e4;border-radius:10px;padding:12px 14px;margin-top:14px;background:#fff;';
+      btn.parentNode.insertBefore(cardDiv, btn);
+    }
+    let errDiv = document.getElementById('stripe-error');
+    if (!errDiv) {
+      errDiv = document.createElement('div');
+      errDiv.id = 'stripe-error';
+      errDiv.style.cssText = 'color:#c62828;font-size:0.83rem;margin-top:6px;min-height:18px;';
+      btn.parentNode.insertBefore(errDiv, btn);
+    }
+
+    const elements = stripeClient.elements();
+    const cardEl = elements.create('card', {
+      style: { base: { fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '15px', color: '#1A3A4A', '::placeholder': { color: '#aaa' } } }
+    });
+    cardEl.mount('#stripe-card-element');
+
+    btn.textContent = `💳 Pagar ahora ${fmt(lastTotal)}`;
+    btn.onclick = async () => {
+      btn.disabled = true;
+      btn.textContent = 'Procesando...';
+      errDiv.textContent = '';
+      const { error: stripeErr, paymentIntent } = await stripeClient.confirmCardPayment(clientSecret, {
+        payment_method: { card: cardEl, billing_details: { name: nombre, email } }
+      });
+      if (stripeErr) {
+        errDiv.textContent = stripeErr.message;
+        btn.disabled = false;
+        btn.textContent = `💳 Pagar ahora ${fmt(lastTotal)}`;
+        return;
+      }
+      if (paymentIntent.status === 'succeeded') {
+        await sb.from('reservaciones').update({ estado: 'confirmado' }).eq('id', resData.id);
+        mostrarStep3(resData, { nombre, p, metodo, cuanto, anticipo });
+      }
+    };
     return;
   }
 
@@ -1555,7 +1602,12 @@ sb.auth.onAuthStateChange((event, session) => {
   }
 });
 
-document.addEventListener('DOMContentLoaded', () => { loadAll(); checkFirstTimeSetup(); if (sessionStorage.getItem('adminAuthenticated') === 'true') openAdmin(); });
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof Stripe !== 'undefined') stripeClient = Stripe('STRIPE_PUBLISHABLE_KEY_PLACEHOLDER');
+  loadAll();
+  checkFirstTimeSetup();
+  if (sessionStorage.getItem('adminAuthenticated') === 'true') openAdmin();
+});
 
 document.addEventListener('keydown', e => {
   if (e.shiftKey && e.altKey && e.key === 'A') { e.preventDefault(); openAdminLogin(); }
