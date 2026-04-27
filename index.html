@@ -914,8 +914,12 @@ function openPay(id) {
   document.getElementById('disc-clear-btn').style.display = 'none';
   calcCotizador();
 
-  // Reset campos formulario paso 2
-  ['r-nombre','r-email','r-whatsapp'].forEach(id => document.getElementById(id).value = '');
+  // Prellenar campos con datos de sesión si existe, si no limpiar
+  sb.auth.getSession().then(({ data: { session } }) => {
+    document.getElementById('r-nombre').value = session?.user?.user_metadata?.full_name || '';
+    document.getElementById('r-email').value = session?.user?.email || '';
+    document.getElementById('r-whatsapp').value = session?.user?.user_metadata?.whatsapp || '';
+  });
   document.getElementById('r-cuanto').value = 'anticipo';
   document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(curPkg.monto_anticipo||3000)} — aparta tu lugar`;
   document.getElementById('modal-step-3').style.display = 'none';
