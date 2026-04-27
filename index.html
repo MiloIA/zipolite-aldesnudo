@@ -533,6 +533,7 @@ section{padding:56px 18px;}
         <div class="bank-row"><span>Banco</span><strong id="bank-name-display">—</strong></div>
         <div class="bank-row"><span>CLABE interbancaria</span><strong id="bank-clabe-display">—</strong></div>
       </div>
+      <div id="reserva-error" style="display:none;color:#c0241d;font-size:0.83rem;font-weight:600;margin-bottom:8px;text-align:center;"></div>
       <button id="confirm-btn" class="pay-btn" onclick="confirmarReserva()" style="margin-top:4px;">Confirmar reserva</button>
     </div>
 
@@ -936,7 +937,9 @@ async function confirmarReserva() {
   const nombre = document.getElementById('r-nombre').value.trim();
   const email = document.getElementById('r-email').value.trim();
   const whatsapp = document.getElementById('r-whatsapp').value.trim();
-  if (!nombre || !email || !whatsapp) { alert('Por favor completa nombre, email y WhatsApp.'); return; }
+  const errEl = document.getElementById('reserva-error');
+  if (!nombre || !email || !whatsapp) { errEl.textContent = 'Por favor completa todos los campos'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
   const metodo = document.getElementById('m-metodo').value;
   const p = parseInt(document.getElementById('m-personas').value);
   const cuanto = document.getElementById('r-cuanto').value;
