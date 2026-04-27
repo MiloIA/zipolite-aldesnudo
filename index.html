@@ -1094,10 +1094,9 @@ function mostrarStep3(res, info) {
   }
   const waNum = localStorage.getItem('cfg_wa') || '529582199953';
   const waMsg = encodeURIComponent(`Hola, acabo de hacer una reserva. Paquete: ${curPkg.nombre}, Personas: ${info.p}, No. reserva: ${shortId}, Nombre: ${info.nombre}, Pago: ${metodoLabel}, Total: ${fmt(lastTotal)}, Pago hoy: ${fmt(info.anticipo)}`);
-  if (info.metodo === 'transfer') {
-    html += `<button class="pay-btn" style="margin-top:18px;background:linear-gradient(135deg,#25D366,#128C7E);" onclick="window.open('https://wa.me/${waNum}?text=${waMsg}','_blank')">💬 Avisar por WhatsApp</button>`;
-  }
+  html += `<button id="btn-whatsapp-step3" class="pay-btn" style="margin-top:18px;background:linear-gradient(135deg,#25D366,#128C7E);" onclick="window.open('https://wa.me/${waNum}?text=${waMsg}','_blank')">💬 Avisar por WhatsApp</button>`;
   document.getElementById('modal-step-3').innerHTML = html;
+  if (info.metodo !== 'transfer') document.getElementById('btn-whatsapp-step3').style.display = 'none';
   document.getElementById('modal-step-2').style.display = 'none';
   document.getElementById('modal-step-3').style.display = 'block';
 }
