@@ -1637,7 +1637,14 @@ function setLang(lang){
 sb.auth.onAuthStateChange((event, session) => {
   const btn = document.querySelector('a[onclick="openRegister();return false;"]');
   if (session && btn) {
-    btn.textContent = '👤 ' + (session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
+    const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
+    btn.textContent = '👤 ' + name;
+    btn.removeAttribute('onclick');
+    btn.href = 'cuenta.html';
+  } else if (!session && btn) {
+    btn.textContent = '👤 Mi cuenta';
+    btn.href = '#';
+    btn.setAttribute('onclick', 'openRegister();return false;');
   }
 });
 
@@ -1646,6 +1653,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAll();
   checkFirstTimeSetup();
   if (sessionStorage.getItem('adminAuthenticated') === 'true') openAdmin();
+  if (window.location.hash === '#login') { openRegister(); window.location.hash = ''; }
 });
 
 document.addEventListener('keydown', e => {
