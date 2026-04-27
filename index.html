@@ -1649,6 +1649,10 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.hash.includes('access_token') && window.location.hash.includes('type=recovery')) {
+    window.location.href = 'cuenta.html' + window.location.hash;
+    return;
+  }
   if (typeof Stripe !== 'undefined') stripeClient = Stripe('pk_live_51MiPtBGs8JZIcNIhUF5aP5xPN7SEfz0wAaGA34mRgolM1TpK60tkzoSn9uQUf6ovLTmIlCjxNUZdUVuY5vw525uu00xDkZoygg');
   loadAll();
   checkFirstTimeSetup();
