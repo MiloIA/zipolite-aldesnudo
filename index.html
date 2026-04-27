@@ -923,7 +923,7 @@ function openPay(id) {
     document.getElementById('r-whatsapp').value = session?.user?.user_metadata?.whatsapp || '';
   });
   document.getElementById('r-cuanto').value = 'anticipo';
-  document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(curPkg.monto_anticipo||3000)} — aparta tu lugar`;
+  document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(curPkg.monto_anticipo||3000)} — aparta todos los lugares`;
   document.getElementById('modal-step-3').style.display = 'none';
 
   // Siempre abrir en paso 1
@@ -949,7 +949,7 @@ async function confirmarReserva() {
   const metodo = document.getElementById('m-metodo').value;
   const p = parseInt(document.getElementById('m-personas').value);
   const cuanto = document.getElementById('r-cuanto').value;
-  const anticipo = cuanto === 'anticipo' ? (curPkg.monto_anticipo || 3000) : lastTotal;
+  const anticipo = cuanto === 'anticipo' ? (curPkg.monto_anticipo || 3000) * p : lastTotal;
 
   if (metodo !== 'transfer') {
     if (!stripeClient) { alert('Error: Stripe no está disponible. Intenta de nuevo.'); return; }
@@ -1177,7 +1177,8 @@ function calcCotizador() {
   }
 
   if (cuanto === 'anticipo') {
-    const montoAnticipo = curPkg.monto_anticipo || 3000;
+    const montoAnticipo = (curPkg.monto_anticipo || 3000) * p;
+    document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(montoAnticipo)} — aparta todos los lugares`;
     const resto = Math.max(0, base - montoAnticipo);
     if (metodo === 'transfer') {
       document.getElementById('bank-clabe-display').textContent = localStorage.getItem('bank_clabe') || '—';
