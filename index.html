@@ -6,6 +6,7 @@
 <title>Zipolite al Desnudo — Agencia de Viajes LGBT+</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://js.stripe.com/v3/"></script>
 <style>
 :root{--red:#E8312A;--orange:#F5831F;--yellow:#FFCA28;--green:#4CAF50;--teal:#00BCD4;--purple:#9C27B0;--ocean:#0097A7;--sand:#FFFBF2;--sky:#E0F7FA;--light:#F0FEFF;--dark:#1A3A4A;--white:#FFFFFF;}
 *{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
@@ -659,6 +660,7 @@ section{padding:56px 18px;}
 const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
 const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
+const stripeClient = typeof Stripe !== 'undefined' ? Stripe('STRIPE_PUBLISHABLE_KEY_PLACEHOLDER') : null;
 
 // Admin password stored in Vercel env — fetched via meta tag injected at build time
 // For static HTML we use a hash comparison approach
@@ -925,13 +927,38 @@ async function confirmarReserva() {
   const whatsapp = document.getElementById('r-whatsapp').value.trim();
   if (!nombre || !email || !whatsapp) { alert('Por favor completa nombre, email y WhatsApp.'); return; }
   const metodo = document.getElementById('m-metodo').value;
-  if (metodo !== 'transfer') {
-    alert('Pago con tarjeta próximamente disponible. Por ahora selecciona transferencia.');
-    return;
-  }
   const p = parseInt(document.getElementById('m-personas').value);
   const cuanto = document.getElementById('r-cuanto').value;
   const anticipo = cuanto === 'anticipo' ? (curPkg.monto_anticipo || 3000) : lastTotal;
+
+  if (metodo !== 'transfer') {
+    const {data: resData, error: resError} = await sb.from('reservaciones').insert([{
+      paquete_id: String(curPkg.id),
+      paquete_nombre: curPkg.nombre,
+      nombre, email, whatsapp,
+      personas: p,
+      metodo_pago: metodo,
+      total: lastTotal,
+      anticipo,
+      estado: 'pendiente_pago'
+    }]).select().single();
+    if (resError) { alert('Error al guardar reserva: ' + resError.message); return; }
+    try {
+      await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: lastTotal,
+          paquete_nombre: curPkg.nombre,
+          nombre, email,
+          reservacion_id: resData.id,
+        }),
+      });
+    } catch (e) { console.error('create-payment:', e); }
+    alert('Pago con tarjeta próximamente — el endpoint está listo');
+    return;
+  }
+
   const {data, error} = await sb.from('reservaciones').insert([{
     paquete_id: String(curPkg.id),
     paquete_nombre: curPkg.nombre,
