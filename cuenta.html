@@ -96,6 +96,21 @@ footer a{color:var(--teal);text-decoration:none;}
     </div>
   </div>
 
+  <!-- MIS DATOS -->
+  <div class="section-card">
+    <h2>👤 Mis Datos</h2>
+    <div class="fg">
+      <label>Nombre completo</label>
+      <input type="text" id="p-nombre" placeholder="Tu nombre completo">
+    </div>
+    <div class="fg">
+      <label>WhatsApp</label>
+      <input type="tel" id="p-whatsapp" placeholder="55 1234 5678">
+    </div>
+    <button class="save-btn" onclick="saveProfile()">Guardar datos</button>
+    <div class="msg-box" id="profile-msg"></div>
+  </div>
+
   <!-- MIS RESERVACIONES -->
   <div class="section-card">
     <h2>🗓️ Mis Reservaciones</h2>
@@ -188,6 +203,27 @@ function renderUser(user) {
   document.getElementById('user-email').textContent = user.email;
   const initials = name.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
   document.getElementById('avatar-initials').textContent = initials;
+  document.getElementById('p-nombre').value = user.user_metadata?.full_name || '';
+  document.getElementById('p-whatsapp').value = user.user_metadata?.whatsapp || '';
+}
+
+async function saveProfile() {
+  const full_name = document.getElementById('p-nombre').value.trim();
+  const whatsapp = document.getElementById('p-whatsapp').value.trim();
+  const msg = document.getElementById('profile-msg');
+  msg.className = 'msg-box';
+  const { error } = await sb.auth.updateUser({ data: { full_name, whatsapp } });
+  if (error) { msg.textContent = 'Error: ' + error.message; msg.classList.add('msg-err'); }
+  else {
+    msg.textContent = '✅ Datos actualizados correctamente';
+    msg.classList.add('msg-ok');
+    if (full_name) {
+      document.getElementById('user-name').textContent = 'Hola, ' + full_name;
+      const initials = full_name.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+      document.getElementById('avatar-initials').textContent = initials;
+    }
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+  }
 }
 
 async function loadReservaciones(email) {
