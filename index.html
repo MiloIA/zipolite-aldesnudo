@@ -1058,6 +1058,9 @@ async function updatePassword() {
   const pass = document.getElementById('new-password').value;
   const msgEl = document.getElementById('pass-msg');
   if (pass.length < 6) { msgEl.style.color='#c62828'; msgEl.textContent='Mínimo 6 caracteres.'; return; }
+  const email = document.getElementById('r-email').value;
+  const { error: signInError } = await sb.auth.signInWithPassword({ email, password: tempPassword });
+  if (signInError) { msgEl.style.color='#c62828'; msgEl.textContent=signInError.message; return; }
   const { error } = await sb.auth.updateUser({ password: pass });
   if (error) { msgEl.style.color='#c62828'; msgEl.textContent=error.message; return; }
   msgEl.style.color = '#2e7d32';
