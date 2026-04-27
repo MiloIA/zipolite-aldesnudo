@@ -667,6 +667,7 @@ let stripeClient;
 // Admin auth via localStorage
 
 let pkgs = [], adminPkgs = [], curPkg = null, selPayment = 'anticipo';
+let tempPassword;
 let oaiKey = localStorage.getItem('oai_key') || '';
 let adminAuthenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
 
@@ -1001,7 +1002,8 @@ async function confirmarReserva() {
       }
       if (paymentIntent.status === 'succeeded') {
         await sb.from('reservaciones').update({ estado: 'confirmado' }).eq('id', resData.id);
-        mostrarStep3(resData, { nombre, p, metodo, cuanto, anticipo });
+        await crearCuentaAuth(nombre, email, whatsapp);
+        mostrarStep3(resData, { nombre, email, p, metodo, cuanto, anticipo });
       }
     };
     return;
@@ -1018,7 +1020,8 @@ async function confirmarReserva() {
     estado: 'pendiente'
   }]).select().single();
   if (error) { alert('Error al guardar reserva: ' + error.message); return; }
-  mostrarStep3(data, {nombre, p, metodo, cuanto, anticipo});
+  await crearCuentaAuth(nombre, email, whatsapp);
+  mostrarStep3(data, {nombre, email, p, metodo, cuanto, anticipo});
   fetch('/api/send-confirmation', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1038,12 +1041,46 @@ async function confirmarReserva() {
   }).catch(e => console.error('send-confirmation:', e));
 }
 
+async function crearCuentaAuth(nombre, email, whatsapp) {
+  const tempPass = 'Zip' + Math.random().toString(36).slice(2,8).toUpperCase() + '!';
+  const { error: authError } = await sb.auth.signUp({
+    email,
+    password: tempPass,
+    options: { data: { full_name: nombre, whatsapp } }
+  });
+  if (authError && !authError.message.includes('already registered')) {
+    console.error('auth.signUp:', authError.message);
+  }
+  tempPassword = tempPass;
+}
+
+async function updatePassword() {
+  const pass = document.getElementById('new-password').value;
+  const msgEl = document.getElementById('pass-msg');
+  if (pass.length < 6) { msgEl.style.color='#c62828'; msgEl.textContent='Mínimo 6 caracteres.'; return; }
+  const { error } = await sb.auth.updateUser({ password: pass });
+  if (error) { msgEl.style.color='#c62828'; msgEl.textContent=error.message; return; }
+  msgEl.style.color = '#2e7d32';
+  msgEl.textContent = '✅ Contraseña guardada. Ya puedes iniciar sesión.';
+  const sec = document.getElementById('new-pass-section');
+  if (sec) { sec.querySelector('input').style.display='none'; sec.querySelector('button').style.display='none'; }
+}
+
 function mostrarStep3(res, info) {
   const shortId = (res.id || '').substring(0, 8).toUpperCase();
   const metodosLabel = {transfer:'Transferencia / Depósito',card:'Contado con tarjeta','3':'Financiamiento 3 meses','6':'Financiamiento 6 meses','9':'Financiamiento 9 meses','12':'Financiamiento 12 meses','18':'Financiamiento 18 meses','24':'Financiamiento 24 meses'};
   const metodoLabel = metodosLabel[info.metodo] || info.metodo;
   let html = `<h3 style="color:#2e7d32;font-family:'Fraunces',serif;font-size:1.4rem;margin-bottom:6px;">✅ ¡Reserva recibida!</h3>
     <p style="font-size:0.82rem;color:#888;margin-bottom:18px;">Tu número de reserva: <strong style="font-size:1rem;color:var(--dark);font-family:monospace;">${shortId}</strong></p>
+    <div style="background:#e8f5e9;border-radius:12px;padding:16px;margin-bottom:16px;">
+      <p style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">🔐 Tu cuenta fue creada</p>
+      <p style="font-size:0.83rem;color:#555;margin-bottom:12px;">${info.email}</p>
+      <div id="new-pass-section">
+        <input type="password" id="new-password" placeholder="Establece tu contraseña" style="width:100%;padding:9px 12px;border:1.5px solid #a5d6a7;border-radius:8px;font-size:0.9rem;outline:none;margin-bottom:8px;">
+        <button onclick="updatePassword()" style="width:100%;padding:9px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:0.88rem;font-weight:700;cursor:pointer;">Guardar contraseña</button>
+        <div id="pass-msg" style="font-size:0.83rem;margin-top:6px;min-height:18px;"></div>
+      </div>
+    </div>`;
     <div class="cot-result">
       <div class="cot-row"><span>Paquete</span><strong>${curPkg.nombre}</strong></div>
       <div class="cot-row"><span>Personas</span><strong>${info.p}</strong></div>
