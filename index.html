@@ -1045,35 +1045,52 @@ function calcCotizador() {
     rows += `<div class="cot-row" style="color:#2e7d32;"><span>Descuento aplicado</span><strong>-${fmt(descuento)}</strong></div>`;
   }
 
-  let finalTotal = base;
-  if (metodo === 'transfer') {
-    document.getElementById('bank-clabe-display').textContent = localStorage.getItem('bank_clabe') || '—';
-    document.getElementById('bank-name-display').textContent = localStorage.getItem('bank_name') || '—';
-    bankEl.style.display = 'block';
-    finalTotal = base;
-    rows += `<div class="cot-row"><span>Comisión</span><strong style="color:#2e7d32;">Sin comisión ✓</strong></div>`;
-  } else {
-    bankEl.style.display = 'none';
-    const cfg = STRIPE_RATES[metodo];
-    finalTotal = grossUp(base, cfg.rate, cfg.flat);
-    if (cfg.months === 0) {
-      rows += `<div class="cot-row"><span>Comisión bancaria</span><strong>+${fmt(finalTotal - base)}</strong></div>`;
-    } else {
-      rows += `<div class="cot-row"><span>Costo de financiamiento</span><strong>+${fmt(finalTotal - base)}</strong></div>`;
-      rows += `<div class="cot-row"><span>Mensualidad</span><strong>${fmt(finalTotal / STRIPE_RATES[metodo].months)} × ${STRIPE_RATES[metodo].months} meses</strong></div>`;
-    }
-  }
-
   if (cuanto === 'anticipo') {
-    rows += `<div class="cot-row"><span>Total a pagar</span><strong>${fmt(finalTotal)}</strong></div>`;
     const montoAnticipo = curPkg.monto_anticipo || 3000;
-    rows += `<div class="cot-row highlight" style="color:#2e7d32;"><span>Pagas hoy</span><strong>${fmt(montoAnticipo)}</strong></div>`;
-    rows += `<div class="cot-row"><span>Resto (10 días antes del viaje)</span><strong>${fmt(Math.max(0, finalTotal - montoAnticipo))}</strong></div>`;
+    const resto = Math.max(0, base - montoAnticipo);
+    if (metodo === 'transfer') {
+      document.getElementById('bank-clabe-display').textContent = localStorage.getItem('bank_clabe') || '—';
+      document.getElementById('bank-name-display').textContent = localStorage.getItem('bank_name') || '—';
+      bankEl.style.display = 'block';
+      rows += `<div class="cot-row"><span>Comisión</span><strong style="color:#2e7d32;">Sin comisión ✓</strong></div>`;
+      rows += `<div class="cot-row highlight" style="color:#2e7d32;"><span>Pagas hoy</span><strong>${fmt(montoAnticipo)}</strong></div>`;
+      lastTotal = montoAnticipo;
+    } else {
+      bankEl.style.display = 'none';
+      const cfg = STRIPE_RATES[metodo];
+      const anticipoGross = grossUp(montoAnticipo, cfg.rate, cfg.flat);
+      if (cfg.months === 0) {
+        rows += `<div class="cot-row"><span>Comisión bancaria (anticipo)</span><strong>+${fmt(anticipoGross - montoAnticipo)}</strong></div>`;
+      } else {
+        rows += `<div class="cot-row"><span>Costo de financiamiento (anticipo)</span><strong>+${fmt(anticipoGross - montoAnticipo)}</strong></div>`;
+        rows += `<div class="cot-row"><span>Mensualidad</span><strong>${fmt(anticipoGross / cfg.months)} × ${cfg.months} meses</strong></div>`;
+      }
+      rows += `<div class="cot-row highlight" style="color:#2e7d32;"><span>Pagas hoy</span><strong>${fmt(anticipoGross)}</strong></div>`;
+      lastTotal = anticipoGross;
+    }
+    rows += `<div class="cot-row"><span>Resto (10 días antes del viaje)</span><strong>${fmt(resto)}</strong></div>`;
   } else {
+    let finalTotal = base;
+    if (metodo === 'transfer') {
+      document.getElementById('bank-clabe-display').textContent = localStorage.getItem('bank_clabe') || '—';
+      document.getElementById('bank-name-display').textContent = localStorage.getItem('bank_name') || '—';
+      bankEl.style.display = 'block';
+      rows += `<div class="cot-row"><span>Comisión</span><strong style="color:#2e7d32;">Sin comisión ✓</strong></div>`;
+    } else {
+      bankEl.style.display = 'none';
+      const cfg = STRIPE_RATES[metodo];
+      finalTotal = grossUp(base, cfg.rate, cfg.flat);
+      if (cfg.months === 0) {
+        rows += `<div class="cot-row"><span>Comisión bancaria</span><strong>+${fmt(finalTotal - base)}</strong></div>`;
+      } else {
+        rows += `<div class="cot-row"><span>Costo de financiamiento</span><strong>+${fmt(finalTotal - base)}</strong></div>`;
+        rows += `<div class="cot-row"><span>Mensualidad</span><strong>${fmt(finalTotal / STRIPE_RATES[metodo].months)} × ${STRIPE_RATES[metodo].months} meses</strong></div>`;
+      }
+    }
     rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(finalTotal)}</strong></div>`;
+    lastTotal = finalTotal;
   }
 
-  lastTotal = finalTotal;
   resultEl.innerHTML = rows;
 }
 
