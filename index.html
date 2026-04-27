@@ -751,6 +751,7 @@ async function loadAll() {
 
 async function loadPkgs() {
   const {data} = await sb.from('paquetes').select('*').eq('activo',true).order('created_at');
+  console.log(data);
   const today = new Date().toISOString().split('T')[0];
   const vigentes = (data||[]).filter(p => !p.fecha_fin || p.fecha_fin >= today);
   pkgs = vigentes.length > 0 ? vigentes : DEFAULT_PKGS;
