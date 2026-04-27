@@ -678,6 +678,7 @@ let stripeClient;
 
 let pkgs = [], adminPkgs = [], curPkg = null, selPayment = 'anticipo';
 let tempPassword;
+let currentSession = null;
 let oaiKey = localStorage.getItem('oai_key') || '';
 let adminAuthenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
 
@@ -916,6 +917,7 @@ function openPay(id) {
 
   // Prellenar campos con datos de sesión si existe, si no limpiar
   sb.auth.getSession().then(({ data: { session } }) => {
+    currentSession = session;
     document.getElementById('r-nombre').value = session?.user?.user_metadata?.full_name || '';
     document.getElementById('r-email').value = session?.user?.email || '';
     document.getElementById('r-whatsapp').value = session?.user?.user_metadata?.whatsapp || '';
@@ -1087,13 +1089,15 @@ function mostrarStep3(res, info) {
   let html = `<h3 style="color:#2e7d32;font-family:'Fraunces',serif;font-size:1.4rem;margin-bottom:6px;">✅ ¡Reserva recibida!</h3>
     <p style="font-size:0.82rem;color:#888;margin-bottom:18px;">Tu número de reserva: <strong style="font-size:1rem;color:var(--dark);font-family:monospace;">${shortId}</strong></p>
     <div style="background:#e8f5e9;border-radius:12px;padding:16px;margin-bottom:16px;">
-      <p style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">🔐 Tu cuenta fue creada</p>
+      <p style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">🔐 Tu cuenta</p>
       <p style="font-size:0.83rem;color:#555;margin-bottom:12px;">${info.email}</p>
-      <div id="new-pass-section">
+      ${currentSession
+        ? `<p style="font-size:0.83rem;color:#2e7d32;font-weight:600;">✅ Reserva registrada en tu cuenta. <a href="cuenta.html" style="color:var(--ocean);">Ver mis reservaciones →</a></p>`
+        : `<div id="new-pass-section">
         <input type="password" id="new-password" placeholder="Establece tu contraseña" style="width:100%;padding:9px 12px;border:1.5px solid #a5d6a7;border-radius:8px;font-size:0.9rem;outline:none;margin-bottom:8px;">
         <button onclick="updatePassword()" style="width:100%;padding:9px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:0.88rem;font-weight:700;cursor:pointer;">Guardar contraseña</button>
         <div id="pass-msg" style="font-size:0.83rem;margin-top:6px;min-height:18px;"></div>
-      </div>
+      </div>`}
     </div>
     <div class="cot-result">
       <div class="cot-row"><span>Paquete</span><strong>${curPkg.nombre}</strong></div>
