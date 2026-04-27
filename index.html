@@ -1055,17 +1055,12 @@ async function crearCuentaAuth(nombre, email, whatsapp) {
 }
 
 async function updatePassword() {
-  const pass = document.getElementById('new-password').value;
   const msgEl = document.getElementById('pass-msg');
-  if (pass.length < 6) { msgEl.style.color='#c62828'; msgEl.textContent='Mínimo 6 caracteres.'; return; }
   const email = document.getElementById('r-email').value;
-  const { error: signInError } = await sb.auth.signInWithPassword({ email, password: tempPassword });
-  if (signInError) { msgEl.style.color='#c62828'; msgEl.textContent=signInError.message; return; }
-  const { error } = await sb.auth.updateUser({ password: pass });
-  if (error) { msgEl.style.color='#c62828'; msgEl.textContent=error.message; return; }
-  msgEl.style.color = '#2e7d32';
-  msgEl.textContent = '✅ Contraseña guardada. Ya puedes iniciar sesión.';
   const sec = document.getElementById('new-pass-section');
+  await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+  msgEl.style.color = '#2e7d32';
+  msgEl.textContent = '✅ Cuenta creada. Te enviamos un email para establecer tu contraseña.';
   if (sec) { sec.querySelector('input').style.display='none'; sec.querySelector('button').style.display='none'; }
 }
 
