@@ -472,6 +472,7 @@ section{padding:56px 18px;}
       <p id="s1-desc" style="font-size:0.85rem;color:#888;margin-bottom:6px;"></p>
       <div id="s1-lugares" class="m-lugares" style="margin-bottom:8px;"></div>
       <div id="s1-fechas" style="font-size:0.82rem;color:var(--ocean);font-weight:600;margin-bottom:14px;display:none;">📅 <span id="s1-fechas-text"></span></div>
+      <div id="s1-highlights" style="background:#f0feff;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:none;"></div>
       <ul id="s1-incluye" style="list-style:none;margin-bottom:16px;padding:0;"></ul>
       <div id="s1-nota" style="background:#f0feff;border-left:3px solid var(--ocean);padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.83rem;color:#2a6a7a;margin-bottom:18px;display:none;"></div>
       <button class="pay-btn" onclick="document.getElementById('modal-step-1').style.display='none';document.getElementById('modal-step-2').style.display='block';">Quiero este paquete →</button>
@@ -854,6 +855,28 @@ function openPay(id) {
   const s1fechas = document.getElementById('s1-fechas');
   s1fechas.style.display = curPkg.fechas ? 'block' : 'none';
   document.getElementById('s1-fechas-text').textContent = curPkg.fechas || '';
+
+  // Highlights block
+  const s1hl = document.getElementById('s1-highlights');
+  const fmtFecha = iso => iso ? new Date(iso+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : null;
+  const fechaInicio = fmtFecha(curPkg.fecha_inicio);
+  const fechaFin    = fmtFecha(curPkg.fecha_fin);
+  const fechaTxt    = (fechaInicio && fechaFin) ? `${fechaInicio} — ${fechaFin}` : (curPkg.fechas || '');
+  const incluyeStr  = (Array.isArray(curPkg.incluye) ? curPkg.incluye.join(' ') : (curPkg.incluye||'')).toLowerCase();
+  const nombreLow   = (curPkg.nombre||'').toLowerCase();
+  const transporteIco = curPkg.icono || '✈️';
+  const transporteTxt = (incluyeStr.includes('vuelo') || nombreLow.includes('vuelo'))
+    ? 'Vuelo incluido'
+    : (incluyeStr.includes('transporte') || nombreLow.includes('transporte'))
+      ? 'Transporte incluido'
+      : 'Ver detalle de incluidos abajo';
+  const rowStyle = 'display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(0,150,170,0.1);font-size:0.88rem;';
+  s1hl.innerHTML = `
+    <div style="${rowStyle}"><span>📅</span><span>${fechaTxt||'—'}</span></div>
+    <div style="${rowStyle}"><span>${transporteIco}</span><span>${transporteTxt}</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:0.88rem;"><span>💳</span><span>Págalo hasta en 24 meses<span style="font-size:0.8rem;color:#888;"> — comisión bancaria aplica</span></span></div>`;
+  s1hl.style.display = 'block';
+
   document.getElementById('s1-incluye').innerHTML = s1inc.map(i=>`<li style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f0f9fa;font-size:0.9rem;"><span style="color:var(--ocean);flex-shrink:0;">✓</span><span>${i.trim()}</span></li>`).join('');
   const s1nota = document.getElementById('s1-nota');
   s1nota.textContent = curPkg.nota || '';
