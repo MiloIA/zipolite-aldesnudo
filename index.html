@@ -1603,7 +1603,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (typeof Stripe !== 'undefined') stripeClient = Stripe('STRIPE_PUBLISHABLE_KEY_PLACEHOLDER');
+  if (typeof Stripe !== 'undefined') stripeClient = Stripe('pk_live_51MiPtBGs8JZIcNIhUF5aP5xPN7SEfz0wAaGA34mRgolM1TpK60tkzoSn9uQUf6ovLTmIlCjxNUZdUVuY5vw525uu00xDkZoygg');
   loadAll();
   checkFirstTimeSetup();
   if (sessionStorage.getItem('adminAuthenticated') === 'true') openAdmin();
