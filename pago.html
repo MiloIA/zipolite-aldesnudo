@@ -184,7 +184,7 @@ footer a{color:var(--teal);text-decoration:none;}
         </div>
       </div>
 
-      <a id="btn-wa-transfer" href="#" target="_blank" class="btn-wa">
+      <a id="btn-wa-transfer" href="#" target="_blank" class="btn-wa" onclick="sendConfirmationOnTransfer()">
         💬 Confirmar pago por WhatsApp
       </a>
       <a href="cuenta.html" class="btn-secondary">
@@ -311,6 +311,22 @@ function renderTransfer() {
   document.getElementById('flow-transfer').style.display = 'block';
 }
 
+function sendConfirmationOnTransfer() {
+  fetch('/api/send-confirmation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      reservacion_id: reserva.id,
+      paquete_nombre: reserva.paquete,
+      metodo_pago: reserva.metodo,
+      total: reserva.total,
+      anticipo: reserva.anticipo,
+      bank_name: localStorage.getItem('bank_name') || '',
+      bank_clabe: localStorage.getItem('bank_clabe') || '',
+    }),
+  }).catch(e => console.error('send-confirmation:', e));
+}
+
 function copyClabe() {
   const clabe = localStorage.getItem('bank_clabe') || '';
   if (!clabe) return;
@@ -391,6 +407,21 @@ async function handleCardPayment() {
       .from('reservaciones')
       .update({ estado: 'confirmado', stripe_payment_id: paymentIntent.id })
       .eq('id', reserva.id);
+
+    // 4. Send confirmation email/notification
+    fetch('/api/send-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reservacion_id: reserva.id,
+        paquete_nombre: reserva.paquete,
+        metodo_pago: reserva.metodo,
+        total: reserva.total,
+        anticipo: reserva.anticipo,
+        bank_name: localStorage.getItem('bank_name') || '',
+        bank_clabe: localStorage.getItem('bank_clabe') || '',
+      }),
+    }).catch(e => console.error('send-confirmation:', e));
 
     sessionStorage.removeItem('reservacion_pendiente');
     showSuccess();
