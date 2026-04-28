@@ -2,10 +2,18 @@ import { createClient } from '@supabase/supabase-js';
 import PDFDocument from 'pdfkit';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  console.log('generate-contract called', req.method, req.body);
+
+  if (req.method !== 'POST') {
+    console.log('returning:', { error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   const { reservacion_id } = req.body || {};
-  if (!reservacion_id) return res.status(400).json({ error: 'reservacion_id requerido' });
+  if (!reservacion_id) {
+    console.log('returning:', { error: 'reservacion_id requerido' });
+    return res.status(400).json({ error: 'reservacion_id requerido' });
+  }
 
   const supabase = createClient(
     process.env.SUPABASE_URL,
@@ -19,6 +27,7 @@ export default async function handler(req, res) {
     .single();
 
   if (errReserva || !reserva) {
+    console.log('returning:', { error: 'Reservación no encontrada', errReserva });
     return res.status(404).json({ error: 'Reservación no encontrada' });
   }
 
@@ -28,6 +37,7 @@ export default async function handler(req, res) {
     .eq('reservacion_id', reservacion_id);
 
   if (errViajeros) {
+    console.log('returning:', { error: 'Error al obtener viajeros', errViajeros });
     return res.status(500).json({ error: 'Error al obtener viajeros: ' + errViajeros.message });
   }
 
@@ -39,6 +49,7 @@ export default async function handler(req, res) {
     .upload(fileName, pdfBuffer, { contentType: 'application/pdf', upsert: true });
 
   if (uploadError) {
+    console.log('returning:', { error: 'Error al subir PDF', uploadError });
     return res.status(500).json({ error: 'Error al subir PDF: ' + uploadError.message });
   }
 
@@ -51,9 +62,11 @@ export default async function handler(req, res) {
     .eq('id', reservacion_id);
 
   if (updateError) {
+    console.log('returning:', { error: 'Error al actualizar reservación', updateError });
     return res.status(500).json({ error: 'Error al actualizar reservación: ' + updateError.message });
   }
 
+  console.log('returning:', { ok: true, url: pdfUrl });
   return res.status(200).json({ ok: true, url: pdfUrl });
 }
 
