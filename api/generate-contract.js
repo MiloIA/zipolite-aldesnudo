@@ -70,142 +70,140 @@ function buildPDF(reserva, viajeros) {
       ? new Date(reserva.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
       : new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 
-    const fechaLlegada  = reserva.fecha_llegada  || reserva.fecha_inicio || 'N/A';
-    const fechaSalida   = reserva.fecha_salida   || reserva.fecha_fin    || 'N/A';
-    const precioBase    = Number(reserva.precio_base || reserva.total || 0);
-    const anticipo      = Number(reserva.anticipo || 0);
-    const saldo         = Number(reserva.saldo_pendiente ?? (precioBase - anticipo));
-    const fmt = n => '$' + Math.round(n).toLocaleString('es-MX') + ' MXN';
+    const fechaLlegada = reserva.fecha_llegada || reserva.fecha_inicio || 'N/A';
+    const fechaSalida  = reserva.fecha_salida  || reserva.fecha_fin    || 'N/A';
+    const precioBase   = Number(reserva.precio_base || reserva.total || 0);
+    const anticipo     = Number(reserva.anticipo || 0);
+    const saldo        = Number(reserva.saldo_pendiente ?? (precioBase - anticipo));
+    const fmt          = n => '$' + Math.round(n).toLocaleString('es-MX') + ' MXN';
+    const nombreTitular = [titular.nombre, titular.apellidos].filter(Boolean).join(' ') || 'N/A';
 
-    // ── Header ──────────────────────────────────────────────────────────────
-    doc.fontSize(13).font('Helvetica-Bold')
+    // ── Header ──
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#000')
       .text('CONTRATO DE PRESTACIÓN DE SERVICIOS TURÍSTICOS', { align: 'center' });
+    doc.moveDown(0.4);
     doc.fontSize(11).font('Helvetica-Bold')
       .text('INFINITY JOURNEY BY MÉXICO S.A.S.', { align: 'center' });
-    doc.moveDown(0.4);
+    doc.moveDown(0.6);
     doc.moveTo(55, doc.y).lineTo(557, doc.y).strokeColor('#888').lineWidth(0.5).stroke();
-    doc.moveDown(0.8);
+    doc.moveDown(1);
 
-    // ── I. Partes ───────────────────────────────────────────────────────────
-    sectionTitle(doc, 'I. PARTES');
-    const nombreTitular = [titular.nombre, titular.apellidos].filter(Boolean).join(' ') || 'N/A';
-    row(doc, 'Nombre completo del titular', nombreTitular);
-    row(doc, 'Fecha de nacimiento',          titular.fecha_nacimiento || 'N/A');
-    doc.moveDown(0.8);
+    // ── I. Partes ──
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1A3A4A')
+      .text('I. PARTES');
+    doc.moveDown(0.3);
+    doc.fontSize(10).font('Helvetica').fillColor('#111')
+      .text(`Nombre completo del titular: ${nombreTitular}`);
+    doc.moveDown(0.5);
+    doc.text(`Fecha de nacimiento: ${titular.fecha_nacimiento || 'N/A'}`);
+    doc.moveDown(1);
 
-    // ── II. Objeto ──────────────────────────────────────────────────────────
-    sectionTitle(doc, 'II. OBJETO DEL CONTRATO');
-    row(doc, 'Destino',              'Zipolite, Oaxaca, México');
-    row(doc, 'Paquete',              reserva.paquete_nombre || 'N/A');
-    row(doc, 'Fecha de llegada',     fechaLlegada);
-    row(doc, 'Fecha de salida',      fechaSalida);
-    row(doc, 'Duración',             reserva.duracion || 'N/A');
-    row(doc, 'Servicios incluidos',  reserva.incluye   || 'N/A');
-    doc.moveDown(0.8);
+    // ── II. Objeto ──
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1A3A4A')
+      .text('II. OBJETO DEL CONTRATO');
+    doc.moveDown(0.3);
+    doc.fontSize(10).font('Helvetica').fillColor('#111')
+      .text('Destino: Zipolite, Oaxaca, México');
+    doc.moveDown(0.5);
+    doc.text(`Paquete: ${reserva.paquete_nombre || 'N/A'}`);
+    doc.moveDown(0.5);
+    doc.text(`Fecha de llegada: ${fechaLlegada}`);
+    doc.moveDown(0.5);
+    doc.text(`Fecha de salida: ${fechaSalida}`);
+    doc.moveDown(0.5);
+    doc.text(`Duración: ${reserva.duracion || 'N/A'}`);
+    doc.moveDown(0.5);
+    doc.text(`Servicios incluidos: ${reserva.incluye || 'N/A'}`);
+    doc.moveDown(1);
 
-    // ── III. Precio ─────────────────────────────────────────────────────────
-    sectionTitle(doc, 'III. PRECIO Y FORMA DE PAGO');
-    row(doc, 'Precio base del paquete', fmt(precioBase));
-    row(doc, 'Método de pago',          reserva.metodo_pago || 'N/A');
-    row(doc, 'Anticipo pagado',         fmt(anticipo));
-    doc.moveDown(0.8);
+    // ── III. Precio ──
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1A3A4A')
+      .text('III. PRECIO Y FORMA DE PAGO');
+    doc.moveDown(0.3);
+    doc.fontSize(10).font('Helvetica').fillColor('#111')
+      .text(`Precio base del paquete: ${fmt(precioBase)}`);
+    doc.moveDown(0.5);
+    doc.text(`Método de pago: ${reserva.metodo_pago || 'N/A'}`);
+    doc.moveDown(0.5);
+    doc.text(`Anticipo pagado: ${fmt(anticipo)}`);
+    doc.moveDown(1);
 
-    // ── IV. Liquidación ─────────────────────────────────────────────────────
-    sectionTitle(doc, 'IV. LIQUIDACIÓN');
-    row(doc, 'Saldo pendiente', fmt(saldo));
-    doc.font('Helvetica').fontSize(9).fillColor('#333')
-      .text('El saldo restante deberá liquidarse en su totalidad 10 días naturales antes de la fecha de llegada. En caso de no realizarse el pago en el plazo indicado, la reserva podrá ser cancelada sin derecho a reembolso del anticipo.');
-    doc.moveDown(0.8);
+    // ── IV. Liquidación ──
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1A3A4A')
+      .text('IV. LIQUIDACIÓN');
+    doc.moveDown(0.3);
+    doc.fontSize(10).font('Helvetica').fillColor('#111')
+      .text(`Saldo pendiente: ${fmt(saldo)}`);
+    doc.moveDown(0.5);
+    doc.text('El saldo restante deberá liquidarse en su totalidad 10 días naturales antes de la fecha de llegada. En caso de no realizarse el pago en el plazo indicado, la reserva podrá ser cancelada sin derecho a reembolso del anticipo.');
+    doc.moveDown(1);
 
-    // ── V. Cancelaciones ────────────────────────────────────────────────────
-    sectionTitle(doc, 'V. POLÍTICA DE CANCELACIÓN');
-    doc.font('Helvetica').fontSize(9).fillColor('#333')
+    // ── V. Cancelaciones ──
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1A3A4A')
+      .text('V. POLÍTICA DE CANCELACIÓN');
+    doc.moveDown(0.3);
+    doc.fontSize(10).font('Helvetica').fillColor('#111')
       .text('• El anticipo no es reembolsable bajo ninguna circunstancia.');
+    doc.moveDown(0.5);
     doc.text('• En caso de cancelación con menos de 20 días naturales de anticipación a la fecha de viaje, no se realizará reembolso de ningún monto pagado.');
+    doc.moveDown(0.5);
     doc.text('• Cancelaciones con más de 20 días de anticipación podrán generar un crédito a cuenta, sujeto a disponibilidad y evaluación de la agencia.');
-    doc.moveDown(0.8);
+    doc.moveDown(1);
 
-    // ── VI. Responsabilidades ───────────────────────────────────────────────
-    sectionTitle(doc, 'VI. RESPONSABILIDADES Y LIMITACIONES');
-    doc.font('Helvetica').fontSize(9).fillColor('#333')
+    // ── VI. Responsabilidades ──
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1A3A4A')
+      .text('VI. RESPONSABILIDADES Y LIMITACIONES');
+    doc.moveDown(0.3);
+    doc.fontSize(10).font('Helvetica').fillColor('#111')
       .text('• La agencia no asume responsabilidad por cambios, retrasos o cancelaciones de vuelos imputables a las aerolíneas.');
+    doc.moveDown(0.5);
     doc.text('• Quedan excluidos de responsabilidad los casos de fuerza mayor, desastres naturales, actos de autoridad o cualquier evento ajeno al control de la agencia.');
+    doc.moveDown(0.5);
     doc.text('• Los servicios prestados por proveedores terceros (hoteles, transportistas, actividades) son responsabilidad exclusiva de dichos proveedores.');
+    doc.moveDown(0.5);
     doc.text('• En todo lo no previsto en este contrato se estará a lo dispuesto por el Artículo 2111 del Código Civil Federal (CCF) y demás disposiciones aplicables.');
-    doc.moveDown(0.8);
+    doc.moveDown(1);
 
-    // ── VII. Viajeros ───────────────────────────────────────────────────────
-    sectionTitle(doc, 'VII. LISTA DE VIAJEROS');
-    renderTravelersTable(doc, viajeros);
-    doc.moveDown(0.8);
+    // ── VII. Viajeros ──
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1A3A4A')
+      .text('VII. LISTA DE VIAJEROS');
+    doc.moveDown(0.3);
 
-    // ── VIII. Aceptación ────────────────────────────────────────────────────
-    sectionTitle(doc, 'VIII. ACEPTACIÓN DIGITAL');
-    doc.font('Helvetica').fontSize(9).fillColor('#333')
+    if (!viajeros.length) {
+      doc.fontSize(10).font('Helvetica').fillColor('#888')
+        .text('Sin viajeros registrados.');
+      doc.moveDown(0.5);
+    } else {
+      viajeros.forEach((v, i) => {
+        const nombre = [v.nombre, v.apellidos].filter(Boolean).join(' ') || 'N/A';
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#111')
+          .text(`${i + 1}. ${nombre}`);
+        doc.moveDown(0.3);
+        doc.fontSize(9).font('Helvetica').fillColor('#444')
+          .text(`   Fecha de nacimiento: ${v.fecha_nacimiento || 'N/A'}     Nacionalidad: ${v.nacionalidad || 'N/A'}`);
+        doc.moveDown(0.5);
+      });
+    }
+    doc.moveDown(0.5);
+
+    // ── VIII. Aceptación ──
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#1A3A4A')
+      .text('VIII. ACEPTACIÓN DIGITAL');
+    doc.moveDown(0.3);
+    doc.fontSize(10).font('Helvetica').fillColor('#111')
       .text(`El cliente aceptó digitalmente este contrato el ${fechaAceptacion} mediante el marcado del checkbox de aceptación en el sitio web zipolitealdesnudo.com.`);
+    doc.moveDown(0.5);
     doc.text(`Folio de reservación: ${reserva.id}`);
-    doc.moveDown(1.5);
+    doc.moveDown(2);
 
-    // ── Footer ──────────────────────────────────────────────────────────────
+    // ── Footer ──
     doc.moveTo(55, doc.y).lineTo(557, doc.y).strokeColor('#888').lineWidth(0.5).stroke();
-    doc.moveDown(0.4);
-    doc.font('Helvetica').fontSize(8).fillColor('#666')
+    doc.moveDown(0.5);
+    doc.fontSize(8).font('Helvetica').fillColor('#666')
       .text('INFINITY JOURNEY BY MÉXICO S.A.S.  ·  Agencia de Viajes LGBT+', { align: 'center' });
+    doc.moveDown(0.3);
     doc.text('WhatsApp: 958 219 9953  ·  reservaciones@zipolitealdesnudo.com  ·  zipolitealdesnudo.com', { align: 'center' });
 
     doc.end();
-  });
-}
-
-function sectionTitle(doc, text) {
-  doc.fontSize(10).font('Helvetica-Bold').fillColor('#1A3A4A').text(text);
-  doc.moveDown(0.3);
-}
-
-function row(doc, label, value) {
-  const x = doc.page.margins.left;
-  const y = doc.y;
-  doc.font('Helvetica-Bold').fontSize(9).fillColor('#555').text(label + ':', x, y, { continued: false });
-  doc.font('Helvetica').fontSize(9).fillColor('#111').text(String(value), x + 12, doc.y - doc.currentLineHeight(), { continued: false });
-  doc.moveDown(0.25);
-}
-
-function renderTravelersTable(doc, viajeros) {
-  if (!viajeros.length) {
-    doc.font('Helvetica').fontSize(9).fillColor('#888').text('Sin viajeros registrados.');
-    return;
-  }
-
-  const left = doc.page.margins.left;
-  const colW = [200, 110, 120];
-  const headers = ['Nombre completo', 'Fecha nacimiento', 'Nacionalidad'];
-
-  // Header row
-  let x = left;
-  doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#fff');
-  doc.rect(left, doc.y, colW[0] + colW[1] + colW[2], 14).fill('#1A3A4A');
-  const headerY = doc.y - 14 + 3;
-  headers.forEach((h, i) => {
-    doc.fillColor('#fff').text(h, x + 3, headerY, { width: colW[i] - 6, lineBreak: false });
-    x += colW[i];
-  });
-  doc.moveDown(0.1);
-
-  // Data rows
-  viajeros.forEach((v, idx) => {
-    const rowY = doc.y;
-    const bg = idx % 2 === 0 ? '#f5fafc' : '#ffffff';
-    doc.rect(left, rowY, colW[0] + colW[1] + colW[2], 13).fill(bg);
-
-    const nombre = [v.nombre, v.apellidos].filter(Boolean).join(' ') || 'N/A';
-    const cells = [nombre, v.fecha_nacimiento || 'N/A', v.nacionalidad || 'N/A'];
-    x = left;
-    doc.font('Helvetica').fontSize(8.5).fillColor('#222');
-    cells.forEach((cell, i) => {
-      doc.text(cell, x + 3, rowY + 2, { width: colW[i] - 6, lineBreak: false });
-      x += colW[i];
-    });
-    doc.moveDown(0.05);
-    doc.y = rowY + 13;
   });
 }
