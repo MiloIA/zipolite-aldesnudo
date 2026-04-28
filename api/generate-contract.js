@@ -42,8 +42,27 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Error al obtener viajeros: ' + errViajeros.message });
     }
 
+    // Resolve servicios: use reserva.incluye (array or string), else query paquetes
+    let servicios = 'N/A';
+    if (reserva.incluye) {
+      servicios = Array.isArray(reserva.incluye)
+        ? reserva.incluye.join(', ')
+        : String(reserva.incluye);
+    } else if (reserva.paquete_nombre) {
+      const { data: paquete } = await supabase
+        .from('paquetes')
+        .select('incluye')
+        .eq('nombre', reserva.paquete_nombre)
+        .single();
+      if (paquete?.incluye) {
+        servicios = Array.isArray(paquete.incluye)
+          ? paquete.incluye.join(', ')
+          : String(paquete.incluye);
+      }
+    }
+
     console.log('Starting PDF generation');
-    const pdfBuffer = await buildPDF(reserva, viajeros || []);
+    const pdfBuffer = await buildPDF(reserva, viajeros || [], servicios);
     console.log('PDF generated, size:', pdfBuffer.length);
 
     const fileName = `${reservacion_id}.pdf`;
@@ -80,7 +99,7 @@ export default async function handler(req, res) {
   }
 }
 
-function buildPDF(reserva, viajeros) {
+function buildPDF(reserva, viajeros, servicios) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 55, size: 'LETTER' });
     const chunks = [];
@@ -88,18 +107,33 @@ function buildPDF(reserva, viajeros) {
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    const titular = viajeros.find(v => v.es_titular) || viajeros[0] || {};
-    const fechaAceptacion = reserva.created_at
-      ? new Date(reserva.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
-      : new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+    // ── Helpers ──
+    const fmtFecha = d => d
+      ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
+      : 'N/A';
 
-    const fechaLlegada = reserva.fecha_llegada || reserva.fecha_inicio || 'N/A';
-    const fechaSalida  = reserva.fecha_salida  || reserva.fecha_fin    || 'N/A';
-    const precioBase   = Number(reserva.precio_base || reserva.total || 0);
-    const anticipo     = Number(reserva.anticipo || 0);
-    const saldo        = Number(reserva.saldo_pendiente ?? (precioBase - anticipo));
-    const fmt          = n => '$' + Math.round(n).toLocaleString('es-MX') + ' MXN';
-    const nombreTitular = [titular.nombre, titular.apellidos].filter(Boolean).join(' ') || 'N/A';
+    const fmtMetodo = m => {
+      if (!m) return 'N/A';
+      if (m === 'transfer') return 'Transferencia / Depósito';
+      if (m === 'card') return 'Tarjeta de crédito';
+      if (!isNaN(String(m))) return `Financiamiento a ${m} meses`;
+      return String(m);
+    };
+
+    const fmt = n => '$' + Math.round(n).toLocaleString('es-MX') + ' MXN';
+
+    // ── Data ──
+    const titular = viajeros.find(v => v.es_titular) || viajeros[0] || {};
+    const nombreTitular = [titular.nombre, titular.apellido_paterno, titular.apellido_materno]
+      .filter(Boolean).join(' ') || 'N/A';
+
+    const fechaAceptacion = fmtFecha(reserva.created_at?.split('T')[0] || null);
+    const fechaLlegada    = fmtFecha(reserva.fecha_inicio || reserva.fecha_llegada);
+    const fechaSalida     = fmtFecha(reserva.fecha_fin    || reserva.fecha_salida);
+
+    const total    = Number(reserva.total    || reserva.precio_base || 0);
+    const anticipo = Number(reserva.anticipo || 0);
+    const saldo    = Math.max(0, total - anticipo);
 
     // ── Header ──
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#000')
@@ -136,7 +170,7 @@ function buildPDF(reserva, viajeros) {
     doc.moveDown(0.5);
     doc.text(`Duración: ${reserva.duracion || 'N/A'}`);
     doc.moveDown(0.5);
-    doc.text(`Servicios incluidos: ${reserva.incluye || 'N/A'}`);
+    doc.text(`Servicios incluidos: ${servicios}`);
     doc.moveDown(1);
 
     // ── III. Precio ──
@@ -144,9 +178,9 @@ function buildPDF(reserva, viajeros) {
       .text('III. PRECIO Y FORMA DE PAGO');
     doc.moveDown(0.3);
     doc.fontSize(10).font('Helvetica').fillColor('#111')
-      .text(`Precio base del paquete: ${fmt(precioBase)}`);
+      .text(`Precio total del paquete: ${fmt(total)}`);
     doc.moveDown(0.5);
-    doc.text(`Método de pago: ${reserva.metodo_pago || 'N/A'}`);
+    doc.text(`Método de pago: ${fmtMetodo(reserva.metodo_pago)}`);
     doc.moveDown(0.5);
     doc.text(`Anticipo pagado: ${fmt(anticipo)}`);
     doc.moveDown(1);
@@ -198,13 +232,31 @@ function buildPDF(reserva, viajeros) {
       doc.moveDown(0.5);
     } else {
       viajeros.forEach((v, i) => {
-        const nombre = [v.nombre, v.apellidos].filter(Boolean).join(' ') || 'N/A';
+        const nombre = [v.nombre, v.apellido_paterno, v.apellido_materno]
+          .filter(Boolean).join(' ') || 'N/A';
         doc.fontSize(10).font('Helvetica-Bold').fillColor('#111')
           .text(`${i + 1}. ${nombre}`);
         doc.moveDown(0.3);
-        doc.fontSize(9).font('Helvetica').fillColor('#444')
+        doc.fontSize(9).font('Helvetica').fillColor('#333')
           .text(`   Fecha de nacimiento: ${v.fecha_nacimiento || 'N/A'}     Nacionalidad: ${v.nacionalidad || 'N/A'}`);
-        doc.moveDown(0.5);
+        doc.moveDown(0.2);
+        if (v.correo) {
+          doc.text(`   Correo: ${v.correo}`);
+          doc.moveDown(0.2);
+        }
+        if (v.whatsapp) {
+          doc.text(`   WhatsApp: ${v.whatsapp}`);
+          doc.moveDown(0.2);
+        }
+        if (v.contacto_emergencia) {
+          doc.text(`   Contacto de emergencia: ${v.contacto_emergencia}`);
+          doc.moveDown(0.2);
+        }
+        if (v.alergias) {
+          doc.text(`   Restricciones / alergias: ${v.alergias}`);
+          doc.moveDown(0.2);
+        }
+        doc.moveDown(0.4);
       });
     }
     doc.moveDown(0.5);
