@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import PDFDocument from 'pdfkit';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { reservacion_id } = req.body || {};
   if (!reservacion_id) return res.status(400).json({ error: 'reservacion_id requerido' });
