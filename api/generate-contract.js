@@ -60,6 +60,7 @@ export default async function handler(req, res) {
         .select('incluye, fecha_inicio, fecha_fin, precio')
         .eq('nombre', reserva.paquete_nombre)
         .single();
+      console.log('paquete fechas:', paquete?.fecha_inicio, paquete?.fecha_fin);
       if (paquete) {
         if (!reserva.incluye && paquete.incluye) {
           servicios = Array.isArray(paquete.incluye)
@@ -81,10 +82,12 @@ export default async function handler(req, res) {
 
     let duracion = reserva.duracion || 'N/A';
     if (fechaInicioPaquete && fechaFinPaquete) {
-      const dias = Math.round(
-        (new Date(fechaFinPaquete) - new Date(fechaInicioPaquete)) / (1000 * 60 * 60 * 24)
-      );
-      if (dias > 0) duracion = `${dias} días / ${dias - 1} noches`;
+      const d1 = new Date(fechaInicioPaquete);
+      const d2 = new Date(fechaFinPaquete);
+      if (!isNaN(d1) && !isNaN(d2)) {
+        const dias = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        if (dias > 0) duracion = `${dias} días / ${dias - 1} noches`;
+      }
     }
 
     console.log('Starting PDF generation');
