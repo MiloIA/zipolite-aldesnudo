@@ -628,7 +628,14 @@ async function submitTravelers() {
     return;
   }
 
-  window.location.href = 'index.html?registro=exitoso';
+  sessionStorage.setItem('reservacion_pendiente', JSON.stringify({
+    id: reserva.id,
+    metodo: reserva.metodo_pago,
+    total: reserva.total,
+    anticipo: reserva.anticipo,
+    paquete: reserva.paquete_nombre
+  }));
+  window.location.href = 'pago.html';
 }
 
 function val(id) {
