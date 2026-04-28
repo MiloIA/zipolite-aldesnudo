@@ -42,27 +42,36 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Error al obtener viajeros: ' + errViajeros.message });
     }
 
-    // Resolve servicios: use reserva.incluye (array or string), else query paquetes
+    // Resolve servicios + fechas desde paquetes si no vienen en la reserva
     let servicios = 'N/A';
+    let fechaInicioPaquete = null;
+    let fechaFinPaquete    = null;
+
     if (reserva.incluye) {
       servicios = Array.isArray(reserva.incluye)
         ? reserva.incluye.join(', ')
         : String(reserva.incluye);
-    } else if (reserva.paquete_nombre) {
+    }
+
+    if (reserva.paquete_nombre) {
       const { data: paquete } = await supabase
         .from('paquetes')
-        .select('incluye')
+        .select('incluye, fecha_inicio, fecha_fin')
         .eq('nombre', reserva.paquete_nombre)
         .single();
-      if (paquete?.incluye) {
-        servicios = Array.isArray(paquete.incluye)
-          ? paquete.incluye.join(', ')
-          : String(paquete.incluye);
+      if (paquete) {
+        if (!reserva.incluye && paquete.incluye) {
+          servicios = Array.isArray(paquete.incluye)
+            ? paquete.incluye.join(', ')
+            : String(paquete.incluye);
+        }
+        fechaInicioPaquete = paquete.fecha_inicio || null;
+        fechaFinPaquete    = paquete.fecha_fin    || null;
       }
     }
 
     console.log('Starting PDF generation');
-    const pdfBuffer = await buildPDF(reserva, viajeros || [], servicios);
+    const pdfBuffer = await buildPDF(reserva, viajeros || [], servicios, fechaInicioPaquete, fechaFinPaquete);
     console.log('PDF generated, size:', pdfBuffer.length);
 
     const fileName = `${reservacion_id}.pdf`;
@@ -99,7 +108,7 @@ export default async function handler(req, res) {
   }
 }
 
-function buildPDF(reserva, viajeros, servicios) {
+function buildPDF(reserva, viajeros, servicios, fechaInicioPaquete, fechaFinPaquete) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 55, size: 'LETTER' });
     const chunks = [];
@@ -108,9 +117,11 @@ function buildPDF(reserva, viajeros, servicios) {
     doc.on('error', reject);
 
     // ── Helpers ──
-    const fmtFecha = d => d
-      ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
-      : 'N/A';
+    const fmtFecha = d => {
+      if (!d) return 'N/A';
+      const iso = String(d).includes('T') ? d : d + 'T12:00:00';
+      return new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
 
     const fmtMetodo = m => {
       if (!m) return 'N/A';
@@ -124,12 +135,23 @@ function buildPDF(reserva, viajeros, servicios) {
 
     // ── Data ──
     const titular = viajeros.find(v => v.es_titular) || viajeros[0] || {};
-    const nombreTitular = [titular.nombre, titular.apellido_paterno, titular.apellido_materno]
+    const nombreTitular = [titular.nombre, titular.ap_paterno, titular.ap_materno]
       .filter(Boolean).join(' ') || 'N/A';
 
     const fechaAceptacion = fmtFecha(reserva.created_at?.split('T')[0] || null);
-    const fechaLlegada    = fmtFecha(reserva.fecha_inicio || reserva.fecha_llegada);
-    const fechaSalida     = fmtFecha(reserva.fecha_fin    || reserva.fecha_salida);
+    const rawInicio = reserva.fecha_inicio || reserva.fecha_llegada || fechaInicioPaquete;
+    const rawFin    = reserva.fecha_fin    || reserva.fecha_salida  || fechaFinPaquete;
+    const fechaLlegada = fmtFecha(rawInicio);
+    const fechaSalida  = fmtFecha(rawFin);
+
+    let duracion = reserva.duracion || 'N/A';
+    if (rawInicio && rawFin) {
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const d1 = new Date(String(rawInicio).includes('T') ? rawInicio : rawInicio + 'T12:00:00');
+      const d2 = new Date(String(rawFin).includes('T')    ? rawFin    : rawFin    + 'T12:00:00');
+      const dias = Math.round((d2 - d1) / msPerDay);
+      if (dias > 0) duracion = `${dias} día${dias !== 1 ? 's' : ''} / ${dias - 1} noche${dias - 1 !== 1 ? 's' : ''}`;
+    }
 
     const total    = Number(reserva.total    || reserva.precio_base || 0);
     const anticipo = Number(reserva.anticipo || 0);
@@ -232,7 +254,7 @@ function buildPDF(reserva, viajeros, servicios) {
       doc.moveDown(0.5);
     } else {
       viajeros.forEach((v, i) => {
-        const nombre = [v.nombre, v.apellido_paterno, v.apellido_materno]
+        const nombre = [v.nombre, v.ap_paterno, v.ap_materno]
           .filter(Boolean).join(' ') || 'N/A';
         doc.fontSize(10).font('Helvetica-Bold').fillColor('#111')
           .text(`${i + 1}. ${nombre}`);
