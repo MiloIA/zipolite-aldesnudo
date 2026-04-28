@@ -628,6 +628,18 @@ async function submitTravelers() {
     return;
   }
 
+  try {
+    const contractRes = await fetch('/api/generate-contract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reservacion_id: reserva.id }),
+    });
+    const contractData = await contractRes.json();
+    console.log('CONTRACT RESULT:', contractData);
+  } catch (e) {
+    console.error('generate-contract:', e);
+  }
+
   sessionStorage.setItem('reservacion_pendiente', JSON.stringify({
     id: reserva.id,
     metodo: reserva.metodo_pago,

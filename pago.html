@@ -330,12 +330,6 @@ function sendConfirmationOnTransfer() {
       bank_clabe: localStorage.getItem('bank_clabe') || '',
     }),
   }).catch(e => console.error('send-confirmation:', e));
-
-  fetch('/api/generate-contract', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reservacion_id: reserva.id }),
-  }).then(r => r.json()).then(data => console.log('CONTRACT RESULT:', data)).catch(e => console.log('CONTRACT ERROR:', e));
 }
 
 function copyClabe() {
@@ -433,12 +427,6 @@ async function handleCardPayment() {
         bank_clabe: localStorage.getItem('bank_clabe') || '',
       }),
     }).catch(e => console.error('send-confirmation:', e));
-
-    fetch('/api/generate-contract', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reservacion_id: reserva.id }),
-    }).then(r => r.json()).then(data => console.log('CONTRACT RESULT:', data)).catch(e => console.log('CONTRACT ERROR:', e));
 
     sessionStorage.removeItem('reservacion_pendiente');
     showSuccess();
