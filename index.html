@@ -497,6 +497,7 @@ section{padding:56px 18px;}
       </div>
       <div class="fg"><label>Nombre completo</label><input type="text" id="r-nombre" placeholder="Tu nombre completo"></div>
       <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="tu@email.com"></div>
+      <p id="login-hint" style="font-size:0.78rem;color:#888;margin-top:-8px;margin-bottom:4px;">¿Ya tienes cuenta? <a href="#" onclick="closePay();openRegister();return false;" style="color:var(--ocean);font-weight:600;">Inicia sesión para autocompletar</a></p>
       <div class="fg"><label>WhatsApp</label><input type="tel" id="r-whatsapp" placeholder="55 1234 5678"></div>
       <div class="fg"><label>Número de personas</label>
         <select id="m-personas" onchange="calcCotizador()"></select>
@@ -921,6 +922,7 @@ function openPay(id) {
     document.getElementById('r-nombre').value = session?.user?.user_metadata?.full_name || '';
     document.getElementById('r-email').value = session?.user?.email || '';
     document.getElementById('r-whatsapp').value = session?.user?.user_metadata?.whatsapp || '';
+    if (session) document.getElementById('login-hint').style.display = 'none';
   });
   document.getElementById('r-cuanto').value = 'anticipo';
   document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(curPkg.monto_anticipo||3000)} — aparta todos los lugares`;
