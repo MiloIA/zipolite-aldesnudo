@@ -42,10 +42,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Error al obtener viajeros: ' + errViajeros.message });
     }
 
-    // Resolve servicios + fechas desde paquetes si no vienen en la reserva
-    let servicios = 'N/A';
-    let fechaInicioPaquete = null;
-    let fechaFinPaquete    = null;
+    // Resolve servicios + fechas + precio desde paquetes, con fallback a reserva
+    let servicios  = 'N/A';
+    let fechaInicio = reserva.fecha_inicio || reserva.fecha_llegada || null;
+    let fechaFin    = reserva.fecha_fin    || reserva.fecha_salida  || null;
+    let precioPaquete = 0;
 
     if (reserva.incluye) {
       servicios = Array.isArray(reserva.incluye)
@@ -53,25 +54,28 @@ export default async function handler(req, res) {
         : String(reserva.incluye);
     }
 
-    let precioPaquete = 0;
     if (reserva.paquete_nombre) {
-      const { data: paquete } = await supabase
+      const { data: paquete, error: errPaquete } = await supabase
         .from('paquetes')
         .select('incluye, fecha_inicio, fecha_fin, precio')
         .eq('nombre', reserva.paquete_nombre)
         .single();
+      console.log('paquete query filter:', reserva.paquete_nombre);
+      console.log('paquete result:', paquete, 'error:', errPaquete?.message);
       console.log('paquete fechas:', paquete?.fecha_inicio, paquete?.fecha_fin);
-      if (paquete) {
+      if (paquete && !errPaquete) {
         if (!reserva.incluye && paquete.incluye) {
           servicios = Array.isArray(paquete.incluye)
             ? paquete.incluye.join(', ')
             : String(paquete.incluye);
         }
-        fechaInicioPaquete = paquete.fecha_inicio || null;
-        fechaFinPaquete    = paquete.fecha_fin    || null;
-        precioPaquete      = Number(paquete.precio || 0);
+        fechaInicio   = paquete.fecha_inicio || fechaInicio;
+        fechaFin      = paquete.fecha_fin    || fechaFin;
+        precioPaquete = Number(paquete.precio || 0);
       }
     }
+
+    console.log('fechas resueltas:', fechaInicio, fechaFin);
 
     const personas = Number(reserva.personas || 1);
     const total    = precioPaquete > 0
@@ -81,9 +85,9 @@ export default async function handler(req, res) {
     const saldo    = Math.max(0, total - anticipo);
 
     let duracion = reserva.duracion || 'N/A';
-    if (fechaInicioPaquete && fechaFinPaquete) {
-      const d1 = new Date(fechaInicioPaquete);
-      const d2 = new Date(fechaFinPaquete);
+    if (fechaInicio && fechaFin) {
+      const d1 = new Date(fechaInicio);
+      const d2 = new Date(fechaFin);
       if (!isNaN(d1) && !isNaN(d2)) {
         const dias = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
         if (dias > 0) duracion = `${dias} días / ${dias - 1} noches`;
@@ -91,7 +95,7 @@ export default async function handler(req, res) {
     }
 
     console.log('Starting PDF generation');
-    const pdfBuffer = await buildPDF(reserva, viajeros || [], servicios, fechaInicioPaquete, fechaFinPaquete, total, saldo, duracion);
+    const pdfBuffer = await buildPDF(reserva, viajeros || [], servicios, fechaInicio, fechaFin, total, saldo, duracion);
     console.log('PDF generated, size:', pdfBuffer.length);
 
     const fileName = `${reservacion_id}.pdf`;
