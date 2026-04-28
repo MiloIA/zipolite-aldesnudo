@@ -668,7 +668,7 @@ section{padding:56px 18px;}
 </div>
 
 <!-- Modal viajeros admin -->
-<div class="modal-overlay" id="viajeros-modal" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal-overlay" id="viajeros-modal" style="z-index:4000;" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" style="max-width:620px;">
     <button class="modal-close" onclick="document.getElementById('viajeros-modal').classList.remove('open')">✕</button>
     <h3>👥 Viajeros</h3>
@@ -1333,7 +1333,7 @@ function renderReservaciones(list) {
     const btnConfirm = estado !== 'confirmado'
       ? `<button class="btn-res-ok" onclick="confirmarReservacion('${r.id}')">✅ Confirmar</button>` : '';
     const btnDel = `<button class="btn-res-del" onclick="eliminarReservacion('${r.id}')">🗑 Eliminar</button>`;
-    const btnViajeros = `<button class="btn-res-ok" style="background:#0097A7;" onclick="verViajeros('${r.id}','${(r.paquete_nombre||'').replace(/'/g,"\\'")}')">👥 Viajeros</button>`;
+    const btnViajeros = `<button class="btn-res-ok" style="background:#0097A7;" onclick="event.stopPropagation();verViajeros('${r.id}','${(r.paquete_nombre||'').replace(/'/g,"\\'")}')">👥 Viajeros</button>`;
     const btnContrato = r.contrato_url
       ? `<a href="${r.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;padding:5px 10px;background:#1A3A4A;color:#fff;border-radius:6px;font-size:0.78rem;font-weight:600;text-decoration:none;vertical-align:middle;">📄 Contrato</a>`
       : '';
