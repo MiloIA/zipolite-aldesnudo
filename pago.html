@@ -335,7 +335,7 @@ function sendConfirmationOnTransfer() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reservacion_id: reserva.id }),
-  }).catch(e => console.error('generate-contract:', e));
+  }).then(r => r.json()).then(data => console.log('CONTRACT RESULT:', data)).catch(e => console.log('CONTRACT ERROR:', e));
 }
 
 function copyClabe() {
@@ -438,7 +438,7 @@ async function handleCardPayment() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reservacion_id: reserva.id }),
-    }).catch(e => console.error('generate-contract:', e));
+    }).then(r => r.json()).then(data => console.log('CONTRACT RESULT:', data)).catch(e => console.log('CONTRACT ERROR:', e));
 
     sessionStorage.removeItem('reservacion_pendiente');
     showSuccess();
