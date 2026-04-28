@@ -126,10 +126,11 @@ footer a{color:var(--teal);text-decoration:none;}
             <th>Total</th>
             <th>Método</th>
             <th>Estado</th>
+            <th>Contrato</th>
           </tr>
         </thead>
         <tbody id="reservaciones-tbody">
-          <tr><td colspan="7" class="empty-msg">Cargando reservaciones...</td></tr>
+          <tr><td colspan="8" class="empty-msg">Cargando reservaciones...</td></tr>
         </tbody>
       </table>
     </div>
@@ -231,7 +232,7 @@ async function loadReservaciones(email) {
   const tbody = document.getElementById('reservaciones-tbody');
   const { data, error } = await sb.from('reservaciones').select('*').eq('email', email).order('created_at', {ascending: false});
   if (error || !data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">No tienes reservaciones aún.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">No tienes reservaciones aún.</td></tr>';
     return;
   }
   const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
@@ -249,6 +250,7 @@ async function loadReservaciones(email) {
       <td style="font-weight:700;">${fmt(r.total)}</td>
       <td>${fmtMetodo(r.metodo_pago)}</td>
       <td><span class="${badgeClass(estado)}">${estado}</span></td>
+      <td>${r.contrato_url ? `<a href="${r.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 10px;background:#0097A7;color:#fff;border-radius:6px;font-size:0.75rem;font-weight:600;text-decoration:none;white-space:nowrap;">📄 Ver contrato</a>` : '—'}</td>
     </tr>`;
   }).join('');
 }
