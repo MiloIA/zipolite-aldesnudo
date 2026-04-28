@@ -79,6 +79,10 @@ nav{background:var(--white);padding:14px 40px;display:flex;align-items:center;ju
 .success-screen h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:900;color:var(--dark);margin-bottom:10px;}
 .success-screen p{font-size:0.95rem;color:#5a7a86;line-height:1.6;margin-bottom:24px;}
 
+/* ── Trust bar ── */
+.trust-bar{text-align:center;font-size:0.75rem;color:#9ab0b8;margin-top:14px;line-height:1.6;}
+.trust-bar .sep{margin:0 6px;opacity:0.5;}
+
 /* ── Spinner ── */
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -203,6 +207,7 @@ footer a{color:var(--teal);text-decoration:none;}
       <button class="btn-pay" id="btn-pay" onclick="handleCardPayment()">
         💳 Pagar <span id="btn-pay-amount">—</span>
       </button>
+      <p class="trust-bar">🔒 Pago seguro con Stripe <span class="sep">|</span> Visa · Mastercard · Amex <span class="sep">|</span> 🛡️ Tus datos están protegidos con encriptación SSL</p>
     </div>
   </div>
 
