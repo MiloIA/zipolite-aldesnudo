@@ -667,6 +667,16 @@ section{padding:56px 18px;}
   </div>
 </div>
 
+<!-- Modal viajeros admin -->
+<div class="modal-overlay" id="viajeros-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:620px;">
+    <button class="modal-close" onclick="document.getElementById('viajeros-modal').classList.remove('open')">✕</button>
+    <h3>👥 Viajeros</h3>
+    <p class="modal-subtitle" id="viajeros-modal-sub"></p>
+    <div id="viajeros-modal-body" style="font-size:0.88rem;color:#333;"></div>
+  </div>
+</div>
+
 <script>
 const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
 const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
@@ -1323,6 +1333,10 @@ function renderReservaciones(list) {
     const btnConfirm = estado !== 'confirmado'
       ? `<button class="btn-res-ok" onclick="confirmarReservacion('${r.id}')">✅ Confirmar</button>` : '';
     const btnDel = `<button class="btn-res-del" onclick="eliminarReservacion('${r.id}')">🗑 Eliminar</button>`;
+    const btnViajeros = `<button class="btn-res-ok" style="background:#0097A7;" onclick="verViajeros('${r.id}','${(r.paquete_nombre||'').replace(/'/g,"\\'")}')">👥 Viajeros</button>`;
+    const btnContrato = r.contrato_url
+      ? `<a href="${r.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;padding:5px 10px;background:#1A3A4A;color:#fff;border-radius:6px;font-size:0.78rem;font-weight:600;text-decoration:none;vertical-align:middle;">📄 Contrato</a>`
+      : '';
     const td = (extra,content) => `<td style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;${extra||''}">${content}</td>`;
     return `<tr>
       ${td('',fecha)}
@@ -1334,7 +1348,7 @@ function renderReservaciones(list) {
       ${td('text-align:center;',r.personas||'—')}
       ${td('font-weight:700;',fmt(r.total))}
       ${td('','<span class="'+badgeClass(estado)+'">'+estado+'</span>')}
-      ${td('',btnConfirm+btnDel)}
+      ${td('',btnViajeros+' '+btnContrato+' '+btnConfirm+btnDel)}
     </tr>`;
   }).join('');
   c.innerHTML = `<div style="overflow-x:auto;width:100%;"><table style="width:100%;border-collapse:collapse;min-width:600px;">
@@ -1355,6 +1369,46 @@ async function eliminarReservacion(id) {
   if (!confirm('¿Eliminar esta reservación? Esta acción no se puede deshacer.')) return;
   await sb.from('reservaciones').delete().eq('id',id);
   loadReservaciones();
+}
+
+async function verViajeros(reservacionId, paqueteNombre) {
+  const modal = document.getElementById('viajeros-modal');
+  const body  = document.getElementById('viajeros-modal-body');
+  const sub   = document.getElementById('viajeros-modal-sub');
+  body.innerHTML = '<p style="color:#aaa;">Cargando...</p>';
+  sub.textContent = paqueteNombre ? `Reserva: ${paqueteNombre}` : `Folio: ${reservacionId.substring(0,8).toUpperCase()}`;
+  modal.classList.add('open');
+
+  const { data, error } = await sb.from('viajeros').select('*').eq('reservacion_id', reservacionId);
+  if (error || !data || !data.length) {
+    body.innerHTML = '<p style="color:#aaa;">Sin viajeros registrados.</p>';
+    return;
+  }
+
+  body.innerHTML = data.map((v, i) => {
+    const nombre = [v.nombre, v.ap_paterno, v.ap_materno].filter(Boolean).join(' ') || '—';
+    const filas = [
+      ['Nombre',              nombre],
+      ['Fecha de nacimiento', v.fecha_nacimiento || '—'],
+      ['Nacionalidad',        v.nacionalidad     || '—'],
+      ['Correo',              v.correo           || '—'],
+      ['WhatsApp',            v.whatsapp         || '—'],
+      ['Contacto emergencia', v.contacto_emergencia || '—'],
+      v.alergias ? ['Alergias / restricciones', v.alergias] : null,
+    ].filter(Boolean);
+
+    const rows = filas.map(([label, val]) =>
+      `<tr>
+        <td style="padding:5px 10px 5px 0;color:#888;font-weight:600;white-space:nowrap;width:40%;">${label}</td>
+        <td style="padding:5px 0;color:#222;">${val}</td>
+      </tr>`
+    ).join('');
+
+    return `<div style="margin-bottom:18px;padding-bottom:18px;${i < data.length-1 ? 'border-bottom:1px solid #eee;' : ''}">
+      <p style="font-weight:700;color:#0097A7;margin:0 0 8px;">Viajero ${i+1}${v.es_titular ? ' (titular)' : ''}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">${rows}</table>
+    </div>`;
+  }).join('');
 }
 
 function renderAdmPkgs() {
