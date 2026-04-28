@@ -49,6 +49,7 @@ export default async function handler(req, res) {
     .upload(fileName, pdfBuffer, { contentType: 'application/pdf', upsert: true });
 
   if (uploadError) {
+    console.log('upload error detail:', JSON.stringify(uploadError));
     console.log('returning:', { error: 'Error al subir PDF', uploadError });
     return res.status(500).json({ error: 'Error al subir PDF: ' + uploadError.message });
   }
