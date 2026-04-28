@@ -42,12 +42,16 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Error al obtener viajeros: ' + errViajeros.message });
     }
 
+    console.log('Starting PDF generation');
     const pdfBuffer = await buildPDF(reserva, viajeros || []);
+    console.log('PDF generated, size:', pdfBuffer.length);
 
     const fileName = `${reservacion_id}.pdf`;
+    console.log('Uploading to storage');
     const { error: uploadError } = await supabase.storage
       .from('contratos')
       .upload(fileName, pdfBuffer, { contentType: 'application/pdf', upsert: true });
+    console.log('Upload result:', uploadError ? uploadError.message : 'ok');
 
     if (uploadError) {
       console.log('upload error detail:', JSON.stringify(uploadError));
