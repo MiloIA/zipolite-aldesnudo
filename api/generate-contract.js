@@ -2,73 +2,78 @@ import { createClient } from '@supabase/supabase-js';
 import PDFDocument from 'pdfkit';
 
 export default async function handler(req, res) {
-  console.log('generate-contract called', req.method, req.body);
+  try {
+    console.log('generate-contract called', req.method, req.body);
 
-  if (req.method !== 'POST') {
-    console.log('returning:', { error: 'Method not allowed' });
-    return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method !== 'POST') {
+      console.log('returning:', { error: 'Method not allowed' });
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const { reservacion_id } = req.body || {};
+    if (!reservacion_id) {
+      console.log('returning:', { error: 'reservacion_id requerido' });
+      return res.status(400).json({ error: 'reservacion_id requerido' });
+    }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY
+    );
+
+    const { data: reserva, error: errReserva } = await supabase
+      .from('reservaciones')
+      .select('*')
+      .eq('id', reservacion_id)
+      .single();
+
+    if (errReserva || !reserva) {
+      console.log('returning:', { error: 'Reservación no encontrada', errReserva });
+      return res.status(404).json({ error: 'Reservación no encontrada' });
+    }
+
+    const { data: viajeros, error: errViajeros } = await supabase
+      .from('viajeros')
+      .select('*')
+      .eq('reservacion_id', reservacion_id);
+
+    if (errViajeros) {
+      console.log('returning:', { error: 'Error al obtener viajeros', errViajeros });
+      return res.status(500).json({ error: 'Error al obtener viajeros: ' + errViajeros.message });
+    }
+
+    const pdfBuffer = await buildPDF(reserva, viajeros || []);
+
+    const fileName = `${reservacion_id}.pdf`;
+    const { error: uploadError } = await supabase.storage
+      .from('contratos')
+      .upload(fileName, pdfBuffer, { contentType: 'application/pdf', upsert: true });
+
+    if (uploadError) {
+      console.log('upload error detail:', JSON.stringify(uploadError));
+      console.log('returning:', { error: 'Error al subir PDF', uploadError });
+      return res.status(500).json({ error: 'Error al subir PDF: ' + uploadError.message });
+    }
+
+    const { data: urlData } = supabase.storage.from('contratos').getPublicUrl(fileName);
+    const pdfUrl = urlData.publicUrl;
+
+    const { error: updateError } = await supabase
+      .from('reservaciones')
+      .update({ contrato_url: pdfUrl })
+      .eq('id', reservacion_id);
+
+    if (updateError) {
+      console.log('returning:', { error: 'Error al actualizar reservación', updateError });
+      return res.status(500).json({ error: 'Error al actualizar reservación: ' + updateError.message });
+    }
+
+    console.log('returning:', { ok: true, url: pdfUrl });
+    return res.status(200).json({ ok: true, url: pdfUrl });
+  } catch (err) {
+    console.error('FATAL ERROR:', err.message, err.stack);
+    return res.status(500).json({ error: err.message });
   }
-
-  const { reservacion_id } = req.body || {};
-  if (!reservacion_id) {
-    console.log('returning:', { error: 'reservacion_id requerido' });
-    return res.status(400).json({ error: 'reservacion_id requerido' });
-  }
-
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-  );
-
-  const { data: reserva, error: errReserva } = await supabase
-    .from('reservaciones')
-    .select('*')
-    .eq('id', reservacion_id)
-    .single();
-
-  if (errReserva || !reserva) {
-    console.log('returning:', { error: 'Reservación no encontrada', errReserva });
-    return res.status(404).json({ error: 'Reservación no encontrada' });
-  }
-
-  const { data: viajeros, error: errViajeros } = await supabase
-    .from('viajeros')
-    .select('*')
-    .eq('reservacion_id', reservacion_id);
-
-  if (errViajeros) {
-    console.log('returning:', { error: 'Error al obtener viajeros', errViajeros });
-    return res.status(500).json({ error: 'Error al obtener viajeros: ' + errViajeros.message });
-  }
-
-  const pdfBuffer = await buildPDF(reserva, viajeros || []);
-
-  const fileName = `${reservacion_id}.pdf`;
-  const { error: uploadError } = await supabase.storage
-    .from('contratos')
-    .upload(fileName, pdfBuffer, { contentType: 'application/pdf', upsert: true });
-
-  if (uploadError) {
-    console.log('upload error detail:', JSON.stringify(uploadError));
-    console.log('returning:', { error: 'Error al subir PDF', uploadError });
-    return res.status(500).json({ error: 'Error al subir PDF: ' + uploadError.message });
-  }
-
-  const { data: urlData } = supabase.storage.from('contratos').getPublicUrl(fileName);
-  const pdfUrl = urlData.publicUrl;
-
-  const { error: updateError } = await supabase
-    .from('reservaciones')
-    .update({ contrato_url: pdfUrl })
-    .eq('id', reservacion_id);
-
-  if (updateError) {
-    console.log('returning:', { error: 'Error al actualizar reservación', updateError });
-    return res.status(500).json({ error: 'Error al actualizar reservación: ' + updateError.message });
-  }
-
-  console.log('returning:', { ok: true, url: pdfUrl });
-  return res.status(200).json({ ok: true, url: pdfUrl });
 }
 
 function buildPDF(reserva, viajeros) {
