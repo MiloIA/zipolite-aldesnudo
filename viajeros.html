@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Viajeros — Zipolite al Desnudo</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--red:#E8312A;--orange:#F5831F;--yellow:#FFCA28;--green:#4CAF50;--teal:#00BCD4;--purple:#9C27B0;--ocean:#0097A7;--sand:#FFFBF2;--sky:#E0F7FA;--light:#F0FEFF;--dark:#1A3A4A;--white:#FFFFFF;}
+*{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--sand);color:var(--dark);overflow-x:hidden;}
+
+/* ── Rainbow + Nav ── */
+.rainbow-bar{height:6px;background:linear-gradient(90deg,#E8312A 0%,#F5831F 20%,#FFCA28 40%,#4CAF50 60%,#00BCD4 80%,#9C27B0 100%);}
+nav{background:var(--white);padding:14px 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,150,170,0.10);}
+.nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
+.nav-logo-circle{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#006080,#00BCD4);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1rem;font-weight:900;color:white;flex-shrink:0;}
+.nav-logo-text{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;line-height:1.2;color:var(--dark);}
+.nav-logo-text span{display:block;font-size:0.68rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;color:var(--ocean);text-transform:uppercase;letter-spacing:0.1em;}
+.nav-links{display:flex;align-items:center;gap:24px;list-style:none;}
+.nav-links a{text-decoration:none;color:var(--dark);font-size:0.88rem;font-weight:500;transition:color 0.2s;}
+.nav-links a:hover{color:var(--ocean);}
+.nav-cta{background:var(--red)!important;color:white!important;padding:9px 20px;border-radius:100px;font-weight:600!important;}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none;}
+.hamburger span{display:block;width:24px;height:2px;background:var(--dark);border-radius:2px;transition:all 0.3s;}
+
+/* ── Page content ── */
+.page-wrap{max-width:780px;margin:0 auto;padding:48px 24px 80px;}
+
+/* ── Reservation header ── */
+.res-header{background:linear-gradient(135deg,#006080,#00ACC1);color:white;border-radius:20px;padding:28px 32px;margin-bottom:36px;position:relative;overflow:hidden;}
+.res-header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:rgba(255,255,255,0.08);border-radius:50%;}
+.res-header::after{content:'';position:absolute;bottom:-30px;left:60px;width:100px;height:100px;background:rgba(255,255,255,0.05);border-radius:50%;}
+.res-badge{display:inline-block;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);padding:4px 14px;border-radius:100px;font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:14px;}
+.res-header h1{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:900;margin-bottom:8px;line-height:1.15;}
+.res-meta{display:flex;gap:24px;flex-wrap:wrap;margin-top:18px;}
+.res-meta-item{display:flex;flex-direction:column;gap:2px;}
+.res-meta-item label{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.7;font-weight:600;}
+.res-meta-item span{font-size:0.95rem;font-weight:600;}
+.res-total{margin-left:auto;text-align:right;}
+.res-total label{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.7;font-weight:600;display:block;}
+.res-total .amount{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;}
+
+/* ── Loading state ── */
+#loading-state{text-align:center;padding:80px 20px;color:#aaa;}
+.spinner{display:inline-block;width:40px;height:40px;border:3px solid #e0f0f2;border-top-color:var(--ocean);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loading-state p{font-size:0.95rem;}
+
+/* ── Traveler form card ── */
+.traveler-card{background:white;border-radius:20px;padding:28px 32px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,150,170,0.08);border:1.5px solid rgba(0,188,212,0.10);}
+.traveler-card.first{border-color:rgba(0,150,170,0.25);}
+.traveler-title{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.traveler-num{width:36px;height:36px;border-radius:50%;background:var(--ocean);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;flex-shrink:0;}
+.traveler-card.first .traveler-num{background:linear-gradient(135deg,#E8312A,#F5831F);}
+.traveler-title h3{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:800;color:var(--dark);}
+.traveler-title .titular-badge{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;background:var(--sky);color:var(--ocean);padding:3px 10px;border-radius:100px;}
+
+/* ── Form fields ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid.three{grid-template-columns:1fr 1fr 1fr;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+.form-group label{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7a9aaa;}
+.form-group input,.form-group select{width:100%;padding:11px 14px;border:1.5px solid #dde8ea;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.93rem;color:var(--dark);background:var(--sand);outline:none;transition:border-color 0.2s,background 0.2s;}
+.form-group input:focus,.form-group select:focus{border-color:var(--ocean);background:white;}
+.form-group input.error,.form-group select.error{border-color:var(--red)!important;background:#fff5f5;}
+.field-error{font-size:0.75rem;color:var(--red);margin-top:2px;display:none;}
+.passport-field{display:none;}
+.passport-field.show{display:flex;}
+.optional-label{font-size:0.7rem;color:#bbb;font-weight:400;margin-left:4px;}
+
+/* ── Terms section ── */
+.terms-section{background:white;border-radius:20px;padding:28px 32px;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,150,170,0.08);}
+.terms-section h3{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:800;margin-bottom:18px;color:var(--dark);}
+.terms-bullets{list-style:none;margin-bottom:22px;}
+.terms-bullets li{display:flex;align-items:flex-start;gap:10px;padding:9px 0;font-size:0.88rem;color:#3a5060;line-height:1.55;border-bottom:1px solid #f0f4f6;}
+.terms-bullets li:last-child{border-bottom:none;}
+.term-dot{width:8px;height:8px;border-radius:50%;background:var(--ocean);flex-shrink:0;margin-top:6px;}
+.terms-link{display:inline-block;font-size:0.83rem;color:var(--ocean);font-weight:600;text-decoration:underline;cursor:pointer;margin-bottom:20px;}
+.terms-link:hover{color:#006080;}
+.terms-check{display:flex;align-items:flex-start;gap:12px;cursor:pointer;}
+.terms-check input[type="checkbox"]{width:20px;height:20px;border-radius:5px;border:2px solid #ccc;cursor:pointer;flex-shrink:0;margin-top:1px;accent-color:var(--ocean);}
+.terms-check-label{font-size:0.88rem;color:var(--dark);line-height:1.5;font-weight:500;}
+.terms-check.error-check input{outline:2px solid var(--red);}
+
+/* ── Submit button ── */
+.submit-wrap{text-align:center;}
+.btn-submit{display:inline-flex;align-items:center;gap:10px;padding:16px 40px;background:var(--red);color:white;border:none;border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 6px 24px rgba(232,49,42,0.35);transition:transform 0.2s,box-shadow 0.2s;}
+.btn-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 32px rgba(232,49,42,0.4);}
+.btn-submit:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
+.btn-submit .arrow{font-size:1.1rem;transition:transform 0.2s;}
+.btn-submit:hover:not(:disabled) .arrow{transform:translateX(4px);}
+#submit-error{color:var(--red);font-size:0.85rem;margin-top:12px;display:none;}
+
+/* ── Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,40,60,0.55);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal-box{background:white;border-radius:20px;width:90%;max-width:660px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;}
+.modal-head{padding:22px 28px;border-bottom:1px solid #e8f4f5;display:flex;justify-content:space-between;align-items:center;}
+.modal-head h3{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:800;color:var(--dark);}
+.modal-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#aaa;line-height:1;padding:4px 8px;transition:color 0.2s;}
+.modal-close:hover{color:var(--dark);}
+.modal-body{padding:24px 28px;overflow-y:auto;font-size:0.88rem;color:#3a5060;line-height:1.7;}
+.modal-body h4{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:var(--dark);margin:18px 0 6px;}
+.modal-body h4:first-child{margin-top:0;}
+.modal-body p{margin-bottom:12px;}
+.modal-body ul{padding-left:20px;margin-bottom:12px;}
+.modal-body ul li{margin-bottom:6px;}
+
+/* ── WhatsApp float ── */
+.whatsapp-float{position:fixed;bottom:26px;right:26px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+.wa-bubble{background:white;border-radius:12px;padding:9px 15px;font-size:0.8rem;font-weight:500;color:var(--dark);box-shadow:0 4px 18px rgba(0,0,0,0.10);animation:floatY 3s ease-in-out infinite;}
+.wa-btn{width:56px;height:56px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 18px rgba(37,211,102,0.45);font-size:1.5rem;transition:transform 0.2s;}
+.wa-btn:hover{transform:scale(1.1);}
+@keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+
+/* ── Footer ── */
+footer{background:#0a2030;color:rgba(255,255,255,0.45);text-align:center;padding:22px 40px;font-size:0.8rem;}
+footer a{color:var(--teal);text-decoration:none;}
+
+/* ── Mobile ── */
+@media(max-width:768px){
+  nav{padding:12px 18px;position:relative;}
+  .nav-links{display:none;}
+  .nav-links.mobile-open{display:flex;flex-direction:column;position:absolute;top:100%;left:0;right:0;background:#fff;box-shadow:0 8px 28px rgba(0,150,170,0.18);padding:10px 0 18px;gap:0;z-index:200;list-style:none;margin:0;}
+  .nav-links.mobile-open li{border-bottom:1px solid #f0f4f6;}
+  .nav-links.mobile-open a{display:block;padding:15px 22px;font-size:1rem;}
+  .hamburger{display:flex;}
+  .page-wrap{padding:28px 16px 60px;}
+  .res-header{padding:22px 20px;}
+  .res-header h1{font-size:1.4rem;}
+  .res-meta{gap:14px;}
+  .res-total{margin-left:0;}
+  .traveler-card{padding:20px 18px;}
+  .form-grid{grid-template-columns:1fr;}
+  .form-grid.three{grid-template-columns:1fr;}
+  .terms-section{padding:20px 18px;}
+  .modal-box{width:95%;max-height:90vh;}
+  .modal-head,.modal-body{padding:18px 20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="rainbow-bar"></div>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-circle">ZD</div>
+    <div class="nav-logo-text">Zipolite al Desnudo<span>Agencia de Viajes LGBT+</span></div>
+  </a>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html#paquetes">Paquetes</a></li>
+    <li><a href="index.html#galeria">Galería</a></li>
+    <li><a href="index.html#testimonios">Reseñas</a></li>
+    <li><a href="index.html#blog-section">Blog</a></li>
+    <li><a href="index.html#redes">Contacto</a></li>
+    <li><a href="index.html#paquetes" class="nav-cta">¡Reservar!</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="page-wrap">
+  <!-- Loading -->
+  <div id="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando tu reservación...</p>
+  </div>
+
+  <!-- Main content (hidden until loaded) -->
+  <div id="main-content" style="display:none;">
+
+    <!-- Reservation header -->
+    <div class="res-header" id="res-header">
+      <div class="res-badge">Registro de Viajeros</div>
+      <h1 id="res-pkg-name">—</h1>
+      <div class="res-meta">
+        <div class="res-meta-item">
+          <label>Folio de reserva</label>
+          <span id="res-folio">—</span>
+        </div>
+        <div class="res-meta-item">
+          <label>Fechas</label>
+          <span id="res-fechas">—</span>
+        </div>
+        <div class="res-meta-item">
+          <label>Viajeros</label>
+          <span id="res-personas">—</span>
+        </div>
+        <div class="res-meta-item res-total">
+          <label>Total</label>
+          <span class="amount" id="res-total">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Traveler forms container -->
+    <div id="travelers-container"></div>
+
+    <!-- Terms & conditions -->
+    <div class="terms-section">
+      <h3>Términos y Condiciones</h3>
+      <ul class="terms-bullets">
+        <li>
+          <div class="term-dot"></div>
+          <span><strong>Anticipo:</strong> Se requiere un anticipo del 30% del total al momento de reservar para confirmar tu lugar en el viaje.</span>
+        </li>
+        <li>
+          <div class="term-dot"></div>
+          <span><strong>Liquidación:</strong> El saldo restante deberá cubrirse a más tardar <strong>10 días naturales antes</strong> de la fecha de salida. De no hacerse, INFINITY JOURNEY BY MÉXICO S.A.S. podrá cancelar la reserva sin reembolso del anticipo.</span>
+        </li>
+        <li>
+          <div class="term-dot"></div>
+          <span><strong>Cancelación por el viajero (más de 30 días antes):</strong> Reembolso del 50% del anticipo pagado. La otra mitad cubre gastos administrativos y de reserva.</span>
+        </li>
+        <li>
+          <div class="term-dot"></div>
+          <span><strong>Cancelación por el viajero (15–29 días antes):</strong> Sin reembolso del anticipo. El saldo adicional pagado se devuelve en su totalidad.</span>
+        </li>
+        <li>
+          <div class="term-dot"></div>
+          <span><strong>Cancelación (menos de 15 días antes):</strong> Sin reembolso de ningún pago realizado.</span>
+        </li>
+        <li>
+          <div class="term-dot"></div>
+          <span><strong>Responsabilidad:</strong> INFINITY JOURNEY BY MÉXICO S.A.S. no se hace responsable por pérdidas, robos, accidentes o situaciones ajenas al servicio contratado. Se recomienda contratar un seguro de viaje.</span>
+        </li>
+        <li>
+          <div class="term-dot"></div>
+          <span><strong>Cambios al itinerario:</strong> La agencia se reserva el derecho de ajustar actividades por causas de fuerza mayor, garantizando siempre servicios de igual o mayor valor.</span>
+        </li>
+        <li>
+          <div class="term-dot"></div>
+          <span><strong>Documentación:</strong> Es responsabilidad de cada viajero contar con los documentos migratorios y de identidad válidos. La agencia no se responsabiliza por negativas de embarque por documentación incompleta.</span>
+        </li>
+      </ul>
+
+      <span class="terms-link" onclick="openTermsModal()">Ver contrato completo</span>
+
+      <label class="terms-check" id="terms-check-label">
+        <input type="checkbox" id="terms-checkbox">
+        <span class="terms-check-label">He leído y acepto los términos y condiciones del contrato de prestación de servicios turísticos de <strong>INFINITY JOURNEY BY MÉXICO S.A.S.</strong></span>
+      </label>
+    </div>
+
+    <!-- Submit -->
+    <div class="submit-wrap">
+      <button class="btn-submit" id="submit-btn" onclick="submitTravelers()">
+        Confirmar viajeros <span class="arrow">→</span>
+      </button>
+      <p id="submit-error"></p>
+    </div>
+
+  </div><!-- /#main-content -->
+</div><!-- /.page-wrap -->
+
+<footer>
+  <p>© 2025 Zipolite al Desnudo · Agencia de Viajes LGBT+ · CDMX, México</p>
+</footer>
+
+<div class="whatsapp-float">
+  <div class="wa-bubble">¿Dudas? ¡Escríbenos! 👋</div>
+  <a href="https://wa.me/529582199953" target="_blank" class="wa-btn">💬</a>
+</div>
+
+<!-- Terms modal -->
+<div class="modal-overlay" id="terms-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Contrato de Prestación de Servicios Turísticos</h3>
+      <button class="modal-close" onclick="closeTermsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <h4>INFINITY JOURNEY BY MÉXICO S.A.S. DE C.V.</h4>
+      <p>El presente contrato regula la relación entre <strong>INFINITY JOURNEY BY MÉXICO S.A.S. DE C.V.</strong> (en adelante "la Agencia") y el cliente (en adelante "el Viajero") para la prestación de servicios turísticos.</p>
+
+      <h4>1. Objeto del Contrato</h4>
+      <p>La Agencia se compromete a prestar los servicios turísticos detallados en la cotización aceptada por el Viajero, incluyendo hospedaje, transportación, actividades y servicios descritos en el paquete seleccionado.</p>
+
+      <h4>2. Forma de Pago</h4>
+      <p>Para confirmar la reservación se requiere un anticipo del <strong>30% del costo total</strong> del paquete. El saldo restante deberá liquidarse a más tardar <strong>10 días naturales antes</strong> de la fecha de inicio del viaje. El pago puede realizarse mediante transferencia bancaria, depósito o los métodos indicados por la Agencia.</p>
+
+      <h4>3. Política de Cancelación por parte del Viajero</h4>
+      <ul>
+        <li><strong>Más de 30 días antes del viaje:</strong> Reembolso del 50% del anticipo pagado.</li>
+        <li><strong>Entre 15 y 29 días antes del viaje:</strong> Pérdida total del anticipo. Se reembolsa cualquier saldo adicional pagado.</li>
+        <li><strong>Menos de 15 días antes del viaje:</strong> Sin reembolso de ningún concepto.</li>
+        <li>Toda cancelación deberá notificarse por escrito a la Agencia.</li>
+      </ul>
+
+      <h4>4. Cancelación por parte de la Agencia</h4>
+      <p>En caso de que la Agencia cancele el servicio por causas imputables a ella, se reembolsará el 100% de los pagos realizados. Por causas de fuerza mayor (desastres naturales, emergencias sanitarias, etc.), se ofrecerá fecha alternativa o un crédito a favor.</p>
+
+      <h4>5. Modificaciones al Itinerario</h4>
+      <p>La Agencia se reserva el derecho de realizar ajustes al itinerario cuando circunstancias extraordinarias así lo requieran, garantizando en todo caso servicios de calidad equivalente o superior sin costo adicional para el Viajero.</p>
+
+      <h4>6. Responsabilidades del Viajero</h4>
+      <ul>
+        <li>Contar con documentos de identidad y migratorios vigentes y válidos.</li>
+        <li>Informar oportunamente sobre condiciones médicas, alergias o restricciones relevantes.</li>
+        <li>Cumplir con los horarios y disposiciones del programa del viaje.</li>
+        <li>Contratar seguro de viaje (recomendado; no incluido salvo indicación expresa).</li>
+        <li>Respetar las normas de los establecimientos y destinos visitados.</li>
+      </ul>
+
+      <h4>7. Limitación de Responsabilidad</h4>
+      <p>La Agencia no será responsable por pérdidas, robos, accidentes personales, enfermedades, daños a terceros, ni por situaciones derivadas de caso fortuito o fuerza mayor. Tampoco por negativas de embarque, migración o acceso a instalaciones derivadas de documentación insuficiente del Viajero.</p>
+
+      <h4>8. Protección de Datos Personales</h4>
+      <p>Los datos personales proporcionados serán utilizados exclusivamente para la prestación de los servicios contratados, en cumplimiento con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.</p>
+
+      <h4>9. Jurisdicción</h4>
+      <p>Para cualquier controversia derivada del presente contrato, las partes se someten a los tribunales competentes de la Ciudad de México, renunciando a cualquier otro fuero que pudiere corresponderles.</p>
+
+      <h4>10. Aceptación</h4>
+      <p>Al marcar la casilla de aceptación y enviar el registro de viajeros, el Viajero declara haber leído, comprendido y aceptado en su totalidad los términos y condiciones del presente contrato.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
+const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+let reserva = null;
+
+// ── Init ──────────────────────────────────────────────
+(async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const resId = params.get('reservacion');
+  if (!resId) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  const { data, error } = await sb
+    .from('reservaciones')
+    .select('*')
+    .eq('id', resId)
+    .single();
+
+  if (error || !data) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  reserva = data;
+  populateHeader(reserva);
+  buildForms(reserva);
+
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+})();
+
+// ── Header ────────────────────────────────────────────
+function populateHeader(r) {
+  document.getElementById('res-pkg-name').textContent = r.paquete || r.nombre_paquete || 'Paquete de viaje';
+  document.getElementById('res-folio').textContent = '#' + String(r.id).slice(0, 8).toUpperCase();
+
+  const fechaInicio = r.fecha_inicio || r.fecha_salida || r.fechas || '';
+  const fechaFin = r.fecha_fin || r.fecha_regreso || '';
+  document.getElementById('res-fechas').textContent = fechaInicio
+    ? (fechaFin ? fmtDate(fechaInicio) + ' – ' + fmtDate(fechaFin) : fmtDate(fechaInicio))
+    : 'Por confirmar';
+
+  const personas = parseInt(r.personas || r.num_personas || r.viajeros || 1, 10);
+  document.getElementById('res-personas').textContent = personas + ' ' + (personas === 1 ? 'persona' : 'personas');
+
+  const total = r.total || r.precio_total || r.monto_total || 0;
+  document.getElementById('res-total').textContent = total
+    ? '$' + Number(total).toLocaleString('es-MX', { minimumFractionDigits: 0 }) + ' MXN'
+    : '—';
+}
+
+function fmtDate(str) {
+  if (!str) return str;
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// ── Build traveler forms ──────────────────────────────
+function buildForms(r) {
+  const count = parseInt(r.personas || r.num_personas || r.viajeros || 1, 10);
+  const container = document.getElementById('travelers-container');
+  container.innerHTML = '';
+
+  for (let i = 1; i <= count; i++) {
+    container.appendChild(createTravelerCard(i, count, r));
+  }
+}
+
+function createTravelerCard(num, total, r) {
+  const isFirst = num === 1;
+  const card = document.createElement('div');
+  card.className = 'traveler-card' + (isFirst ? ' first' : '');
+  card.id = 'traveler-' + num;
+
+  const titleLabel = isFirst
+    ? `<h3>Viajero ${num}</h3><span class="titular-badge">Titular</span>`
+    : `<h3>Viajero ${num}</h3>`;
+
+  card.innerHTML = `
+    <div class="traveler-title">
+      <div class="traveler-num">${num}</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        ${titleLabel}
+      </div>
+    </div>
+
+    <div class="form-grid three">
+      <div class="form-group">
+        <label>Nombre(s) *</label>
+        <input type="text" id="t${num}_nombre" placeholder="Nombre(s)" autocomplete="given-name"
+          value="${isFirst ? esc(getFirstName(r.nombre || r.name || '')) : ''}">
+        <span class="field-error" id="err-t${num}_nombre">Requerido</span>
+      </div>
+      <div class="form-group">
+        <label>Apellido paterno *</label>
+        <input type="text" id="t${num}_ap_paterno" placeholder="Apellido paterno"
+          value="${isFirst ? esc(getPaternalName(r.nombre || r.name || '')) : ''}">
+        <span class="field-error" id="err-t${num}_ap_paterno">Requerido</span>
+      </div>
+      <div class="form-group">
+        <label>Apellido materno</label>
+        <input type="text" id="t${num}_ap_materno" placeholder="Apellido materno">
+      </div>
+    </div>
+
+    <div class="form-grid" style="margin-top:14px;">
+      <div class="form-group">
+        <label>Fecha de nacimiento *</label>
+        <input type="date" id="t${num}_fecha_nac">
+        <span class="field-error" id="err-t${num}_fecha_nac">Requerido</span>
+      </div>
+      <div class="form-group">
+        <label>Nacionalidad *</label>
+        <select id="t${num}_nacionalidad" onchange="togglePassport(${num})">
+          <option value="Mexicana" selected>🇲🇽 Mexicana</option>
+          <option value="Extranjero">🌍 Extranjero</option>
+        </select>
+      </div>
+      <div class="form-group passport-field" id="passport-wrap-${num}">
+        <label>Número de pasaporte *</label>
+        <input type="text" id="t${num}_pasaporte" placeholder="Pasaporte">
+        <span class="field-error" id="err-t${num}_pasaporte">Requerido</span>
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico *</label>
+        <input type="email" id="t${num}_correo" placeholder="correo@ejemplo.com" autocomplete="email"
+          value="${isFirst ? esc(r.correo || r.email || '') : ''}">
+        <span class="field-error" id="err-t${num}_correo">Correo inválido</span>
+      </div>
+    </div>
+
+    <div class="form-grid" style="margin-top:14px;">
+      <div class="form-group">
+        <label>WhatsApp / Telegram *</label>
+        <input type="tel" id="t${num}_whatsapp" placeholder="+52 55 1234 5678"
+          value="${isFirst ? esc(r.whatsapp || r.telefono || r.phone || '') : ''}">
+        <span class="field-error" id="err-t${num}_whatsapp">Requerido</span>
+      </div>
+      <div class="form-group">
+        <label>Contacto de emergencia *</label>
+        <input type="text" id="t${num}_emergencia" placeholder="Nombre y teléfono">
+        <span class="field-error" id="err-t${num}_emergencia">Requerido</span>
+      </div>
+      <div class="form-group full">
+        <label>Restricciones alimentarias / alergias <span class="optional-label">(opcional)</span></label>
+        <input type="text" id="t${num}_alergias" placeholder="Vegetariano, celiaco, alergia a mariscos...">
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
+// ── Helpers to pre-fill name ──────────────────────────
+function getFirstName(fullName) {
+  if (!fullName) return '';
+  const parts = fullName.trim().split(/\s+/);
+  return parts[0] || '';
+}
+function getPaternalName(fullName) {
+  if (!fullName) return '';
+  const parts = fullName.trim().split(/\s+/);
+  return parts[1] || '';
+}
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/"/g,'&quot;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
+
+// ── Passport visibility ───────────────────────────────
+function togglePassport(num) {
+  const sel = document.getElementById('t' + num + '_nacionalidad');
+  const wrap = document.getElementById('passport-wrap-' + num);
+  if (sel.value === 'Extranjero') {
+    wrap.classList.add('show');
+  } else {
+    wrap.classList.remove('show');
+    const inp = document.getElementById('t' + num + '_pasaporte');
+    if (inp) { inp.value = ''; inp.classList.remove('error'); }
+    const err = document.getElementById('err-t' + num + '_pasaporte');
+    if (err) err.style.display = 'none';
+  }
+}
+
+// ── Terms modal ───────────────────────────────────────
+function openTermsModal() {
+  document.getElementById('terms-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeTermsModal() {
+  document.getElementById('terms-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('terms-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeTermsModal();
+});
+
+// ── Validation ────────────────────────────────────────
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validateForms() {
+  const count = parseInt(reserva.personas || reserva.num_personas || reserva.viajeros || 1, 10);
+  let ok = true;
+
+  for (let i = 1; i <= count; i++) {
+    const fields = ['nombre', 'ap_paterno', 'fecha_nac', 'whatsapp', 'emergencia'];
+    fields.forEach(f => {
+      const el = document.getElementById('t' + i + '_' + f);
+      const err = document.getElementById('err-t' + i + '_' + f);
+      if (!el || !err) return;
+      if (!el.value.trim()) {
+        el.classList.add('error');
+        err.style.display = 'block';
+        ok = false;
+      } else {
+        el.classList.remove('error');
+        err.style.display = 'none';
+      }
+    });
+
+    // Email
+    const correoEl = document.getElementById('t' + i + '_correo');
+    const correoErr = document.getElementById('err-t' + i + '_correo');
+    if (correoEl && correoErr) {
+      if (!correoEl.value.trim() || !validateEmail(correoEl.value.trim())) {
+        correoEl.classList.add('error');
+        correoErr.style.display = 'block';
+        ok = false;
+      } else {
+        correoEl.classList.remove('error');
+        correoErr.style.display = 'none';
+      }
+    }
+
+    // Passport if foreign
+    const selNac = document.getElementById('t' + i + '_nacionalidad');
+    if (selNac && selNac.value === 'Extranjero') {
+      const pasEl = document.getElementById('t' + i + '_pasaporte');
+      const pasErr = document.getElementById('err-t' + i + '_pasaporte');
+      if (pasEl && pasErr) {
+        if (!pasEl.value.trim()) {
+          pasEl.classList.add('error');
+          pasErr.style.display = 'block';
+          ok = false;
+        } else {
+          pasEl.classList.remove('error');
+          pasErr.style.display = 'none';
+        }
+      }
+    }
+  }
+
+  // Terms
+  const chk = document.getElementById('terms-checkbox');
+  const chkLabel = document.getElementById('terms-check-label');
+  if (!chk.checked) {
+    chkLabel.classList.add('error-check');
+    ok = false;
+  } else {
+    chkLabel.classList.remove('error-check');
+  }
+
+  return ok;
+}
+
+// ── Submit ────────────────────────────────────────────
+async function submitTravelers() {
+  if (!validateForms()) {
+    document.getElementById('submit-error').textContent = 'Por favor completa todos los campos requeridos y acepta los términos.';
+    document.getElementById('submit-error').style.display = 'block';
+    document.querySelector('.traveler-card .error, .terms-check.error-check')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  document.getElementById('submit-error').style.display = 'none';
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;"></span> Guardando...';
+
+  const count = parseInt(reserva.personas || reserva.num_personas || reserva.viajeros || 1, 10);
+  const rows = [];
+
+  for (let i = 1; i <= count; i++) {
+    const selNac = document.getElementById('t' + i + '_nacionalidad');
+    const row = {
+      reservacion_id: reserva.id,
+      numero_viajero: i,
+      nombre: val('t' + i + '_nombre'),
+      ap_paterno: val('t' + i + '_ap_paterno'),
+      ap_materno: val('t' + i + '_ap_materno'),
+      fecha_nacimiento: val('t' + i + '_fecha_nac'),
+      nacionalidad: selNac ? selNac.value : 'Mexicana',
+      pasaporte: selNac && selNac.value === 'Extranjero' ? val('t' + i + '_pasaporte') : null,
+      correo: val('t' + i + '_correo'),
+      whatsapp: val('t' + i + '_whatsapp'),
+      contacto_emergencia: val('t' + i + '_emergencia'),
+      alergias: val('t' + i + '_alergias') || null,
+      es_titular: i === 1
+    };
+    rows.push(row);
+  }
+
+  const { error } = await sb.from('viajeros').insert(rows);
+
+  if (error) {
+    btn.disabled = false;
+    btn.innerHTML = 'Confirmar viajeros <span class="arrow">→</span>';
+    document.getElementById('submit-error').textContent = 'Ocurrió un error al guardar: ' + (error.message || 'intenta de nuevo.');
+    document.getElementById('submit-error').style.display = 'block';
+    return;
+  }
+
+  window.location.href = 'index.html?registro=exitoso';
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+// ── Hamburger menu ────────────────────────────────────
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('nav-links').classList.toggle('mobile-open');
+});
+</script>
+</body>
+</html>
