@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Completa tu pago — Zipolite al Desnudo</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+:root{--red:#E8312A;--orange:#F5831F;--yellow:#FFCA28;--green:#4CAF50;--teal:#00BCD4;--purple:#9C27B0;--ocean:#0097A7;--sand:#FFFBF2;--sky:#E0F7FA;--light:#F0FEFF;--dark:#1A3A4A;--white:#FFFFFF;}
+*{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--sand);color:var(--dark);overflow-x:hidden;}
+
+/* ── Rainbow + Nav ── */
+.rainbow-bar{height:6px;background:linear-gradient(90deg,#E8312A 0%,#F5831F 20%,#FFCA28 40%,#4CAF50 60%,#00BCD4 80%,#9C27B0 100%);}
+nav{background:var(--white);padding:14px 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,150,170,0.10);}
+.nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
+.nav-logo-circle{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#006080,#00BCD4);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1rem;font-weight:900;color:white;flex-shrink:0;}
+.nav-logo-text{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;line-height:1.2;color:var(--dark);}
+.nav-logo-text span{display:block;font-size:0.68rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;color:var(--ocean);text-transform:uppercase;letter-spacing:0.1em;}
+.nav-links{display:flex;align-items:center;gap:24px;list-style:none;}
+.nav-links a{text-decoration:none;color:var(--dark);font-size:0.88rem;font-weight:500;transition:color 0.2s;}
+.nav-links a:hover{color:var(--ocean);}
+.nav-cta{background:var(--red)!important;color:white!important;padding:9px 20px;border-radius:100px;font-weight:600!important;}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none;}
+.hamburger span{display:block;width:24px;height:2px;background:var(--dark);border-radius:2px;transition:all 0.3s;}
+
+/* ── Page wrap ── */
+.page-wrap{max-width:680px;margin:0 auto;padding:48px 24px 80px;}
+
+/* ── Payment header ── */
+.pay-header{background:linear-gradient(135deg,#006080,#00ACC1);color:white;border-radius:20px;padding:28px 32px;margin-bottom:32px;position:relative;overflow:hidden;}
+.pay-header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:rgba(255,255,255,0.08);border-radius:50%;}
+.pay-header::after{content:'';position:absolute;bottom:-30px;left:60px;width:100px;height:100px;background:rgba(255,255,255,0.05);border-radius:50%;}
+.pay-badge{display:inline-block;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);padding:4px 14px;border-radius:100px;font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:14px;}
+.pay-header h1{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:900;margin-bottom:20px;line-height:1.15;}
+.pay-summary{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.pay-summary-item{display:flex;flex-direction:column;gap:3px;}
+.pay-summary-item label{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.7;font-weight:600;}
+.pay-summary-item span{font-size:0.95rem;font-weight:600;}
+.pay-summary-item.highlight span{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:900;}
+
+/* ── Cards ── */
+.pay-card{background:white;border-radius:20px;padding:28px 32px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,150,170,0.08);border:1.5px solid rgba(0,188,212,0.10);}
+.pay-card h2{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:800;margin-bottom:20px;color:var(--dark);}
+
+/* ── Transfer section ── */
+.transfer-box{background:#FFFDE7;border:1.5px solid #FFE082;border-radius:14px;padding:22px 24px;margin-bottom:22px;}
+.transfer-box h3{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:800;color:#5a4000;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.transfer-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(0,0,0,0.07);font-size:0.9rem;}
+.transfer-row:last-child{border-bottom:none;}
+.transfer-row .t-label{color:#888;font-weight:500;}
+.transfer-row .t-value{font-weight:700;color:var(--dark);}
+.transfer-row .t-value.amount{font-family:'Fraunces',serif;font-size:1.2rem;color:var(--green);}
+.transfer-row .t-value.ref{font-family:monospace;font-size:0.95rem;background:#f0f4f6;padding:3px 9px;border-radius:6px;letter-spacing:0.06em;}
+.copy-btn{background:none;border:none;cursor:pointer;font-size:0.8rem;color:var(--ocean);font-weight:600;margin-left:8px;text-decoration:underline;}
+.copy-btn:hover{color:#006080;}
+
+/* ── Buttons ── */
+.btn-wa{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;text-decoration:none;box-shadow:0 6px 22px rgba(37,211,102,0.35);transition:transform 0.2s,box-shadow 0.2s;margin-bottom:12px;}
+.btn-wa:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(37,211,102,0.45);}
+.btn-secondary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:white;color:var(--dark);border:2px solid rgba(0,150,170,0.25);border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+.btn-secondary:hover{border-color:var(--ocean);background:var(--sky);}
+.btn-pay{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:var(--red);color:white;border:none;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 6px 22px rgba(232,49,42,0.35);transition:transform 0.2s,box-shadow 0.2s;margin-top:20px;}
+.btn-pay:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 30px rgba(232,49,42,0.4);}
+.btn-pay:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
+
+/* ── Stripe element ── */
+#stripe-card-element{border:1.5px solid #dde8ea;border-radius:10px;padding:13px 14px;background:var(--sand);transition:border-color 0.2s;}
+#stripe-card-element.StripeElement--focus{border-color:var(--ocean);background:white;}
+#stripe-card-element.StripeElement--invalid{border-color:var(--red);background:#fff5f5;}
+#stripe-error{color:var(--red);font-size:0.85rem;margin-top:10px;display:none;}
+.stripe-label{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7a9aaa;margin-bottom:8px;display:block;}
+
+/* ── Success screen ── */
+.success-screen{text-align:center;padding:20px 0;}
+.success-icon{width:80px;height:80px;background:linear-gradient(135deg,#4CAF50,#81C784);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto 20px;box-shadow:0 8px 28px rgba(76,175,80,0.35);}
+.success-screen h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:900;color:var(--dark);margin-bottom:10px;}
+.success-screen p{font-size:0.95rem;color:#5a7a86;line-height:1.6;margin-bottom:24px;}
+
+/* ── Spinner ── */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── WhatsApp float ── */
+.whatsapp-float{position:fixed;bottom:26px;right:26px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+.wa-bubble{background:white;border-radius:12px;padding:9px 15px;font-size:0.8rem;font-weight:500;color:var(--dark);box-shadow:0 4px 18px rgba(0,0,0,0.10);animation:floatY 3s ease-in-out infinite;}
+.wa-btn{width:56px;height:56px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 18px rgba(37,211,102,0.45);font-size:1.5rem;transition:transform 0.2s;}
+.wa-btn:hover{transform:scale(1.1);}
+@keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+
+/* ── Footer ── */
+footer{background:#0a2030;color:rgba(255,255,255,0.45);text-align:center;padding:22px 40px;font-size:0.8rem;}
+footer a{color:var(--teal);text-decoration:none;}
+
+/* ── Mobile ── */
+@media(max-width:768px){
+  nav{padding:12px 18px;position:relative;}
+  .nav-links{display:none;}
+  .nav-links.mobile-open{display:flex;flex-direction:column;position:absolute;top:100%;left:0;right:0;background:#fff;box-shadow:0 8px 28px rgba(0,150,170,0.18);padding:10px 0 18px;gap:0;z-index:200;list-style:none;margin:0;}
+  .nav-links.mobile-open li{border-bottom:1px solid #f0f4f6;}
+  .nav-links.mobile-open a{display:block;padding:15px 22px;font-size:1rem;}
+  .hamburger{display:flex;}
+  .page-wrap{padding:28px 16px 60px;}
+  .pay-header{padding:22px 20px;}
+  .pay-header h1{font-size:1.4rem;}
+  .pay-summary{grid-template-columns:1fr;}
+  .pay-card{padding:20px 18px;}
+}
+</style>
+</head>
+<body>
+
+<div class="rainbow-bar"></div>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-circle">ZD</div>
+    <div class="nav-logo-text">Zipolite al Desnudo<span>Agencia de Viajes LGBT+</span></div>
+  </a>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html#paquetes">Paquetes</a></li>
+    <li><a href="index.html#galeria">Galería</a></li>
+    <li><a href="index.html#testimonios">Reseñas</a></li>
+    <li><a href="index.html#blog-section">Blog</a></li>
+    <li><a href="index.html#redes">Contacto</a></li>
+    <li><a href="index.html#paquetes" class="nav-cta">¡Reservar!</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="page-wrap" id="page-wrap" style="display:none;">
+
+  <!-- Payment header -->
+  <div class="pay-header">
+    <div class="pay-badge">Pago de reservación</div>
+    <h1>💳 Completa tu pago</h1>
+    <div class="pay-summary">
+      <div class="pay-summary-item">
+        <label>Paquete</label>
+        <span id="sum-paquete">—</span>
+      </div>
+      <div class="pay-summary-item">
+        <label>Folio</label>
+        <span id="sum-folio">—</span>
+      </div>
+      <div class="pay-summary-item">
+        <label>Total del viaje</label>
+        <span id="sum-total">—</span>
+      </div>
+      <div class="pay-summary-item highlight">
+        <label>Pagas hoy (anticipo)</label>
+        <span id="sum-anticipo">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transfer flow -->
+  <div id="flow-transfer" style="display:none;">
+    <div class="pay-card">
+      <h2>Realiza tu transferencia</h2>
+      <div class="transfer-box">
+        <h3>🏦 Datos bancarios</h3>
+        <div class="transfer-row">
+          <span class="t-label">Banco</span>
+          <span class="t-value" id="tr-banco">—</span>
+        </div>
+        <div class="transfer-row">
+          <span class="t-label">CLABE interbancaria</span>
+          <span class="t-value">
+            <span id="tr-clabe">—</span>
+            <button class="copy-btn" onclick="copyClabe()">Copiar</button>
+          </span>
+        </div>
+        <div class="transfer-row">
+          <span class="t-label">Monto exacto</span>
+          <span class="t-value amount" id="tr-monto">—</span>
+        </div>
+        <div class="transfer-row">
+          <span class="t-label">Referencia / concepto</span>
+          <span class="t-value ref" id="tr-ref">—</span>
+        </div>
+      </div>
+
+      <a id="btn-wa-transfer" href="#" target="_blank" class="btn-wa">
+        💬 Confirmar pago por WhatsApp
+      </a>
+      <a href="cuenta.html" class="btn-secondary">
+        Ver mis reservaciones
+      </a>
+    </div>
+  </div>
+
+  <!-- Card / financing flow -->
+  <div id="flow-card" style="display:none;">
+    <div class="pay-card">
+      <h2>Pago con tarjeta</h2>
+      <label class="stripe-label" for="stripe-card-element">Datos de tarjeta</label>
+      <div id="stripe-card-element"></div>
+      <p id="stripe-error"></p>
+      <button class="btn-pay" id="btn-pay" onclick="handleCardPayment()">
+        💳 Pagar <span id="btn-pay-amount">—</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Success screen (hidden until payment confirmed) -->
+  <div class="pay-card" id="flow-success" style="display:none;">
+    <div class="success-screen">
+      <div class="success-icon">✅</div>
+      <h2>¡Pago recibido!</h2>
+      <p>Tu reservación ha sido confirmada. Recibirás los detalles del viaje por correo y WhatsApp en breve.</p>
+      <a href="cuenta.html" class="btn-secondary">Ver mis reservaciones</a>
+    </div>
+  </div>
+
+</div><!-- /.page-wrap -->
+
+<footer>
+  <p>© 2025 Zipolite al Desnudo · Agencia de Viajes LGBT+ · CDMX, México</p>
+</footer>
+
+<div class="whatsapp-float">
+  <div class="wa-bubble">¿Dudas? ¡Escríbenos! 👋</div>
+  <a href="https://wa.me/529582199953" target="_blank" class="wa-btn">💬</a>
+</div>
+
+<script>
+const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
+const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+let reserva = null;
+let stripe = null;
+let cardElement = null;
+
+// ── Init ──────────────────────────────────────────────
+(function init() {
+  const raw = sessionStorage.getItem('reservacion_pendiente');
+  if (!raw) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  try {
+    reserva = JSON.parse(raw);
+  } catch (e) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  populateSummary();
+  renderFlow();
+  document.getElementById('page-wrap').style.display = 'block';
+})();
+
+// ── Summary ───────────────────────────────────────────
+function populateSummary() {
+  document.getElementById('sum-paquete').textContent = reserva.paquete || '—';
+  document.getElementById('sum-folio').textContent = reserva.id
+    ? '#' + String(reserva.id).slice(0, 8).toUpperCase()
+    : '—';
+  document.getElementById('sum-total').textContent = reserva.total
+    ? '$' + Number(reserva.total).toLocaleString('es-MX') + ' MXN'
+    : '—';
+  document.getElementById('sum-anticipo').textContent = reserva.anticipo
+    ? '$' + Number(reserva.anticipo).toLocaleString('es-MX') + ' MXN'
+    : '—';
+}
+
+// ── Route by payment method ───────────────────────────
+function renderFlow() {
+  const metodo = (reserva.metodo || '').toLowerCase();
+
+  if (metodo === 'transfer' || metodo === 'transferencia') {
+    renderTransfer();
+  } else {
+    renderCard();
+  }
+}
+
+// ── Transfer flow ─────────────────────────────────────
+function renderTransfer() {
+  const banco = localStorage.getItem('bank_name') || 'Consultar con la agencia';
+  const clabe = localStorage.getItem('bank_clabe') || '—';
+  const monto = reserva.anticipo
+    ? '$' + Number(reserva.anticipo).toLocaleString('es-MX') + ' MXN'
+    : '—';
+  const ref = reserva.id
+    ? String(reserva.id).slice(0, 8).toUpperCase()
+    : '—';
+
+  document.getElementById('tr-banco').textContent = banco;
+  document.getElementById('tr-clabe').textContent = clabe;
+  document.getElementById('tr-monto').textContent = monto;
+  document.getElementById('tr-ref').textContent = ref;
+
+  // WhatsApp message
+  const waText = encodeURIComponent(
+    'Hola, realicé mi transferencia para la reserva ' +
+    (reserva.id ? String(reserva.id).slice(0, 8).toUpperCase() : '') +
+    ', paquete ' + (reserva.paquete || '') +
+    ', monto ' + (reserva.anticipo ? '$' + Number(reserva.anticipo).toLocaleString('es-MX') + ' MXN' : '') +
+    '. Adjunto comprobante.'
+  );
+  document.getElementById('btn-wa-transfer').href =
+    'https://wa.me/529582199953?text=' + waText;
+
+  document.getElementById('flow-transfer').style.display = 'block';
+}
+
+function copyClabe() {
+  const clabe = localStorage.getItem('bank_clabe') || '';
+  if (!clabe) return;
+  navigator.clipboard.writeText(clabe).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    const original = btn.textContent;
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => { btn.textContent = original; }, 2000);
+  });
+}
+
+// ── Card / financing flow ─────────────────────────────
+function renderCard() {
+  stripe = Stripe('pk_live_51MiPtBGs8JZIcNIhUF5aP5xPN7SEfz0wAaGA34mRgolM1TpK60tkzoSn9uQUf6ovLTmIlCjxNUZdUVuY5vw525uu00xDkZoygg');
+  const elements = stripe.elements();
+
+  cardElement = elements.create('card', {
+    style: {
+      base: {
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontSize: '16px',
+        color: '#1A3A4A',
+        '::placeholder': { color: '#aac4cc' }
+      },
+      invalid: { color: '#E8312A' }
+    }
+  });
+  cardElement.mount('#stripe-card-element');
+
+  const antiLabel = reserva.anticipo
+    ? '$' + Number(reserva.anticipo).toLocaleString('es-MX') + ' MXN'
+    : '—';
+  document.getElementById('btn-pay-amount').textContent = antiLabel;
+
+  document.getElementById('flow-card').style.display = 'block';
+}
+
+async function handleCardPayment() {
+  const btn = document.getElementById('btn-pay');
+  const errorEl = document.getElementById('stripe-error');
+  errorEl.style.display = 'none';
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Procesando...';
+
+  // 1. Create payment intent via backend
+  let clientSecret;
+  try {
+    const res = await fetch('/api/create-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: reserva.anticipo,
+        reservacion_id: reserva.id
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.clientSecret) throw new Error(data.error || 'No se pudo iniciar el pago');
+    clientSecret = data.clientSecret;
+  } catch (err) {
+    showCardError(btn, errorEl, err.message);
+    return;
+  }
+
+  // 2. Confirm card payment with Stripe
+  const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
+    payment_method: { card: cardElement }
+  });
+
+  if (error) {
+    showCardError(btn, errorEl, error.message);
+    return;
+  }
+
+  if (paymentIntent.status === 'succeeded') {
+    // 3. Update reservation status in Supabase
+    await sb
+      .from('reservaciones')
+      .update({ estado: 'confirmado', stripe_payment_id: paymentIntent.id })
+      .eq('id', reserva.id);
+
+    sessionStorage.removeItem('reservacion_pendiente');
+    showSuccess();
+  }
+}
+
+function showCardError(btn, errorEl, msg) {
+  btn.disabled = false;
+  btn.innerHTML = '💳 Pagar <span id="btn-pay-amount">' +
+    (reserva.anticipo ? '$' + Number(reserva.anticipo).toLocaleString('es-MX') + ' MXN' : '—') +
+    '</span>';
+  errorEl.textContent = msg;
+  errorEl.style.display = 'block';
+}
+
+function showSuccess() {
+  document.getElementById('flow-card').style.display = 'none';
+  document.getElementById('flow-transfer').style.display = 'none';
+  document.getElementById('flow-success').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Hamburger ─────────────────────────────────────────
+document.getElementById('hamburger').addEventListener('click', function() {
+  document.getElementById('nav-links').classList.toggle('mobile-open');
+});
+</script>
+</body>
+</html>
