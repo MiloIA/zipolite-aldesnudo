@@ -53,10 +53,11 @@ export default async function handler(req, res) {
         : String(reserva.incluye);
     }
 
+    let precioPaquete = 0;
     if (reserva.paquete_nombre) {
       const { data: paquete } = await supabase
         .from('paquetes')
-        .select('incluye, fecha_inicio, fecha_fin')
+        .select('incluye, fecha_inicio, fecha_fin, precio')
         .eq('nombre', reserva.paquete_nombre)
         .single();
       if (paquete) {
@@ -67,11 +68,27 @@ export default async function handler(req, res) {
         }
         fechaInicioPaquete = paquete.fecha_inicio || null;
         fechaFinPaquete    = paquete.fecha_fin    || null;
+        precioPaquete      = Number(paquete.precio || 0);
       }
     }
 
+    const personas = Number(reserva.personas || 1);
+    const total    = precioPaquete > 0
+      ? precioPaquete * personas
+      : Number(reserva.total || reserva.precio_base || 0);
+    const anticipo = Number(reserva.anticipo || 0);
+    const saldo    = Math.max(0, total - anticipo);
+
+    let duracion = reserva.duracion || 'N/A';
+    if (fechaInicioPaquete && fechaFinPaquete) {
+      const dias = Math.round(
+        (new Date(fechaFinPaquete) - new Date(fechaInicioPaquete)) / (1000 * 60 * 60 * 24)
+      );
+      if (dias > 0) duracion = `${dias} días / ${dias - 1} noches`;
+    }
+
     console.log('Starting PDF generation');
-    const pdfBuffer = await buildPDF(reserva, viajeros || [], servicios, fechaInicioPaquete, fechaFinPaquete);
+    const pdfBuffer = await buildPDF(reserva, viajeros || [], servicios, fechaInicioPaquete, fechaFinPaquete, total, saldo, duracion);
     console.log('PDF generated, size:', pdfBuffer.length);
 
     const fileName = `${reservacion_id}.pdf`;
@@ -108,7 +125,7 @@ export default async function handler(req, res) {
   }
 }
 
-function buildPDF(reserva, viajeros, servicios, fechaInicioPaquete, fechaFinPaquete) {
+function buildPDF(reserva, viajeros, servicios, fechaInicioPaquete, fechaFinPaquete, total, saldo, duracion) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 55, size: 'LETTER' });
     const chunks = [];
@@ -132,11 +149,15 @@ function buildPDF(reserva, viajeros, servicios, fechaInicioPaquete, fechaFinPaqu
     };
 
     const fmt = n => '$' + Math.round(n).toLocaleString('es-MX') + ' MXN';
+    const capitalize = s => s
+      ? s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+      : '';
 
     // ── Data ──
     const titular = viajeros.find(v => v.es_titular) || viajeros[0] || {};
-    const nombreTitular = [titular.nombre, titular.ap_paterno, titular.ap_materno]
-      .filter(Boolean).join(' ') || 'N/A';
+    const nombreTitular = capitalize(
+      [titular.nombre, titular.ap_paterno, titular.ap_materno].filter(Boolean).join(' ')
+    ) || 'N/A';
 
     const fechaAceptacion = fmtFecha(reserva.created_at?.split('T')[0] || null);
     const rawInicio = reserva.fecha_inicio || reserva.fecha_llegada || fechaInicioPaquete;
@@ -144,18 +165,7 @@ function buildPDF(reserva, viajeros, servicios, fechaInicioPaquete, fechaFinPaqu
     const fechaLlegada = fmtFecha(rawInicio);
     const fechaSalida  = fmtFecha(rawFin);
 
-    let duracion = reserva.duracion || 'N/A';
-    if (rawInicio && rawFin) {
-      const msPerDay = 1000 * 60 * 60 * 24;
-      const d1 = new Date(String(rawInicio).includes('T') ? rawInicio : rawInicio + 'T12:00:00');
-      const d2 = new Date(String(rawFin).includes('T')    ? rawFin    : rawFin    + 'T12:00:00');
-      const dias = Math.round((d2 - d1) / msPerDay);
-      if (dias > 0) duracion = `${dias} día${dias !== 1 ? 's' : ''} / ${dias - 1} noche${dias - 1 !== 1 ? 's' : ''}`;
-    }
-
-    const total    = Number(reserva.total    || reserva.precio_base || 0);
     const anticipo = Number(reserva.anticipo || 0);
-    const saldo    = Math.max(0, total - anticipo);
 
     // ── Header ──
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#000')
@@ -254,8 +264,9 @@ function buildPDF(reserva, viajeros, servicios, fechaInicioPaquete, fechaFinPaqu
       doc.moveDown(0.5);
     } else {
       viajeros.forEach((v, i) => {
-        const nombre = [v.nombre, v.ap_paterno, v.ap_materno]
-          .filter(Boolean).join(' ') || 'N/A';
+        const nombre = capitalize(
+          [v.nombre, v.ap_paterno, v.ap_materno].filter(Boolean).join(' ')
+        ) || 'N/A';
         doc.fontSize(10).font('Helvetica-Bold').fillColor('#111')
           .text(`${i + 1}. ${nombre}`);
         doc.moveDown(0.3);
