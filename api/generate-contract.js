@@ -207,8 +207,6 @@ function buildPDF(reserva, viajeros, servicios, fechaInicioPaquete, fechaFinPaqu
     doc.moveDown(0.5);
     doc.text(`Fecha de salida: ${fechaSalida}`);
     doc.moveDown(0.5);
-    doc.text(`Duración: ${reserva.duracion || 'N/A'}`);
-    doc.moveDown(0.5);
     doc.text(`Servicios incluidos: ${servicios}`);
     doc.moveDown(1);
 
