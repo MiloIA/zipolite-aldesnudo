@@ -134,17 +134,6 @@ export default async function handler(req, res) {
       body: JSON.stringify({ from: FROM, to: [to], subject, html }),
     });
 
-    const [r1, r2] = await Promise.all([
-      send(email,   `✅ Reserva confirmada — ${paquete_nombre}`, clientHtml),
-      send(ADMIN,   `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
-      send(NOTIFY,  `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
-    ]);
-
-    if (!r1.ok) {
-      const err = await r1.json().catch(() => ({}));
-      return res.status(500).json({ ok: false, error: err.message || 'Error enviando email al cliente' });
-    }
-
     const tgText = `🔔 <b>Nueva reserva</b>\n\n` +
       `<b>No. reserva:</b> ${shortId}\n` +
       `<b>Nombre:</b> ${nombre}\n` +
@@ -157,11 +146,21 @@ export default async function handler(req, res) {
       `<b>Total:</b> ${fmt(total)}\n` +
       `<b>Anticipo / Paga hoy:</b> ${fmt(anticipo)}`;
 
-    fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: tgText, parse_mode: 'HTML' }),
-    }).catch(e => console.error('telegram:', e));
+    const [r1] = await Promise.all([
+      send(email,   `✅ Reserva confirmada — ${paquete_nombre}`, clientHtml),
+      send(ADMIN,   `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
+      send(NOTIFY,  `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
+      fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: tgText, parse_mode: 'HTML' }),
+      }).catch(e => console.error('telegram:', e)),
+    ]);
+
+    if (!r1.ok) {
+      const err = await r1.json().catch(() => ({}));
+      return res.status(500).json({ ok: false, error: err.message || 'Error enviando email al cliente' });
+    }
 
     return res.status(200).json({ ok: true });
   } catch (e) {
