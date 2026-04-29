@@ -14,8 +14,9 @@ export default async function handler(req, res) {
   }
 
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  const FROM  = 'Zipolite al Desnudo <reservaciones@zipolitealdesnudo.com>';
-  const ADMIN = 'reservaciones@zipolitealdesnudo.com';
+  const FROM   = 'Zipolite al Desnudo <reservaciones@zipolitealdesnudo.com>';
+  const ADMIN  = 'reservaciones@zipolitealdesnudo.com';
+  const NOTIFY = 'infinitybymexico@gmail.com';
 
   const shortId = (reservacion_id || '').substring(0, 8).toUpperCase();
 
@@ -134,8 +135,9 @@ export default async function handler(req, res) {
     });
 
     const [r1, r2] = await Promise.all([
-      send(email, `✅ Reserva confirmada — ${paquete_nombre}`, clientHtml),
-      send(ADMIN, `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
+      send(email,   `✅ Reserva confirmada — ${paquete_nombre}`, clientHtml),
+      send(ADMIN,   `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
+      send(NOTIFY,  `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
     ]);
 
     if (!r1.ok) {
