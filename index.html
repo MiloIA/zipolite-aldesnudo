@@ -1103,8 +1103,12 @@ function applyDiscountToBase(basePorPersona, personas) {
 function calcCotizador() {
   if (!curPkg) return;
   const p = parseInt(document.getElementById('m-personas').value);
-  const metodo = document.getElementById('m-metodo').value;
   const cuanto = document.getElementById('r-cuanto')?.value || 'total';
+  const metodoSel = document.getElementById('m-metodo');
+  const financVals = ['3','6','9','12','18','24'];
+  metodoSel.querySelectorAll('option').forEach(o => { o.disabled = cuanto === 'anticipo' && financVals.includes(o.value); });
+  if (cuanto === 'anticipo' && financVals.includes(metodoSel.value)) metodoSel.value = 'transfer';
+  const metodo = metodoSel.value;
   const precioBase = curPkg.precio;
   const totalSinDesc = precioBase * p;
   const base = applyDiscountToBase(precioBase, p);
