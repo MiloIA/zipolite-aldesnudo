@@ -155,8 +155,12 @@ footer a{color:var(--teal);text-decoration:none;}
         <span id="sum-total">—</span>
       </div>
       <div class="pay-summary-item highlight">
-        <label>Pagas hoy (anticipo)</label>
+        <label id="sum-anticipo-label">Pagas hoy (anticipo)</label>
         <span id="sum-anticipo">—</span>
+      </div>
+      <div class="pay-summary-item" id="sum-fin-row" style="display:none;">
+        <label>Financiamiento</label>
+        <span id="sum-fin-text">—</span>
       </div>
     </div>
   </div>
@@ -263,6 +267,10 @@ let cardElement = null;
 
 // ── Summary ───────────────────────────────────────────
 function populateSummary() {
+  const meses = parseInt(reserva.metodo || '');
+  const esFinanciamiento = [3, 6, 9, 12, 18, 24].includes(meses);
+  const esAnticipo = !esFinanciamiento && Number(reserva.anticipo) < Number(reserva.total);
+
   document.getElementById('sum-paquete').textContent = reserva.paquete || '—';
   document.getElementById('sum-folio').textContent = reserva.id
     ? '#' + String(reserva.id).slice(0, 8).toUpperCase()
@@ -270,9 +278,21 @@ function populateSummary() {
   document.getElementById('sum-total').textContent = reserva.total
     ? '$' + Number(reserva.total).toLocaleString('es-MX') + ' MXN'
     : '—';
+
+  document.getElementById('sum-anticipo-label').textContent = esAnticipo
+    ? 'Pagas hoy (anticipo)'
+    : 'Total a pagar';
+
   document.getElementById('sum-anticipo').textContent = reserva.anticipo
     ? '$' + Number(reserva.anticipo).toLocaleString('es-MX') + ' MXN'
     : '—';
+
+  if (esFinanciamiento) {
+    const porMes = Math.round(Number(reserva.total) / meses);
+    document.getElementById('sum-fin-text').textContent =
+      meses + ' meses — $' + porMes.toLocaleString('es-MX') + '/mes';
+    document.getElementById('sum-fin-row').style.display = '';
+  }
 }
 
 // ── Route by payment method ───────────────────────────
