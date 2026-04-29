@@ -87,7 +87,7 @@ export default async function handler(req, res) {
             <td style="padding:10px 12px;font-weight:700;color:#1A3A4A;border-bottom:1px solid #e8f5f7;">${fmt(total)}</td>
           </tr>
           <tr style="background:#e0f7fa;">
-            <td style="padding:12px;color:#006064;font-weight:700;">Pagas hoy</td>
+            <td style="padding:12px;color:#006064;font-weight:700;">${anticipoLabel}</td>
             <td style="padding:12px;font-weight:800;color:#006064;font-size:1.05rem;">${fmt(anticipo)}</td>
           </tr>
         </table>
