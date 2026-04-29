@@ -145,6 +145,24 @@ export default async function handler(req, res) {
       return res.status(500).json({ ok: false, error: err.message || 'Error enviando email al cliente' });
     }
 
+    const tgText = `🔔 <b>Nueva reserva</b>\n\n` +
+      `<b>No. reserva:</b> ${shortId}\n` +
+      `<b>Nombre:</b> ${nombre}\n` +
+      `<b>Email:</b> ${email}\n` +
+      `<b>WhatsApp:</b> ${whatsapp || '—'}\n` +
+      `<b>Paquete:</b> ${paquete_nombre}\n` +
+      `<b>Personas:</b> ${personas}\n` +
+      `<b>Fechas:</b> ${fecha_inicio || '—'} → ${fecha_fin || '—'}\n` +
+      `<b>Método de pago:</b> ${metodoLabel}\n` +
+      `<b>Total:</b> ${fmt(total)}\n` +
+      `<b>Anticipo / Paga hoy:</b> ${fmt(anticipo)}`;
+
+    fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: tgText, parse_mode: 'HTML' }),
+    }).catch(e => console.error('telegram:', e));
+
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
