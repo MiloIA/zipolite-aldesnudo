@@ -273,7 +273,7 @@ let cardElement = null;
 function populateSummary() {
   const meses = parseInt(reserva.metodo || '');
   const esFinanciamiento = [3, 6, 9, 12, 18, 24].includes(meses);
-  const esAnticipo = !esFinanciamiento && Number(reserva.anticipo) < Number(reserva.total);
+  const esAnticipo = Number(reserva.anticipo) < Number(reserva.total);
 
   document.getElementById('sum-paquete').textContent = reserva.paquete || '—';
   document.getElementById('sum-folio').textContent = reserva.id
