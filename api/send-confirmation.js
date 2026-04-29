@@ -28,6 +28,7 @@ export default async function handler(req, res) {
   };
   const metodoLabel = metodosLabel[metodo_pago] || metodo_pago || '—';
   const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+  const anticipoLabel = Number(anticipo) < Number(total) ? 'Paga hoy (anticipo)' : 'Total a pagar';
 
   const fechasRow = (fecha_inicio || fecha_fin)
     ? `<tr><td style="padding:10px 12px;color:#555;border-bottom:1px solid #e8f5f7;">Fechas</td>
@@ -122,7 +123,7 @@ export default async function handler(req, res) {
     <tr><td style="padding:6px 20px 6px 0;color:#777;">Fechas</td><td>${fecha_inicio || '—'} → ${fecha_fin || '—'}</td></tr>
     <tr><td style="padding:6px 20px 6px 0;color:#777;">Método de pago</td><td>${metodoLabel}</td></tr>
     <tr><td style="padding:6px 20px 6px 0;color:#777;">Total</td><td><strong>${fmt(total)}</strong></td></tr>
-    <tr><td style="padding:6px 20px 6px 0;color:#777;">Anticipo / Pago hoy</td><td><strong>${fmt(anticipo)}</strong></td></tr>
+    <tr><td style="padding:6px 20px 6px 0;color:#777;">${anticipoLabel}</td><td><strong>${fmt(anticipo)}</strong></td></tr>
   </table>
 </body>
 </html>`;
@@ -144,7 +145,7 @@ export default async function handler(req, res) {
       `<b>Fechas:</b> ${fecha_inicio || '—'} → ${fecha_fin || '—'}\n` +
       `<b>Método de pago:</b> ${metodoLabel}\n` +
       `<b>Total:</b> ${fmt(total)}\n` +
-      `<b>Anticipo / Paga hoy:</b> ${fmt(anticipo)}`;
+      `<b>${anticipoLabel}:</b> ${fmt(anticipo)}`;
 
     const [r1] = await Promise.all([
       send(email,   `✅ Reserva confirmada — ${paquete_nombre}`, clientHtml),
