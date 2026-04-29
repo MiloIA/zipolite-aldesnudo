@@ -972,6 +972,8 @@ async function confirmarReserva() {
     metodo_pago: metodo,
     total: lastTotal,
     anticipo,
+    fecha_inicio: curPkg.fecha_inicio || null,
+    fecha_fin: curPkg.fecha_fin || null,
     estado: 'pendiente'
   }]).select().single();
   if (error) { alert('Error al guardar reserva: ' + error.message); return; }
