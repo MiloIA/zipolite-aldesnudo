@@ -158,6 +158,10 @@ footer a{color:var(--teal);text-decoration:none;}
         <label id="sum-anticipo-label">Pagas hoy (anticipo)</label>
         <span id="sum-anticipo">—</span>
       </div>
+      <div class="pay-summary-item" id="sum-resto-row" style="display:none;">
+        <label>Resto 10 días antes del viaje</label>
+        <span id="sum-resto-text">—</span>
+      </div>
       <div class="pay-summary-item" id="sum-fin-row" style="display:none;">
         <label>Financiamiento</label>
         <span id="sum-fin-text">—</span>
@@ -286,6 +290,13 @@ function populateSummary() {
   document.getElementById('sum-anticipo').textContent = reserva.anticipo
     ? '$' + Number(reserva.anticipo).toLocaleString('es-MX') + ' MXN'
     : '—';
+
+  if (esAnticipo) {
+    const resto = Number(reserva.total) - Number(reserva.anticipo);
+    document.getElementById('sum-resto-text').textContent =
+      '$' + Math.round(resto).toLocaleString('es-MX') + ' MXN';
+    document.getElementById('sum-resto-row').style.display = '';
+  }
 
   if (esFinanciamiento) {
     const porMes = Math.round(Number(reserva.total) / meses);
