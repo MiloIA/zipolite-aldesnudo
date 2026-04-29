@@ -148,7 +148,6 @@ export default async function handler(req, res) {
 
     const [r1] = await Promise.all([
       send(email,   `✅ Reserva confirmada — ${paquete_nombre}`, clientHtml),
-      send(ADMIN,   `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
       send(NOTIFY,  `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
       fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: 'POST',
