@@ -964,6 +964,7 @@ async function confirmarReserva() {
   const anticipo = cuanto === 'anticipo' ? (curPkg.monto_anticipo || 3000) * p : lastTotal;
 
 
+  console.log('[reserva] fechas del paquete:', curPkg.fecha_inicio, curPkg.fecha_fin, curPkg.fechas);
   const {data, error} = await sb.from('reservaciones').insert([{
     paquete_id: String(curPkg.id),
     paquete_nombre: curPkg.nombre,
