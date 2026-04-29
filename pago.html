@@ -317,6 +317,7 @@ function renderTransfer() {
 }
 
 function sendConfirmationOnTransfer() {
+  console.log('Llamando send-confirmation...');
   fetch('/api/send-confirmation', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -329,7 +330,8 @@ function sendConfirmationOnTransfer() {
       bank_name: localStorage.getItem('bank_name') || '',
       bank_clabe: localStorage.getItem('bank_clabe') || '',
     }),
-  }).catch(e => console.error('send-confirmation:', e));
+  }).then(async r => { const data = await r.json(); console.log('Respuesta:', data); })
+    .catch(e => console.error('send-confirmation:', e));
 }
 
 function copyClabe() {
@@ -414,6 +416,7 @@ async function handleCardPayment() {
       .eq('id', reserva.id);
 
     // 4. Send confirmation email/notification
+    console.log('Llamando send-confirmation...');
     fetch('/api/send-confirmation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -426,7 +429,8 @@ async function handleCardPayment() {
         bank_name: localStorage.getItem('bank_name') || '',
         bank_clabe: localStorage.getItem('bank_clabe') || '',
       }),
-    }).catch(e => console.error('send-confirmation:', e));
+    }).then(async r => { const data = await r.json(); console.log('Respuesta:', data); })
+      .catch(e => console.error('send-confirmation:', e));
 
     sessionStorage.removeItem('reservacion_pendiente');
     showSuccess();
