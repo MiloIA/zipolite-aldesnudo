@@ -868,6 +868,7 @@ async function loadGallery() {
   const c = document.getElementById('gal-container');
   if (!data || !data.length) { c.innerHTML='<div class="empty-msg">📷 Agrega fotos desde el panel admin (⚙️ en el footer)</div>'; return; }
   allGalleryImages = data;
+  console.log('allGalleryImages:', allGalleryImages.length);
   lbImages = data;
   const visible = data.slice(0, 9);
   c.innerHTML = visible.map((img, i) => `<div class="gallery-item" onclick="openLightbox(${i})"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
