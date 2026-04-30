@@ -54,9 +54,9 @@ nav{background:#0d1b3e;padding:14px 40px;display:flex;align-items:center;justify
 .btn-primary:hover{transform:translateY(-2px);}
 .btn-secondary{padding:13px 26px;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);color:white;border:2px solid rgba(255,255,255,0.4);border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all 0.2s;}
 .btn-secondary:hover{background:rgba(255,255,255,0.25);}
-.hero-logo-ring{width:300px;height:300px;border-radius:50%;background:linear-gradient(135deg,#E0F7FA,#B2EBF2);box-shadow:0 20px 60px rgba(0,150,170,0.18);display:flex;align-items:center;justify-content:center;animation:floatY 5s ease-in-out infinite;margin:0 auto;}
+.hero-logo-ring{width:300px;height:300px;border-radius:50%;background:none;box-shadow:none;border:none;display:flex;align-items:center;justify-content:center;animation:floatY 5s ease-in-out infinite;margin:0 auto;}
 @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-14px);}}
-.hero-logo-ring img{width:260px;height:260px;object-fit:contain;}
+.hero-logo-ring img{width:260px;height:260px;object-fit:contain;filter:drop-shadow(0 8px 32px rgba(0,0,0,0.3));}
 .hero-wave{position:absolute;bottom:0;left:0;right:0;line-height:0;}
 .hero-wave svg{width:100%;height:80px;}
 .stats{background:var(--white);padding:36px 40px;box-shadow:0 2px 20px rgba(0,150,170,0.07);}
