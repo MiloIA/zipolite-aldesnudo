@@ -126,6 +126,13 @@ section{padding:80px 40px;}
 .lb-prev:hover,.lb-next:hover{background:rgba(255,255,255,0.3);}
 .lb-counter{position:absolute;top:16px;left:50%;transform:translateX(-50%);color:white;font-size:14px;background:rgba(0,0,0,0.5);padding:4px 12px;border-radius:20px;}
 .empty-msg{text-align:center;padding:60px 20px;color:#aaa;grid-column:1/-1;}
+.faq-list{max-width:720px;margin:0 auto;}
+.faq-item{border-bottom:1px solid #e5e7eb;}
+.faq-q{width:100%;background:none;border:none;padding:20px 0;text-align:left;font-size:1rem;font-weight:600;color:#1a1a2e;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;}
+.faq-q span{font-size:1.4rem;color:#0891b2;flex-shrink:0;}
+.faq-q:hover{color:#0891b2;}
+.faq-a{max-height:0;overflow:hidden;transition:max-height 0.3s ease;font-size:0.95rem;line-height:1.7;color:#4b5563;padding:0;}
+.faq-item.open .faq-a{padding-bottom:20px;}
 #incluye{background:white;}
 .includes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 .include-card{padding:26px 22px;border-radius:18px;background:var(--sand);border:1.5px solid rgba(0,188,212,0.12);text-align:center;transition:transform 0.2s;}
@@ -325,6 +332,7 @@ section{padding:56px 18px;}
     <li><a href="#paquetes">Paquetes</a></li>
     <li><a href="#galeria">Galería</a></li>
     <li><a href="#testimonios">Reseñas</a></li>
+    <li><a href="#faq">FAQ</a></li>
     <li><a href="#blog-section">Blog</a></li>
     <li><a href="#redes">Contacto</a></li>
     <li><div class="lang-switch"><button class="lang-btn active" onclick="setLang('es')">ES</button><button class="lang-btn" onclick="setLang('en')">EN</button></div></li>
@@ -416,6 +424,87 @@ section{padding:56px 18px;}
       <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Un gusto conocerles, feliz inicio de año lleno de abundancia y bendiciones. Atentamente Miguel Fernández."</p><div class="testi-author"><div class="testi-avatar">M</div><div><div class="testi-name">Miguel Fernández</div><div class="testi-trip">Zipolite Dic 2025</div></div></div></div>
       <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Fue un placer chicas estar con ustedes."</p><div class="testi-author"><div class="testi-avatar">V</div><div><div class="testi-name">Viajero</div><div class="testi-trip">Zipolite</div></div></div></div>
       <div class="testi-card"><div class="testi-stars">★★★★★</div><p class="testi-text">"Un placer conocerlos y por la experiencia de Zipolite 🎉🥳🎊"</p><div class="testi-author"><div class="testi-avatar">L</div><div><div class="testi-name">Luis Ángel</div><div class="testi-trip">Zipolite Feb 2026 · García</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="section-inner">
+    <span class="section-tag">Preguntas frecuentes</span>
+    <h2 class="section-title">¿Tienes dudas? 🌈</h2>
+    <p class="section-sub">Todo lo que necesitas saber antes de reservar.</p>
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Tengo que ser nudista para ir a Zipolite? <span>+</span>
+        </button>
+        <div class="faq-a">Para nada. Nadie está obligado a nada. Tú decides cómo vivir la experiencia, siempre desde el respeto y tu comodidad.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Van personas viajando solas? <span>+</span>
+        </button>
+        <div class="faq-a">Sí, muchísimas. Varios viajeros llegan solos y regresan con nuevas amistades. Nuestra comunidad está pensada para que nadie se sienta aislado.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Es seguro viajar con el grupo? <span>+</span>
+        </button>
+        <div class="faq-a">Sí. Organizamos salidas con coordinación, comunicación constante y acompañamiento. Además, Zipolite es un destino turístico muy conocido y con ambiente relajado.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Qué tipo de personas viajan? <span>+</span>
+        </button>
+        <div class="faq-a">Principalmente viajeros LGBT+, aliados, personas abiertas y con buena vibra. También llegan personas tímidas que terminan disfrutándolo muchísimo.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Quiero ir, pero no tengo con quién viajar. <span>+</span>
+        </button>
+        <div class="faq-a">Eso le pasa a muchísima gente. Por eso existen nuestros grupos. Llegas solo y normalmente regresas con amistades nuevas.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Me da pena ir solo / soy tímido. <span>+</span>
+        </button>
+        <div class="faq-a">Es completamente normal. Varios llegan nerviosos y al segundo día ya están integrados. No necesitas ser el alma de la fiesta, puedes ir a tu ritmo.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Y si no puedo pagar todo ahorita? <span>+</span>
+        </button>
+        <div class="faq-a">Puedes apartar con anticipo y liquidar después en fechas programadas. Así aseguras tu lugar sin desembolsar todo de golpe.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Por qué viajar con ustedes y no por mi cuenta? <span>+</span>
+        </button>
+        <div class="faq-a">Porque no solo compras un viaje: entras a una comunidad con más de una década creando experiencias, amistades y recuerdos inolvidables.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Y si cancelo? <span>+</span>
+        </button>
+        <div class="faq-a">Te explicamos políticas claras desde el inicio. El anticipo no es reembolsable ya que se usa para asegurar tu lugar. Si cancelas con más de 30 días, se reembolsa el saldo pagado adicional al anticipo.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Cómo reservo? <span>+</span>
+        </button>
+        <div class="faq-a">Muy fácil: escríbenos por WhatsApp, te compartimos detalles y formas de pago, y aseguras tu lugar antes de que se llene. 🌈</div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -1811,6 +1900,22 @@ function lbNav(dir) {
   document.getElementById('lb-img').src = lbImages[lbIndex].url;
   document.getElementById('lb-img').alt = lbImages[lbIndex].descripcion || 'Zipolite';
   document.getElementById('lb-counter').textContent = `${lbIndex + 1} / ${lbImages.length}`;
+}
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  const answer = item.querySelector('.faq-a');
+  const icon = btn.querySelector('span');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.faq-a').style.maxHeight = '0';
+    el.querySelector('.faq-q span').textContent = '+';
+  });
+  if (!isOpen) {
+    item.classList.add('open');
+    answer.style.maxHeight = answer.scrollHeight + 'px';
+    icon.textContent = '−';
+  }
 }
 function closeLightbox() {
   document.getElementById('lb-overlay').classList.remove('active');
