@@ -299,6 +299,7 @@ section{padding:56px 18px;}
     <li><div class="lang-switch"><button class="lang-btn active" onclick="setLang('es')">ES</button><button class="lang-btn" onclick="setLang('en')">EN</button></div></li>
     <li><a href="#" onclick="openRegister();return false;" style="color:var(--ocean);font-weight:600;">👤 Mi cuenta</a></li>
     <li><a href="#paquetes" class="nav-cta">¡Reservar!</a></li>
+    <li><button class="pwa-install-btn" onclick="installPWA()" style="display:none;background:none;border:1.5px solid var(--ocean);color:var(--ocean);padding:7px 16px;border-radius:100px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">📲 Descargar app</button></li>
   </ul>
 </nav>
 
@@ -1757,5 +1758,25 @@ document.addEventListener('dragstart', e => {
   <img id="lb-img" src="" alt="" onclick="event.stopPropagation()">
   <div class="lb-wm">zipolitealdesnudo.com</div>
 </div>
+
+<script>
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.querySelectorAll('.pwa-install-btn')
+    .forEach(btn => btn.style.display = 'block');
+});
+window.addEventListener('appinstalled', () => {
+  document.querySelectorAll('.pwa-install-btn')
+    .forEach(btn => btn.style.display = 'none');
+});
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.then(() => deferredPrompt = null);
+  }
+}
+</script>
 </body>
 </html>

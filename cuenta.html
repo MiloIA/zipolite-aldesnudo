@@ -114,6 +114,13 @@ footer a{color:var(--teal);text-decoration:none;}
     <div class="msg-box" id="profile-msg"></div>
   </div>
 
+  <!-- PWA INSTALL CARD -->
+  <div class="section-card pwa-install-btn" style="display:none;">
+    <h2>📲 Instala la app</h2>
+    <p style="color:#555;margin-bottom:16px;">Accede rápido a tus reservaciones desde tu celular o escritorio.</p>
+    <button class="pwa-install-btn" onclick="installPWA()" style="display:none;">📲 Descargar app</button>
+  </div>
+
   <!-- MIS RESERVACIONES -->
   <div class="section-card">
     <h2>🗓️ Mis Reservaciones</h2>
@@ -299,6 +306,26 @@ document.addEventListener('click', function(e) {
     btn.setAttribute('aria-expanded', false);
   }
 });
+</script>
+
+<script>
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.querySelectorAll('.pwa-install-btn')
+    .forEach(btn => btn.style.display = 'block');
+});
+window.addEventListener('appinstalled', () => {
+  document.querySelectorAll('.pwa-install-btn')
+    .forEach(btn => btn.style.display = 'none');
+});
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.then(() => deferredPrompt = null);
+  }
+}
 </script>
 </body>
 </html>
