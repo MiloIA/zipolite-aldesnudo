@@ -867,14 +867,13 @@ async function loadGallery() {
   const {data} = await sb.from('galeria').select('*').order('orden').order('created_at');
   const c = document.getElementById('gal-container');
   if (!data || !data.length) { c.innerHTML='<div class="empty-msg">📷 Agrega fotos desde el panel admin (⚙️ en el footer)</div>'; return; }
-  lbImages = data;
   allGalleryImages = data;
+  lbImages = data;
   const visible = data.slice(0, 9);
-  let html = visible.map((img, index) => `<div class="gallery-item" onclick="openLightbox(${index})"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
+  c.innerHTML = visible.map((img, i) => `<div class="gallery-item" onclick="openLightbox(${i})"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
   if (data.length > 9) {
-    html += `<button class="btn-ver-mas" onclick="loadMoreGallery()">📷 Ver más fotos (${data.length - 9})</button>`;
+    c.innerHTML += `<button class="btn-ver-mas" onclick="loadMoreGallery()">📷 Ver más fotos (${data.length - 9})</button>`;
   }
-  c.innerHTML = html;
 }
 let allGalleryImages = [];
 function loadMoreGallery() {
