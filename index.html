@@ -1761,20 +1761,38 @@ document.addEventListener('dragstart', e => {
 
 <script>
 let deferredPrompt;
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   document.querySelectorAll('.pwa-install-btn')
-    .forEach(btn => btn.style.display = 'block');
+    .forEach(btn => btn.style.display = 'flex');
 });
+
 window.addEventListener('appinstalled', () => {
   document.querySelectorAll('.pwa-install-btn')
     .forEach(btn => btn.style.display = 'none');
+  deferredPrompt = null;
 });
+
+// En móvil siempre mostrar el botón
+if (isMobile) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.pwa-install-btn')
+      .forEach(btn => btn.style.display = 'flex');
+  });
+}
+
 function installPWA() {
   if (deferredPrompt) {
     deferredPrompt.prompt();
     deferredPrompt.then(() => deferredPrompt = null);
+  } else if (isIOS) {
+    alert('Para instalar la app:\nToca el botón compartir ↑ → "Añadir a pantalla de inicio"');
+  } else if (isMobile) {
+    alert('Para instalar la app:\nToca el menú ⋮ → "Añadir a pantalla de inicio"');
   }
 }
 </script>
