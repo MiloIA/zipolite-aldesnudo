@@ -114,6 +114,10 @@ section{padding:80px 40px;}
 .gallery-item::after{content:'zipolitealdesnudo.com';position:absolute;bottom:10px;right:10px;color:rgba(255,255,255,0.65);font-size:0.68rem;font-weight:700;letter-spacing:0.04em;text-shadow:0 1px 3px rgba(0,0,0,0.6);pointer-events:none;user-select:none;}
 .lb-wm{display:none;position:fixed;bottom:22px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-size:0.85rem;font-weight:700;letter-spacing:0.06em;text-shadow:0 1px 5px rgba(0,0,0,0.8);pointer-events:none;user-select:none;z-index:10000;white-space:nowrap;}
 .lb-overlay.active .lb-wm{display:block;}
+.lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:white;font-size:3rem;cursor:pointer;padding:10px 18px;border-radius:8px;z-index:10;}
+.lb-prev{left:16px;}.lb-next{right:16px;}
+.lb-prev:hover,.lb-next:hover{background:rgba(255,255,255,0.3);}
+.lb-counter{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:white;font-size:14px;background:rgba(0,0,0,0.4);padding:4px 12px;border-radius:20px;}
 .empty-msg{text-align:center;padding:60px 20px;color:#aaa;grid-column:1/-1;}
 #incluye{background:white;}
 .includes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
@@ -856,7 +860,17 @@ async function loadGallery() {
   const {data} = await sb.from('galeria').select('*').order('orden').order('created_at');
   const c = document.getElementById('gal-container');
   if (!data || !data.length) { c.innerHTML='<div class="empty-msg">📷 Agrega fotos desde el panel admin (⚙️ en el footer)</div>'; return; }
-  c.innerHTML = data.map(img=>`<div class="gallery-item" onclick="openLightbox('${img.url}','${(img.descripcion||'Zipolite').replace(/'/g,"\\'")}')"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
+  lbImages = data;
+  const visible = data.slice(0, 12);
+  let html = visible.map((img, index) => `<div class="gallery-item" onclick="openLightbox(${index})"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
+  if (data.length > 12) {
+    html += `<div style="grid-column:1/-1;text-align:center;padding:16px 0;"><button onclick="loadAllGallery()" style="background:var(--primary);color:#fff;border:none;padding:12px 28px;border-radius:30px;font-size:1rem;cursor:pointer;font-weight:600;">Ver más fotos (${data.length - 12} más)</button></div>`;
+  }
+  c.innerHTML = html;
+}
+function loadAllGallery() {
+  const c = document.getElementById('gal-container');
+  c.innerHTML = lbImages.map((img, index) => `<div class="gallery-item" onclick="openLightbox(${index})"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
 }
 
 async function loadBlog() {
@@ -1764,18 +1778,32 @@ document.querySelectorAll('#nav-links a').forEach(function(link) {
   });
 });
 
-function openLightbox(src, alt) {
+let lbImages = [];
+let lbIndex = 0;
+function openLightbox(index) {
+  lbIndex = index;
   const lb = document.getElementById('lb-overlay');
-  document.getElementById('lb-img').src = src;
-  document.getElementById('lb-img').alt = alt;
+  document.getElementById('lb-img').src = lbImages[lbIndex].url;
+  document.getElementById('lb-img').alt = lbImages[lbIndex].descripcion || 'Zipolite';
+  document.getElementById('lb-counter').textContent = `${lbIndex + 1} / ${lbImages.length}`;
   lb.classList.add('active');
   document.body.style.overflow = 'hidden';
+}
+function lbNav(dir) {
+  lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
+  document.getElementById('lb-img').src = lbImages[lbIndex].url;
+  document.getElementById('lb-img').alt = lbImages[lbIndex].descripcion || 'Zipolite';
+  document.getElementById('lb-counter').textContent = `${lbIndex + 1} / ${lbImages.length}`;
 }
 function closeLightbox() {
   document.getElementById('lb-overlay').classList.remove('active');
   document.body.style.overflow = '';
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') lbNav(1);
+  if (e.key === 'ArrowLeft') lbNav(-1);
+  if (e.key === 'Escape') closeLightbox();
+});
 document.addEventListener('contextmenu', e => {
   if (e.target.tagName==='IMG' && (e.target.closest('#gal-container')||e.target.id==='lb-img')) e.preventDefault();
 }, true);
@@ -1784,8 +1812,11 @@ document.addEventListener('dragstart', e => {
 }, true);
 </script>
 <div class="lb-overlay" id="lb-overlay" onclick="closeLightbox()">
-  <button class="lb-close" onclick="closeLightbox()" aria-label="Cerrar">&#10005;</button>
+  <button class="lb-close" onclick="closeLightbox()">✕</button>
+  <button class="lb-prev" onclick="event.stopPropagation();lbNav(-1)">&#8249;</button>
   <img id="lb-img" src="" alt="" onclick="event.stopPropagation()">
+  <button class="lb-next" onclick="event.stopPropagation();lbNav(1)">&#8250;</button>
+  <div class="lb-counter" id="lb-counter"></div>
   <div class="lb-wm">zipolitealdesnudo.com</div>
 </div>
 
