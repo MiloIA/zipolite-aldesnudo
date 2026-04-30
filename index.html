@@ -98,7 +98,7 @@ section{padding:80px 40px;}
 .pkg-btn-primary:hover{background:#c0241d;transform:translateY(-1px);}
 .pkg-btn-secondary{background:#1a5c3a;}
 .pkg-btn-secondary:hover{background:#144a2e;transform:translateY(-1px);}
-.pkg-urgency{font-size:13px;color:#666;margin:6px 0 12px;font-weight:600;}
+.pkg-urgency{font-size:13px;color:#666;margin:6px 0 12px;font-weight:600;}.pkg-more-btn{background:none;border:none;color:#0891b2;font-size:13px;font-weight:600;cursor:pointer;padding:4px 0;}.pkg-more-btn:hover{text-decoration:underline;}
 #galeria{background:var(--light);}
 .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 .gallery-item{border-radius:16px;overflow:hidden;aspect-ratio:4/3;background:#e0f7fa;position:relative;}
@@ -833,13 +833,22 @@ function renderPkgs(list) {
       <div class="pkg-body">
         <div class="pkg-price"><span class="currency">MXN $</span><span class="amount">${Number(p.precio).toLocaleString()}</span><span class="per">/ persona</span></div>
         <div class="pkg-urgency">${p.tipo==='secondary'?'🏕️ ¡Solo 48 lugares disponibles!':'✈️ Incluye vuelo, hotel y traslados'}</div>
-        <ul class="pkg-features">${inc.slice(0,5).map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}${inc.length>5?`<li style="color:#aaa;font-size:0.78rem;">+ ${inc.length-5} más incluidos</li>`:''}</ul>
+        <ul class="pkg-features">${inc.slice(0,5).map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}${inc.length>5?`<div class="pkg-extra-items" style="display:none">${inc.slice(5).map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}</div><button class="pkg-more-btn" onclick="toggleExtras(this)">+ ${inc.length-5} más incluidos ▾</button>`:''}</ul>
         <button class="pkg-btn pkg-btn-${p.tipo||'primary'}" onclick="openPay('${p.id}')">
           ${p.tipo==='secondary'?'⛺ Apartar mi lugar':'🏖️ Reservar ahora'}
         </button>
       </div>
     </div>`;
   }).join('');
+}
+
+function toggleExtras(btn) {
+  const extras = btn.previousElementSibling;
+  const isOpen = extras.style.display !== 'none';
+  extras.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen
+    ? `+ ${extras.children.length} más incluidos ▾`
+    : 'Ver menos ▴';
 }
 
 async function loadGallery() {
