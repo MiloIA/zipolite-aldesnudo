@@ -114,6 +114,8 @@ section{padding:80px 40px;}
 .gallery-item::after{content:'zipolitealdesnudo.com';position:absolute;bottom:10px;right:10px;color:rgba(255,255,255,0.65);font-size:0.68rem;font-weight:700;letter-spacing:0.04em;text-shadow:0 1px 3px rgba(0,0,0,0.6);pointer-events:none;user-select:none;}
 .lb-wm{display:none;position:fixed;bottom:22px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-size:0.85rem;font-weight:700;letter-spacing:0.06em;text-shadow:0 1px 5px rgba(0,0,0,0.8);pointer-events:none;user-select:none;z-index:10000;white-space:nowrap;}
 .lb-overlay.active .lb-wm{display:block;}
+.btn-ver-mas{grid-column:1/-1;background:white;border:2px solid #0891b2;color:#0891b2;padding:12px 32px;border-radius:999px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;}
+.btn-ver-mas:hover{background:#0891b2;color:white;}
 .lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:white;font-size:3rem;cursor:pointer;padding:10px 18px;border-radius:8px;z-index:10;}
 .lb-prev{left:16px;}.lb-next{right:16px;}
 .lb-prev:hover,.lb-next:hover{background:rgba(255,255,255,0.3);}
@@ -861,16 +863,18 @@ async function loadGallery() {
   const c = document.getElementById('gal-container');
   if (!data || !data.length) { c.innerHTML='<div class="empty-msg">📷 Agrega fotos desde el panel admin (⚙️ en el footer)</div>'; return; }
   lbImages = data;
+  allGalleryImages = data;
   const visible = data.slice(0, 9);
   let html = visible.map((img, index) => `<div class="gallery-item" onclick="openLightbox(${index})"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
   if (data.length > 9) {
-    html += `<div style="grid-column:1/-1;text-align:center;padding:16px 0;"><button onclick="loadAllGallery()" style="background:var(--primary);color:#fff;border:none;padding:12px 28px;border-radius:30px;font-size:1rem;cursor:pointer;font-weight:600;">Ver más fotos (${data.length - 9} más)</button></div>`;
+    html += `<button class="btn-ver-mas" onclick="loadMoreGallery()">📷 Ver más fotos (${data.length - 9})</button>`;
   }
   c.innerHTML = html;
 }
-function loadAllGallery() {
+let allGalleryImages = [];
+function loadMoreGallery() {
   const c = document.getElementById('gal-container');
-  c.innerHTML = lbImages.map((img, index) => `<div class="gallery-item" onclick="openLightbox(${index})"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
+  c.innerHTML = allGalleryImages.map((img, i) => `<div class="gallery-item" onclick="openLightbox(${i})"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
 }
 
 async function loadBlog() {
