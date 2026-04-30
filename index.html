@@ -861,10 +861,10 @@ async function loadGallery() {
   const c = document.getElementById('gal-container');
   if (!data || !data.length) { c.innerHTML='<div class="empty-msg">📷 Agrega fotos desde el panel admin (⚙️ en el footer)</div>'; return; }
   lbImages = data;
-  const visible = data.slice(0, 12);
+  const visible = data.slice(0, 9);
   let html = visible.map((img, index) => `<div class="gallery-item" onclick="openLightbox(${index})"><img src="${img.url}" alt="${img.descripcion||'Zipolite'}" loading="lazy"></div>`).join('');
-  if (data.length > 12) {
-    html += `<div style="grid-column:1/-1;text-align:center;padding:16px 0;"><button onclick="loadAllGallery()" style="background:var(--primary);color:#fff;border:none;padding:12px 28px;border-radius:30px;font-size:1rem;cursor:pointer;font-weight:600;">Ver más fotos (${data.length - 12} más)</button></div>`;
+  if (data.length > 9) {
+    html += `<div style="grid-column:1/-1;text-align:center;padding:16px 0;"><button onclick="loadAllGallery()" style="background:var(--primary);color:#fff;border:none;padding:12px 28px;border-radius:30px;font-size:1rem;cursor:pointer;font-weight:600;">Ver más fotos (${data.length - 9} más)</button></div>`;
   }
   c.innerHTML = html;
 }
