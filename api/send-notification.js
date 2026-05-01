@@ -29,5 +29,8 @@ export default async function handler(req, res) {
       JSON.stringify({ title, body, image, url: url && url.trim() !== '' ? url.trim() : 'https://zipolitealdesnudo.com/#paquetes' })
     ).catch(err => console.error('Error enviando a', sub.endpoint, err.message)))
   );
-  res.status(200).json({ sent: results.filter(r => r.status === 'fulfilled').length });
+  const sent = results.filter(r => r.status === 'fulfilled').length;
+  await supabase.from('push_history')
+    .insert([{ title, body, image: image || null, url: url || null, sent }]);
+  res.status(200).json({ sent });
 }
