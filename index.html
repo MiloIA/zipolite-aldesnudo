@@ -1810,7 +1810,7 @@ async function loadNotifCenter() {
 
   list.innerHTML = data.map(n => `
     <div class="notif-item ${read.includes(n.id) ? 'read' : 'unread'}"
-         onclick="openNotif('${n.id}', '${n.url || ''}')">
+         onclick="openNotif('${n.id}', ${JSON.stringify(n.url || '')})">
       ${n.image ? `<img src="${n.image}" class="notif-item-img">` : ''}
       <div class="notif-item-body">
         <strong>${n.title}</strong>
@@ -1835,7 +1835,9 @@ function openNotif(id, url) {
     read.push(id);
     localStorage.setItem('notif_read', JSON.stringify(read));
   }
-  if (url && url !== 'undefined') window.location.href = url;
+  if (url && url !== 'undefined' && url !== '' && url !== 'null') {
+    window.location.href = url;
+  }
   loadNotifCenter();
 }
 
