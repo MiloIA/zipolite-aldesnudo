@@ -62,10 +62,12 @@ nav{background:#0d1b3e;padding:14px 40px;display:flex;align-items:center;justify
 .hero-logo-wrap img,.hero-img-wrap img{filter:drop-shadow(0 8px 40px rgba(0,0,0,0.4));max-width:420px;width:100%;}
 .hero-wave{position:absolute;bottom:0;left:0;right:0;line-height:0;}
 .hero-wave svg{width:100%;height:80px;}
-.stats{background:var(--white);padding:36px 40px;box-shadow:0 2px 20px rgba(0,150,170,0.07);}
-.stats-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center;}
-.stat-item h3{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;color:var(--ocean);}
-.stat-item p{font-size:0.82rem;color:#888;margin-top:4px;font-weight:500;}
+.stats{background:linear-gradient(135deg,#0d1b3e 0%,#1a3a5c 100%);padding:60px 0;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
+.stat-item{text-align:center;padding:32px 24px;border-right:1px solid rgba(255,255,255,0.1);position:relative;}
+.stat-item:last-child{border-right:none;}
+.stat-number{font-size:3rem;font-weight:900;background:linear-gradient(135deg,#7dd3ea,#ffffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:8px;}
+.stat-label{color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:500;text-transform:uppercase;letter-spacing:1px;}
 section{padding:80px 40px;}
 .section-inner{max-width:1100px;margin:0 auto;}
 .section-tag{display:inline-block;background:var(--sky);color:var(--ocean);padding:5px 14px;border-radius:100px;font-size:0.76rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;}
@@ -317,7 +319,7 @@ nav{padding:12px 18px;position:relative;}
 .hero-content{grid-template-columns:1fr;gap:28px;padding:50px 20px 80px;}
 .hero-logo-ring{width:200px;height:200px;}
 .hero-logo-ring img{width:170px;height:170px;}
-.stats-inner{grid-template-columns:repeat(2,1fr);}
+.stats-grid{grid-template-columns:repeat(2,1fr);}.stat-item:nth-child(2){border-right:none;}.stat-item:nth-child(1),.stat-item:nth-child(2){border-bottom:1px solid rgba(255,255,255,0.1);}.stat-number{font-size:2.2rem;}
 .packages-grid,.includes-grid{grid-template-columns:1fr;}
 section{padding:56px 18px;}
 .ag{grid-template-columns:1fr;}
@@ -373,11 +375,11 @@ section{padding:56px 18px;}
 </section>
 
 <div class="stats">
-  <div class="stats-inner">
-    <div class="stat-item"><h3>+342</h3><p>Viajes realizados</p></div>
-    <div class="stat-item"><h3>4,926</h3><p>Familia en Instagram</p></div>
-    <div class="stat-item"><h3>100%</h3><p>Ambiente LGBT+</p></div>
-    <div class="stat-item"><h3>5★</h3><p>Experiencia garantizada</p></div>
+  <div class="stats-grid">
+    <div class="stat-item"><div class="stat-number">+342</div><div class="stat-label">Viajes realizados</div></div>
+    <div class="stat-item"><div class="stat-number">4,926</div><div class="stat-label">Familia en Instagram</div></div>
+    <div class="stat-item"><div class="stat-number">100%</div><div class="stat-label">Ambiente LGBT+</div></div>
+    <div class="stat-item"><div class="stat-number">5★</div><div class="stat-label">Experiencia garantizada</div></div>
   </div>
 </div>
 
