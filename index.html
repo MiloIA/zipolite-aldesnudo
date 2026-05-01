@@ -253,6 +253,27 @@ footer a{color:var(--teal);text-decoration:none;}
 .add-btn{width:100%;padding:11px;background:transparent;border:2px dashed var(--ocean);border-radius:10px;color:var(--ocean);font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;margin-top:8px;transition:all 0.2s;}
 .add-btn:hover{background:var(--sky);}
 .sub-form{background:var(--sand);border-radius:12px;padding:18px;margin-top:14px;}
+/* PUSH NOTIFICATIONS */
+.push-stats{margin-bottom:24px;}
+.push-stat-card{background:#0d1b3e;color:white;border-radius:12px;padding:20px 32px;display:inline-block;text-align:center;}
+.push-stat-card span{font-size:2.5rem;font-weight:900;color:#7dd3ea;}
+.push-stat-card p{margin:4px 0 0;opacity:0.8;}
+.push-form label{display:block;font-weight:600;margin:16px 0 6px;font-size:0.9rem;}
+.push-form input,.push-form textarea{width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.95rem;box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}
+.notif-preview{background:#f3f4f6;border-radius:12px;padding:16px;margin:16px 0;border:1.5px solid #e5e7eb;}
+.notif-header{display:flex;gap:12px;align-items:flex-start;}
+.notif-icon{width:40px;height:40px;border-radius:8px;}
+.notif-header strong{font-size:0.9rem;display:block;}
+.notif-header p{font-size:0.85rem;color:#6b7280;margin:2px 0 0;}
+.notif-image{width:100%;border-radius:8px;margin-top:10px;max-height:120px;object-fit:cover;}
+.btn-push-send{background:linear-gradient(135deg,#0d1b3e,#0891b2);color:white;border:none;border-radius:10px;padding:14px 28px;font-size:1rem;font-weight:700;cursor:pointer;width:100%;margin-top:16px;font-family:'Plus Jakarta Sans',sans-serif;}
+.btn-push-send:disabled{opacity:0.6;cursor:not-allowed;}
+.push-success{color:#10b981;font-weight:600;margin-top:12px;}
+.push-error{color:#ef4444;font-weight:600;margin-top:12px;}
+.push-history-item{padding:12px 0;border-bottom:1px solid #f3f4f6;}
+.push-history-item strong{font-size:0.9rem;}
+.push-history-item p{font-size:0.85rem;color:#6b7280;margin:2px 0;}
+.push-history-item small{font-size:0.75rem;color:#9ca3af;}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #ddd;border-top-color:var(--ocean);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 /* MODAL PAGO */
@@ -820,6 +841,48 @@ section{padding:56px 18px;}
         <input type="file" id="gal-input" multiple accept="image/*" style="display:none" onchange="uploadPhotos(this)">
       </div>
       <div class="gal-prev" id="adm-gallery"><div style="color:#aaa;font-size:0.82rem;">Sin fotos aún.</div></div>
+    </div>
+
+    <div class="adm-sec" id="adm-push">
+      <h3>🔔 Notificaciones Push</h3>
+
+      <div class="push-stats">
+        <div class="push-stat-card">
+          <span id="push-count">...</span>
+          <p>Suscriptores activos</p>
+        </div>
+      </div>
+
+      <div class="push-form">
+        <h4>Enviar notificación</h4>
+
+        <label>Título *</label>
+        <input type="text" id="push-title" placeholder="ej. ¡Últimos lugares disponibles!" maxlength="50">
+
+        <label>Mensaje *</label>
+        <textarea id="push-body" placeholder="ej. Solo quedan 3 lugares en el paquete Mayo en Zipolite" maxlength="120" rows="3"></textarea>
+
+        <label>Imagen (URL opcional)</label>
+        <input type="url" id="push-image" placeholder="https://...imagen.jpg">
+
+        <label>URL destino (opcional)</label>
+        <input type="url" id="push-url" placeholder="https://zipolitealdesnudo.com/#paquetes">
+
+        <div class="push-preview" id="push-preview">
+          <p style="color:#aaa;font-size:0.85rem">👆 Preview de la notificación aparecerá aquí</p>
+        </div>
+
+        <button class="btn-push-send" onclick="sendPushNotification()">
+          🚀 Enviar a todos los suscriptores
+        </button>
+
+        <div id="push-result"></div>
+      </div>
+
+      <div class="push-history">
+        <h4>Últimas notificaciones enviadas</h4>
+        <div id="push-history-list"><p style="color:#aaa">Sin historial aún.</p></div>
+      </div>
     </div>
 
     <div class="adm-sec">
@@ -1583,6 +1646,91 @@ async function loadAdminData() {
   if (savedClabe) document.getElementById('cfg-clabe').value=savedClabe;
   loadDiscounts();
   loadReservaciones();
+  loadPushStats();
+  loadPushHistory();
+}
+
+// ---- PUSH NOTIFICATIONS ----
+async function loadPushStats() {
+  const { data } = await sb.from('push_subscriptions').select('id');
+  document.getElementById('push-count').textContent = data?.length || 0;
+}
+
+document.getElementById('push-title')?.addEventListener('input', updatePushPreview);
+document.getElementById('push-body')?.addEventListener('input', updatePushPreview);
+document.getElementById('push-image')?.addEventListener('input', updatePushPreview);
+
+function updatePushPreview() {
+  const title = document.getElementById('push-title').value || 'Título';
+  const body = document.getElementById('push-body').value || 'Mensaje...';
+  const image = document.getElementById('push-image').value;
+  document.getElementById('push-preview').innerHTML = `
+    <div class="notif-preview">
+      <div class="notif-header">
+        <img src="/icon-192x192.png" class="notif-icon">
+        <div>
+          <strong>${title}</strong>
+          <p>${body}</p>
+        </div>
+      </div>
+      ${image ? `<img src="${image}" class="notif-image" onerror="this.style.display='none'">` : ''}
+    </div>
+  `;
+}
+
+async function sendPushNotification() {
+  const title = document.getElementById('push-title').value.trim();
+  const body = document.getElementById('push-body').value.trim();
+  const image = document.getElementById('push-image').value.trim();
+  const url = document.getElementById('push-url').value.trim();
+
+  if (!title || !body) {
+    alert('Título y mensaje son obligatorios');
+    return;
+  }
+
+  const btn = document.querySelector('.btn-push-send');
+  btn.textContent = '⏳ Enviando...';
+  btn.disabled = true;
+
+  const res = await fetch('/api/send-notification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, body, image, url })
+  });
+
+  const data = await res.json();
+  const result = document.getElementById('push-result');
+
+  if (res.ok) {
+    result.innerHTML = `<p class="push-success">✅ Enviado a ${data.sent} suscriptores</p>`;
+    await sb.from('push_history').insert([{ title, body, sent: data.sent }]);
+    loadPushHistory();
+    document.getElementById('push-title').value = '';
+    document.getElementById('push-body').value = '';
+    document.getElementById('push-image').value = '';
+    document.getElementById('push-url').value = '';
+    document.getElementById('push-preview').innerHTML = '<p style="color:#aaa;font-size:0.85rem">👆 Preview aparecerá aquí</p>';
+  } else {
+    result.innerHTML = `<p class="push-error">❌ Error al enviar</p>`;
+  }
+
+  btn.textContent = '🚀 Enviar a todos los suscriptores';
+  btn.disabled = false;
+}
+
+async function loadPushHistory() {
+  const { data } = await sb.from('push_history')
+    .select('*').order('created_at', { ascending: false }).limit(10);
+  const list = document.getElementById('push-history-list');
+  if (!data?.length) { list.innerHTML = '<p style="color:#aaa">Sin historial aún.</p>'; return; }
+  list.innerHTML = data.map(h => `
+    <div class="push-history-item">
+      <strong>${h.title}</strong>
+      <p>${h.body}</p>
+      <small>Enviado a ${h.sent} personas · ${new Date(h.created_at).toLocaleDateString('es-MX')}</small>
+    </div>
+  `).join('');
 }
 
 async function loadReservaciones() {

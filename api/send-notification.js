@@ -14,7 +14,7 @@ webpush.setVapidDetails(
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { title, body, url } = req.body;
+  const { title, body, image, url } = req.body;
   const { data: subs } = await supabase
     .from('push_subscriptions')
     .select('*');
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   const results = await Promise.allSettled(
     subs.map(sub => webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-      JSON.stringify({ title, body, url: url || '/' })
+      JSON.stringify({ title, body, image, url: url || '/' })
     ))
   );
   res.status(200).json({ sent: results.filter(r => r.status === 'fulfilled').length });
