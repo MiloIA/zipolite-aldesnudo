@@ -40,9 +40,6 @@ nav{background:#0d1b3e;padding:14px 40px;display:flex;align-items:center;justify
 .nav-links a{text-decoration:none;color:rgba(255,255,255,0.85);font-size:0.88rem;font-weight:500;transition:color 0.2s;}
 .nav-links a:hover{color:white;}
 .nav-cta{background:linear-gradient(135deg,#e63946,#c1121f)!important;color:white!important;padding:9px 20px;border-radius:100px;font-weight:600!important;box-shadow:0 4px 15px rgba(230,57,70,0.4);}
-.lang-switch{display:flex;gap:5px;}
-.lang-btn{padding:4px 11px;border-radius:100px;border:1.5px solid rgba(255,255,255,0.3);background:transparent;font-size:0.75rem;font-weight:600;cursor:pointer;color:white;font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.2s;}
-.lang-btn.active{background:white;color:#0d1b3e;border-color:white;}
 .hero{min-height:100vh;background:linear-gradient(135deg,#0d1b3e 0%,#1a3a5c 40%,#0891b2 100%);position:relative;display:flex;align-items:center;overflow:hidden;}
 .hero-content{max-width:1100px;margin:0 auto;padding:80px 40px 100px;display:grid;grid-template-columns:1.1fr 0.9fr;gap:60px;align-items:center;position:relative;z-index:2;width:100%;}
 .hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 16px;border-radius:100px;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:22px;}
@@ -314,7 +311,6 @@ nav{padding:12px 18px;position:relative;}
 .nav-links.mobile-open a{display:block;padding:15px 22px;font-size:1rem;font-weight:500;color:var(--dark);text-decoration:none;}
 .nav-links.mobile-open a:hover{color:var(--ocean);background:#f4fafc;}
 .nav-links.mobile-open .nav-cta{margin:10px 22px 0;border-radius:100px;text-align:center;padding:12px 20px;background:var(--red);color:#fff!important;}
-.nav-links.mobile-open .lang-switch{padding:12px 22px;display:flex;gap:8px;}
 .hero-content{grid-template-columns:1fr;gap:28px;padding:50px 20px 80px;}
 .hero-logo-ring{width:200px;height:200px;}
 .hero-logo-ring img{width:170px;height:170px;}
@@ -344,7 +340,6 @@ section{padding:56px 18px;}
     <li><a href="#faq">FAQ</a></li>
     <li><a href="#blog-section">Blog</a></li>
     <li><a href="#redes">Contacto</a></li>
-    <li><div class="lang-switch"><button class="lang-btn active" onclick="setLang('es')">ES</button><button class="lang-btn" onclick="setLang('en')">EN</button></div></li>
     <li><a href="#" onclick="openRegister();return false;" style="color:var(--ocean);font-weight:600;">👤 Mi cuenta</a></li>
     <li><a href="#paquetes" class="nav-cta">¡Reservar!</a></li>
     <li><button class="pwa-install-btn" onclick="installPWA()" style="display:none;background:none;border:1.5px solid var(--ocean);color:var(--ocean);padding:7px 16px;border-radius:100px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">📲 Descargar app</button></li>
@@ -1834,11 +1829,6 @@ function saveCfg(){
   const newPwd=prompt('Establece o cambia la contraseña del panel admin (deja vacío para mantener la actual):');
   if(newPwd){localStorage.setItem('adm_pwd',newPwd);alert('✅ Contraseña actualizada');}
   const el=document.getElementById('cfg-saved');el.style.display='block';setTimeout(()=>el.style.display='none',2500);
-}
-
-function setLang(lang){
-  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`.lang-btn[onclick="setLang('${lang}')"]`).classList.add('active');
 }
 
 // Check auth state on load
