@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   const results = await Promise.allSettled(
     subs.map(sub => webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-      JSON.stringify({ title, body, image, url: url || '/' })
+      JSON.stringify({ title, body, image, url: url && url.trim() !== '' ? url.trim() : 'https://zipolitealdesnudo.com/#paquetes' })
     ).catch(err => console.error('Error enviando a', sub.endpoint, err.message)))
   );
   res.status(200).json({ sent: results.filter(r => r.status === 'fulfilled').length });
