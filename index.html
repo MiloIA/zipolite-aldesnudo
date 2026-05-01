@@ -142,6 +142,20 @@ section{padding:80px 40px;}
 .include-card h4{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;margin-bottom:7px;}
 .include-card p{font-size:0.83rem;color:#5a7a86;line-height:1.5;}
 #testimonios{background:#f8f5f0 !important;}
+#nosotros{background:#f8f5f0 !important;}
+.nosotros-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;margin-top:40px;}
+.nosotros-texto h3{font-size:1.2rem;font-weight:700;color:#0d1b3e;margin:24px 0 8px;}
+.nosotros-texto p{color:#4b5563;line-height:1.8;margin-bottom:12px;}
+.nosotros-list{list-style:none;padding:0;margin:12px 0;}
+.nosotros-list li{padding:8px 0 8px 28px;position:relative;color:#4b5563;line-height:1.6;}
+.nosotros-list li::before{content:'🌊';position:absolute;left:0;}
+.nosotros-highlight{font-size:1.1rem;font-weight:700;color:#0d1b3e;margin-top:20px;}
+.nosotros-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.nosotros-card{background:white;border-radius:16px;padding:24px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.08);transition:transform 0.2s;}
+.nosotros-card:hover{transform:translateY(-4px);}
+.nosotros-icon{font-size:2rem;display:block;margin-bottom:8px;}
+.nosotros-card h4{font-size:1.4rem;font-weight:900;color:#0d1b3e;margin:0 0 4px;}
+.nosotros-card p{font-size:0.85rem;color:#6b7280;margin:0;}
 .testi-carousel-wrap{position:relative;display:flex;align-items:center;gap:12px;}
 .testi-prev,.testi-next{background:white;border:2px solid #e5e7eb;border-radius:50%;width:44px;height:44px;min-width:44px;font-size:2rem;cursor:pointer;color:#1a1a2e;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);z-index:10;flex-shrink:0;}
 .testi-prev:hover,.testi-next:hover{background:#0891b2;color:white;border-color:#0891b2;}
@@ -314,7 +328,7 @@ nav{padding:12px 18px;position:relative;}
 .hero-content{grid-template-columns:1fr;gap:28px;padding:50px 20px 80px;}
 .hero-logo-ring{width:200px;height:200px;}
 .hero-logo-ring img{width:170px;height:170px;}
-.stats-grid{grid-template-columns:repeat(2,1fr);}.stat-item:nth-child(2){border-right:none;}.stat-item:nth-child(1),.stat-item:nth-child(2){border-bottom:1px solid rgba(255,255,255,0.1);}.stat-number{font-size:2.2rem;}
+.stats-grid{grid-template-columns:repeat(2,1fr);}.stat-item:nth-child(2){border-right:none;}.stat-item:nth-child(1),.stat-item:nth-child(2){border-bottom:1px solid rgba(255,255,255,0.1);}.stat-number{font-size:2.2rem;}.nosotros-grid{grid-template-columns:1fr;}.nosotros-cards{grid-template-columns:1fr 1fr;}
 .packages-grid,.includes-grid{grid-template-columns:1fr;}
 section{padding:56px 18px;}
 .ag{grid-template-columns:1fr;}
@@ -336,6 +350,7 @@ section{padding:56px 18px;}
   <ul class="nav-links" id="nav-links">
     <li><a href="#paquetes">Paquetes</a></li>
     <li><a href="#galeria">Galería</a></li>
+    <li><a href="#nosotros">Nosotros</a></li>
     <li><a href="#testimonios">Reseñas</a></li>
     <li><a href="#faq">FAQ</a></li>
     <li><a href="#mapa">Mapa</a></li>
@@ -412,6 +427,57 @@ section{padding:56px 18px;}
       <div class="include-card"><span class="include-icon">📸</span><h4>Memorias Inolvidables</h4><p>Atardeceres, fiestas y momentos que duran toda la vida.</p></div>
       <div class="include-card"><span class="include-icon">💳</span><h4>Pago Flexible</h4><p>Aparta con $3,000 y liquida 10 días antes del viaje.</p></div>
       <div class="include-card"><span class="include-icon">📞</span><h4>Atención Personalizada</h4><p>Te acompañamos desde la reserva hasta que regresas a casa.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="nosotros">
+  <div class="section-inner">
+    <span class="section-tag">Sobre nosotros</span>
+    <h2 class="section-title">No organizamos viajes… creamos experiencias ✨</h2>
+    <p class="section-sub">Durante más de una década hemos acompañado a personas a descubrir Zipolite de una forma distinta.</p>
+
+    <div class="nosotros-grid">
+      <div class="nosotros-texto">
+        <p>No se trata solo de llegar a la playa. Se trata de sentirte libre, conectar con otros y vivir un espacio donde puedes ser tú, sin filtros.</p>
+
+        <h3>¿Qué hace diferente viajar con nosotros? 🏖️</h3>
+        <p>Sabemos que viajar solo puede generar dudas: ¿Voy a encajar? ¿Iré solo? ¿Me sentiré cómodo? Por eso creamos algo más que un viaje:</p>
+        <p><strong>Creamos comunidad.</strong> Nuestros grupos están diseñados para que desde antes de salir ya te sientas acompañado.</p>
+
+        <h3>Un espacio pensado para ti 🌈</h3>
+        <p>Somos una agencia 100% LGBT+ friendly. Un espacio donde:</p>
+        <ul class="nosotros-list">
+          <li>Puedes conocer personas con tu misma vibra</li>
+          <li>Puedes ir solo y no sentirte solo</li>
+          <li>Puedes vivir la experiencia a tu ritmo</li>
+          <li>Puedes soltarte sin presión ni expectativas</li>
+        </ul>
+        <p class="nosotros-highlight">Aquí no tienes que encajar… solo llegar. 💛</p>
+      </div>
+
+      <div class="nosotros-cards">
+        <div class="nosotros-card">
+          <span class="nosotros-icon">🗓️</span>
+          <h4>+10 años</h4>
+          <p>Creando experiencias inolvidables</p>
+        </div>
+        <div class="nosotros-card">
+          <span class="nosotros-icon">👥</span>
+          <h4>+342 viajes</h4>
+          <p>Personas que ya vivieron Zipolite con nosotros</p>
+        </div>
+        <div class="nosotros-card">
+          <span class="nosotros-icon">🌈</span>
+          <h4>100% LGBT+</h4>
+          <p>Espacio seguro, inclusivo y libre</p>
+        </div>
+        <div class="nosotros-card">
+          <span class="nosotros-icon">⭐</span>
+          <h4>5 estrellas</h4>
+          <p>Experiencia garantizada en cada viaje</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
