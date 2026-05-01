@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notificación — Zipolite al Desnudo</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+
+<meta name="description" content="Zipolite al Desnudo — Agencia de viajes LGBT+ CDMX.">
+<meta property="og:title" content="Zipolite al Desnudo — Agencia de Viajes LGBT+">
+<meta property="og:description" content="Playa, libertad y la familia que elegiste.">
+<meta property="og:image" content="https://zipolitealdesnudo.com/logo.png">
+<meta property="og:url" content="https://zipolitealdesnudo.com">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_MX">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Zipolite al Desnudo — Agencia de Viajes LGBT+">
+<meta name="twitter:description" content="Playa, libertad y la familia que elegiste.">
+<meta name="twitter:image" content="https://zipolitealdesnudo.com/logo.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--red:#E8312A;--orange:#F5831F;--yellow:#FFCA28;--green:#4CAF50;--teal:#00BCD4;--purple:#9C27B0;--ocean:#0097A7;--sand:#FFFBF2;--sky:#E0F7FA;--light:#F0FEFF;--dark:#1A3A4A;--white:#FFFFFF;}
+*{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--sand);color:var(--dark);overflow-x:hidden;}
+.rainbow-bar{height:6px;background:linear-gradient(90deg,#E8312A 0%,#F5831F 20%,#FFCA28 40%,#4CAF50 60%,#00BCD4 80%,#9C27B0 100%);}
+nav{background:#0d1b3e;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.3);}
+.nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
+.nav-logo img{height:70px;width:auto;border-radius:8px;object-fit:contain;mix-blend-mode:screen;filter:brightness(1.3) drop-shadow(0 2px 8px rgba(255,255,255,0.2));}
+.nav-logo-text{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;line-height:1.2;color:white;}
+.nav-logo-text span{display:block;font-size:0.68rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;color:#7dd3ea;text-transform:uppercase;letter-spacing:0.1em;}
+.nav-links{display:flex;align-items:center;gap:24px;list-style:none;}
+.nav-links a{text-decoration:none;color:rgba(255,255,255,0.85);font-size:0.88rem;font-weight:500;transition:color 0.2s;}
+.nav-links a:hover{color:white;}
+.nav-cta{background:linear-gradient(135deg,#e63946,#c1121f)!important;color:white!important;padding:9px 20px;border-radius:100px;font-weight:600!important;box-shadow:0 4px 15px rgba(230,57,70,0.4);}
+section{padding:80px 40px;}
+.section-inner{max-width:1100px;margin:0 auto;}
+footer{background:#0a2030;color:rgba(255,255,255,0.45);text-align:center;padding:22px 40px;font-size:0.8rem;}
+footer a{color:var(--teal);text-decoration:none;}
+.whatsapp-float{position:fixed;bottom:26px;right:26px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+.wa-bubble{background:white;border-radius:12px;padding:9px 15px;font-size:0.8rem;font-weight:500;color:var(--dark);box-shadow:0 4px 18px rgba(0,0,0,0.10);}
+.wa-btn{width:56px;height:56px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 18px rgba(37,211,102,0.45);font-size:1.5rem;transition:transform 0.2s;}
+.wa-btn:hover{transform:scale(1.1);}
+.spin{display:inline-block;width:20px;height:20px;border:3px solid #ddd;border-top-color:var(--ocean);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.hamburger{display:none;}
+@media(max-width:768px){
+nav{padding:12px 18px;position:relative;}
+.hamburger{display:flex;align-items:center;justify-content:center;background:none;border:none;font-size:1.7rem;cursor:pointer;color:white;padding:4px 8px;line-height:1;}
+.nav-links{display:none;}
+.nav-links.mobile-open{display:flex;flex-direction:column;position:absolute;top:100%;left:0;right:0;background:#fff;box-shadow:0 8px 28px rgba(0,150,170,0.18);padding:10px 0 18px;gap:0;z-index:200;list-style:none;margin:0;}
+.nav-links.mobile-open li{border-bottom:1px solid #f0f4f6;}
+.nav-links.mobile-open li:last-child{border-bottom:none;}
+.nav-links.mobile-open a{display:block;padding:15px 22px;font-size:1rem;font-weight:500;color:var(--dark);text-decoration:none;}
+.nav-links.mobile-open a:hover{color:var(--ocean);background:#f4fafc;}
+.nav-links.mobile-open .nav-cta{margin:10px 22px 0;border-radius:100px;text-align:center;padding:12px 20px;background:var(--red);color:#fff!important;}
+section{padding:56px 18px;}
+}
+</style>
+</head>
+<body>
+
+<div class="rainbow-bar"></div>
+<nav>
+  <a href="/" class="nav-logo">
+    <img src="logo-nuevo.png" alt="Zipolite al Desnudo">
+    <div class="nav-logo-text">Zipolite al Desnudo<span>Agencia de Viajes LGBT+</span></div>
+  </a>
+  <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Abrir menú" aria-expanded="false">☰</button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="/#paquetes">Paquetes</a></li>
+    <li><a href="/#galeria">Galería</a></li>
+    <li><a href="/#nosotros">Nosotros</a></li>
+    <li><a href="/#testimonios">Reseñas</a></li>
+    <li><a href="/#faq">FAQ</a></li>
+    <li><a href="/#redes">Contacto</a></li>
+    <li><a href="/#paquetes" class="nav-cta">¡Reservar!</a></li>
+  </ul>
+</nav>
+
+<section id="notif-detalle">
+  <div class="section-inner" style="max-width:680px">
+    <div id="notif-loading" style="text-align:center;padding:60px">
+      <span class="spin"></span> Cargando...
+    </div>
+    <div id="notif-content" style="display:none">
+      <img id="notif-img" src="" alt=""
+        style="width:100%;border-radius:16px;margin-bottom:24px;display:none">
+      <h1 id="notif-titulo" style="font-size:2rem;color:#0d1b3e;margin-bottom:12px"></h1>
+      <p id="notif-descripcion" style="color:#4b5563;line-height:1.8;margin-bottom:24px"></p>
+
+      <div id="notif-codigo-wrap" style="display:none;background:#f0f9ff;border:2px dashed #0891b2;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center">
+        <p style="color:#0891b2;font-weight:700;margin:0 0 8px">🎟️ Tu código de descuento:</p>
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px">
+          <span id="notif-codigo" style="font-size:1.8rem;font-weight:900;color:#0d1b3e;letter-spacing:4px"></span>
+          <button onclick="copiarCodigo()" style="background:#0891b2;color:white;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:600">
+            📋 Copiar
+          </button>
+        </div>
+        <p id="notif-valido" style="color:#9ca3af;font-size:0.85rem;margin:8px 0 0"></p>
+      </div>
+
+      <a id="notif-cta" href="#"
+        style="display:block;background:linear-gradient(135deg,#e63946,#c1121f);color:white;text-align:center;padding:16px;border-radius:999px;font-size:1.1rem;font-weight:700;text-decoration:none;margin-bottom:16px">
+        🏖️ Ver paquetes
+      </a>
+
+      <p id="notif-fecha" style="color:#9ca3af;font-size:0.85rem;text-align:center"></p>
+    </div>
+    <div id="notif-404" style="display:none;text-align:center;padding:60px">
+      <p style="font-size:3rem">🔔</p>
+      <h2>Notificación no encontrada</h2>
+      <p style="color:#6b7280">Esta promoción ya expiró o fue eliminada.</p>
+      <a href="/" style="color:#0891b2">← Volver al inicio</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 Zipolite al Desnudo · Agencia de Viajes LGBT+ · CDMX, México</p>
+  <p style="margin-top:8px;"><a href="/privacidad.html">Aviso de Privacidad</a> | <a href="/terminos.html">Términos y Condiciones</a></p>
+</footer>
+
+<div class="whatsapp-float">
+  <div class="wa-bubble">¿Dudas? ¡Escríbenos! 👋</div>
+  <a href="https://wa.me/529582199953" target="_blank" class="wa-btn">💬</a>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
+
+async function loadNotificacion() {
+  const id = new URLSearchParams(window.location.search).get('id');
+  if (!id) { showNotFound(); return; }
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/push_history?id=eq.${id}&select=*`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  const data = await res.json();
+
+  if (!data?.length) { showNotFound(); return; }
+
+  const n = data[0];
+  document.getElementById('notif-loading').style.display = 'none';
+  document.getElementById('notif-content').style.display = 'block';
+
+  document.getElementById('notif-titulo').textContent = n.title;
+  document.getElementById('notif-descripcion').textContent = n.descripcion || n.body;
+
+  if (n.image) {
+    const img = document.getElementById('notif-img');
+    img.src = n.image;
+    img.style.display = 'block';
+  }
+
+  if (n.codigo_descuento) {
+    document.getElementById('notif-codigo-wrap').style.display = 'block';
+    document.getElementById('notif-codigo').textContent = n.codigo_descuento;
+    if (n.valido_hasta) {
+      document.getElementById('notif-valido').textContent =
+        `Válido hasta: ${new Date(n.valido_hasta).toLocaleDateString('es-MX', {day:'numeric',month:'long',year:'numeric'})}`;
+    }
+  }
+
+  const cta = document.getElementById('notif-cta');
+  cta.textContent = n.cta_texto || '🏖️ Ver paquetes';
+  cta.href = n.cta_url || '/#paquetes';
+
+  document.getElementById('notif-fecha').textContent =
+    `Publicado el ${new Date(n.created_at).toLocaleDateString('es-MX', {day:'numeric',month:'long',year:'numeric'})}`;
+
+  document.title = `${n.title} — Zipolite al Desnudo`;
+  document.querySelector('meta[property="og:title"]')?.setAttribute('content', n.title);
+  document.querySelector('meta[property="og:description"]')?.setAttribute('content', n.descripcion || n.body);
+  if (n.image) document.querySelector('meta[property="og:image"]')?.setAttribute('content', n.image);
+}
+
+function showNotFound() {
+  document.getElementById('notif-loading').style.display = 'none';
+  document.getElementById('notif-404').style.display = 'block';
+}
+
+function copiarCodigo() {
+  const codigo = document.getElementById('notif-codigo').textContent;
+  navigator.clipboard.writeText(codigo);
+  alert('✅ Código copiado: ' + codigo);
+}
+
+function toggleMobileMenu() {
+  const nav = document.getElementById('nav-links');
+  const btn = document.getElementById('hamburger');
+  const open = nav.classList.toggle('mobile-open');
+  btn.setAttribute('aria-expanded', open);
+}
+
+loadNotificacion();
+</script>
+</body>
+</html>

@@ -912,6 +912,23 @@ section{padding:56px 18px;}
         <label>URL destino (opcional)</label>
         <input type="url" id="push-url" placeholder="https://zipolitealdesnudo.com/#paquetes">
 
+        <label>Descripción completa (para mini-página)</label>
+        <textarea id="push-descripcion" rows="4"
+          placeholder="Describe la promoción con todos los detalles..."></textarea>
+
+        <label>Código de descuento (opcional)</label>
+        <input type="text" id="push-codigo" placeholder="ej. MAYO10"
+          style="text-transform:uppercase">
+
+        <label>Válido hasta (opcional)</label>
+        <input type="date" id="push-valido-hasta">
+
+        <label>Texto del botón CTA</label>
+        <input type="text" id="push-cta-texto" placeholder="ej. 🏖️ Reservar ahora" value="🏖️ Ver paquetes">
+
+        <label>URL del botón CTA</label>
+        <input type="url" id="push-cta-url" placeholder="https://zipolitealdesnudo.com/#paquetes">
+
         <div class="push-preview" id="push-preview">
           <p style="color:#aaa;font-size:0.85rem">👆 Preview de la notificación aparecerá aquí</p>
         </div>
@@ -1748,6 +1765,11 @@ async function sendPushNotification() {
   const body = document.getElementById('push-body').value.trim();
   const image = document.getElementById('push-image').value.trim();
   const url = document.getElementById('push-url').value.trim();
+  const descripcion = document.getElementById('push-descripcion').value.trim();
+  const codigo_descuento = document.getElementById('push-codigo').value.trim().toUpperCase();
+  const valido_hasta = document.getElementById('push-valido-hasta').value;
+  const cta_texto = document.getElementById('push-cta-texto').value.trim();
+  const cta_url = document.getElementById('push-cta-url').value.trim();
 
   if (!title || !body) {
     alert('Título y mensaje son obligatorios');
@@ -1768,13 +1790,28 @@ async function sendPushNotification() {
   const result = document.getElementById('push-result');
 
   if (res.ok) {
-    result.innerHTML = `<p class="push-success">✅ Enviado a ${data.sent} suscriptores</p>`;
-    await sb.from('push_history').insert([{ title, body, sent: data.sent }]);
+    const record = { title, body, sent: data.sent };
+    if (image) record.image = image;
+    if (descripcion) record.descripcion = descripcion;
+    if (codigo_descuento) record.codigo_descuento = codigo_descuento;
+    if (valido_hasta) record.valido_hasta = valido_hasta;
+    if (cta_texto) record.cta_texto = cta_texto;
+    if (cta_url) record.cta_url = cta_url;
+
+    const { data: inserted } = await sb.from('push_history').insert([record]).select('id').single();
+    const miniUrl = inserted?.id ? `/notificacion.html?id=${inserted.id}` : '';
+    result.innerHTML = `<p class="push-success">✅ Enviado a ${data.sent} suscriptores${miniUrl ? ` · <a href="${miniUrl}" target="_blank">Ver mini-página</a>` : ''}</p>`;
+
     loadPushHistory();
     document.getElementById('push-title').value = '';
     document.getElementById('push-body').value = '';
     document.getElementById('push-image').value = '';
     document.getElementById('push-url').value = '';
+    document.getElementById('push-descripcion').value = '';
+    document.getElementById('push-codigo').value = '';
+    document.getElementById('push-valido-hasta').value = '';
+    document.getElementById('push-cta-texto').value = '🏖️ Ver paquetes';
+    document.getElementById('push-cta-url').value = '';
     document.getElementById('push-preview').innerHTML = '<p style="color:#aaa;font-size:0.85rem">👆 Preview aparecerá aquí</p>';
   } else {
     result.innerHTML = `<p class="push-error">❌ Error al enviar</p>`;
