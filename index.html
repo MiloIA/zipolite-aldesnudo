@@ -2016,8 +2016,10 @@ function installPWA() {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const map = L.map('zipolite-map').setView([15.6697, -96.9964], 15);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
   }).addTo(map);
   const markers = [
     { lat: 15.6705, lng: -96.9980, icon: '🏨', title: 'Hotel Paraíso', desc: 'Tu hospedaje frente al mar' },
