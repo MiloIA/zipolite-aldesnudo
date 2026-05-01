@@ -268,6 +268,9 @@ footer a{color:var(--teal);text-decoration:none;}
 .notif-image{width:100%;border-radius:8px;margin-top:10px;max-height:120px;object-fit:cover;}
 .btn-push-send{background:linear-gradient(135deg,#0d1b3e,#0891b2);color:white;border:none;border-radius:10px;padding:14px 28px;font-size:1rem;font-weight:700;cursor:pointer;width:100%;margin-top:16px;font-family:'Plus Jakarta Sans',sans-serif;}
 .btn-push-send:disabled{opacity:0.6;cursor:not-allowed;}
+.push-img-upload{display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
+.btn-upload-img{background:#f3f4f6;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 16px;font-size:0.9rem;cursor:pointer;font-weight:600;}
+.btn-upload-img:hover{background:#e5e7eb;}
 .push-success{color:#10b981;font-weight:600;margin-top:12px;}
 .push-error{color:#ef4444;font-weight:600;margin-top:12px;}
 .push-history-item{padding:12px 0;border-bottom:1px solid #f3f4f6;}
@@ -862,8 +865,18 @@ section{padding:56px 18px;}
         <label>Mensaje *</label>
         <textarea id="push-body" placeholder="ej. Solo quedan 3 lugares en el paquete Mayo en Zipolite" maxlength="120" rows="3"></textarea>
 
-        <label>Imagen (URL opcional)</label>
-        <input type="url" id="push-image" placeholder="https://...imagen.jpg">
+        <label>Imagen (opcional)</label>
+        <div class="push-img-upload">
+          <input type="file" id="push-image-file" accept="image/*"
+            onchange="uploadPushImage(this)" style="display:none">
+          <button type="button" class="btn-upload-img"
+            onclick="document.getElementById('push-image-file').click()">
+            📎 Subir imagen
+          </button>
+          <span id="push-image-name" style="font-size:0.85rem;color:#6b7280;margin-left:8px"></span>
+          <input type="hidden" id="push-image" value="">
+          <img id="push-image-preview" src="" style="display:none;width:100%;border-radius:8px;margin-top:8px;max-height:120px;object-fit:cover">
+        </div>
 
         <label>URL destino (opcional)</label>
         <input type="url" id="push-url" placeholder="https://zipolitealdesnudo.com/#paquetes">
@@ -1676,6 +1689,27 @@ function updatePushPreview() {
       ${image ? `<img src="${image}" class="notif-image" onerror="this.style.display='none'">` : ''}
     </div>
   `;
+}
+
+async function uploadPushImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const ext = file.name.split('.').pop();
+  const path = `push/${Date.now()}.${ext}`;
+
+  const { error } = await sb.storage
+    .from('galeria')
+    .upload(path, file, { contentType: file.type });
+
+  if (error) { alert('Error al subir imagen: ' + error.message); return; }
+
+  const { data } = sb.storage.from('galeria').getPublicUrl(path);
+
+  document.getElementById('push-image').value = data.publicUrl;
+  document.getElementById('push-image-name').textContent = file.name;
+  document.getElementById('push-image-preview').src = data.publicUrl;
+  document.getElementById('push-image-preview').style.display = 'block';
 }
 
 async function sendPushNotification() {
