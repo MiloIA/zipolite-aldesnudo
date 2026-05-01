@@ -339,7 +339,6 @@ section{padding:56px 18px;}
 }
 </style>
 <link rel="manifest" href="/manifest.json">
-<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </head>
 <body>
 <div class="rainbow-bar"></div>
@@ -2094,5 +2093,29 @@ function installPWA() {
     <div class="gallery-modal-grid" id="gallery-modal-grid"></div>
   </div>
 </div>
+<script>
+async function registerPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+  const reg = await navigator.serviceWorker.register('/sw.js');
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') return;
+
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: 'BGUv6ywkG2UAqlrowQlMCalnqrRXj4AbW3HlN6dBw2nRZWBo5YvCboluPGE8kApQyub7miVBHIjKnLpIMgEUpwo'
+  });
+
+  await fetch('/api/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(sub)
+  });
+}
+
+window.addEventListener('load', () => {
+  setTimeout(registerPush, 3000);
+});
+</script>
 </body>
 </html>
