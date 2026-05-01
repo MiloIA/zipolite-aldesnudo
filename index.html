@@ -1810,7 +1810,9 @@ async function loadNotifCenter() {
 
   list.innerHTML = data.map(n => `
     <div class="notif-item ${read.includes(n.id) ? 'read' : 'unread'}"
-         onclick="openNotif('${n.id}', ${JSON.stringify(n.url || '')})">
+         data-id="${n.id}"
+         data-url="${n.url || ''}"
+         style="cursor:pointer">
       ${n.image ? `<img src="${n.image}" class="notif-item-img">` : ''}
       <div class="notif-item-body">
         <strong>${n.title}</strong>
@@ -1820,6 +1822,25 @@ async function loadNotifCenter() {
       ${!read.includes(n.id) ? '<span class="notif-dot"></span>' : ''}
     </div>
   `).join('');
+
+  list.addEventListener('click', function(e) {
+    const item = e.target.closest('.notif-item');
+    if (!item) return;
+    const id = item.dataset.id;
+    const url = item.dataset.url;
+
+    const read = JSON.parse(localStorage.getItem('notif_read') || '[]');
+    if (!read.includes(id)) {
+      read.push(id);
+      localStorage.setItem('notif_read', JSON.stringify(read));
+    }
+
+    if (url && url.trim() !== '' && url !== 'null' && url !== 'undefined') {
+      window.location.href = url;
+    }
+
+    loadNotifCenter();
+  }, { once: true });
 }
 
 function toggleNotifCenter() {
@@ -1829,17 +1850,6 @@ function toggleNotifCenter() {
   if (!isOpen) loadNotifCenter();
 }
 
-function openNotif(id, url) {
-  const read = JSON.parse(localStorage.getItem('notif_read') || '[]');
-  if (!read.includes(id)) {
-    read.push(id);
-    localStorage.setItem('notif_read', JSON.stringify(read));
-  }
-  if (url && url !== 'undefined' && url !== '' && url !== 'null') {
-    window.location.href = url;
-  }
-  loadNotifCenter();
-}
 
 function markAllRead() {
   sb.from('push_history').select('id').then(({data}) => {
