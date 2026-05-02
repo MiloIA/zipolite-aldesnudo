@@ -923,8 +923,9 @@ section{padding:56px 18px;}
           placeholder="Describe la promoción con todos los detalles..."></textarea>
 
         <label>Código de descuento (opcional)</label>
-        <input type="text" id="push-codigo" placeholder="ej. MAYO10"
-          style="text-transform:uppercase">
+        <select id="push-codigo">
+          <option value="">Sin código de descuento</option>
+        </select>
 
         <label>Válido hasta (opcional)</label>
         <input type="date" id="push-valido-hasta">
@@ -1715,9 +1716,31 @@ async function loadAdminData() {
   loadReservaciones();
   loadPushStats();
   loadPushHistory();
+  loadDescuentos();
 }
 
 // ---- PUSH NOTIFICATIONS ----
+async function loadDescuentos() {
+  const { data } = await sb.from('descuentos')
+    .select('codigo, valor, tipo')
+    .eq('activo', true)
+    .order('codigo');
+
+  const select = document.getElementById('push-codigo');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Sin código de descuento</option>';
+
+  if (data?.length) {
+    data.forEach(d => {
+      const label = d.tipo === 'porcentaje'
+        ? `${d.codigo} (${d.valor}% off)`
+        : `${d.codigo} ($${d.valor} off)`;
+      select.innerHTML += `<option value="${d.codigo}">${label}</option>`;
+    });
+  }
+}
+
 async function loadPushStats() {
   const { data } = await sb.from('push_subscriptions').select('id');
   document.getElementById('push-count').textContent = data?.length || 0;
