@@ -1872,9 +1872,7 @@ async function loadNotifCenter() {
       localStorage.setItem('notif_read', JSON.stringify(read));
     }
 
-    if (url && url.trim() !== '' && url !== 'null' && url !== 'undefined') {
-      window.location.href = url;
-    }
+    window.open(`/notificacion.html?id=${id}`, '_blank');
 
     loadNotifCenter();
   }, { once: true });
@@ -1886,6 +1884,16 @@ function toggleNotifCenter() {
   center.style.display = isOpen ? 'none' : 'block';
   if (!isOpen) loadNotifCenter();
 }
+
+document.addEventListener('click', function(e) {
+  const center = document.getElementById('notif-center');
+  const bell = document.querySelector('.notif-bell');
+  if (center && bell &&
+      !center.contains(e.target) &&
+      !bell.contains(e.target)) {
+    center.style.display = 'none';
+  }
+});
 
 
 function markAllRead() {
