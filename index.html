@@ -411,7 +411,13 @@ section{padding:56px 18px;}
 <div class="notif-center" id="notif-center" style="display:none">
   <div class="notif-center-header">
     <h3>Notificaciones</h3>
-    <button onclick="markAllRead()">Marcar todas como leídas</button>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="markAllRead()">Marcar todas como leídas</button>
+      <button onclick="document.getElementById('notif-center').style.display='none'"
+        style="background:#f3f4f6;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">
+        ✕
+      </button>
+    </div>
   </div>
   <div id="notif-center-list">
     <p class="notif-empty">Sin notificaciones aún</p>
