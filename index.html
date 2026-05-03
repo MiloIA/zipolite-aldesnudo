@@ -516,8 +516,8 @@ section{padding:56px 18px;}
 <section id="cotizacion">
   <div class="section-inner">
     <span class="section-tag">Cotización personalizada</span>
-    <h2 class="section-title">Diseña tu viaje</h2>
-    <p class="section-sub">Cuéntanos tu aventura ideal — nosotros nos encargamos del resto.</p>
+    <h2 class="section-title">Cotiza tu viaje a Zipolite</h2>
+    <p class="section-sub">Arma tu escapada ideal — vuelo, hotel y traslados en un solo paquete.</p>
     <div class="cot-aviso">✈️ Cotizamos paquete completo: vuelo + hotel + traslados. No cotizamos servicios por separado.</div>
     <div class="cot-form">
       <form id="form-cotizacion" onsubmit="submitCotizacion(event)">
@@ -536,7 +536,9 @@ section{padding:56px 18px;}
           </div>
           <div class="cf">
             <label>Destino deseado *</label>
-            <input type="text" id="cot-destino" required placeholder="Ej. Bacalar, Los Cabos, Puerto Vallarta...">
+            <select id="cot-destino" required>
+              <option value="Zipolite, Oaxaca">Zipolite, Oaxaca</option>
+            </select>
           </div>
           <div class="cf">
             <label>Ciudad de salida *</label>
