@@ -1,13 +1,18 @@
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 const loginAttempts = {};
-export const validTokens = {};
 
-const WINDOW_MS  = 15 * 60 * 1000;     // 15 min
-const MAX_TRIES  = 5;
-const TOKEN_TTL  = 8 * 60 * 60 * 1000; // 8 h
+const WINDOW_MS = 15 * 60 * 1000;     // 15 min
+const MAX_TRIES = 5;
+const TOKEN_TTL = 8 * 60 * 60 * 1000; // 8 h
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const ip  = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
@@ -29,7 +34,10 @@ export default function handler(req, res) {
   if (password && password === process.env.ADMIN_PASSWORD) {
     delete loginAttempts[ip];
     const token = crypto.randomBytes(32).toString('hex');
-    validTokens[token] = now + TOKEN_TTL;
+    const expires_at = new Date(now + TOKEN_TTL).toISOString();
+
+    await supabase.from('admin_sessions').insert({ token, expires_at });
+
     return res.status(200).json({ success: true, token });
   }
 
