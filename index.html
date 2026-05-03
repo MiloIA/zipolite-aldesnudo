@@ -378,7 +378,27 @@ footer a{color:var(--teal);text-decoration:none;}
 .tab-reg.active{background:white;color:var(--dark);box-shadow:0 2px 8px rgba(0,0,0,0.08);}
 .reg-form{display:none;}
 .reg-form.active{display:block;}
+/* COTIZACIÓN PERSONALIZADA */
+#cotizacion{background:#f4fafc !important;}
+.cot-aviso{background:#e0f7f7;border:1.5px solid #1a9fa0;border-radius:12px;padding:16px 20px;font-size:0.92rem;color:#006060;font-weight:600;margin-bottom:32px;line-height:1.5;}
+.cot-form{background:white;border-radius:20px;box-shadow:0 6px 28px rgba(0,0,0,0.08);padding:36px;max-width:760px;}
+.cot-form .cg{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.cot-form .cf{display:flex;flex-direction:column;gap:0;}
+.cot-form .cf.full{grid-column:1/-1;}
+.cot-form label{font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#888;margin-bottom:5px;}
+.cot-form input,.cot-form select,.cot-form textarea{width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;outline:none;transition:border-color 0.2s;background:#fff;box-sizing:border-box;}
+.cot-form input:focus,.cot-form select:focus,.cot-form textarea:focus{border-color:#1a9fa0;box-shadow:0 0 0 3px rgba(26,159,160,0.1);}
+.cot-form textarea{min-height:90px;resize:vertical;}
+.cot-submit{padding:15px 34px;background:#1a9fa0;color:white;border:none;border-radius:999px;font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;margin-top:8px;transition:background 0.2s,transform 0.1s;letter-spacing:0.01em;}
+.cot-submit:hover{background:#157e7f;transform:translateY(-1px);}
+.cot-submit:active{transform:translateY(0);}
+.cot-success{display:none;background:#e8f5e9;border:1.5px solid #43a047;border-radius:12px;padding:18px 22px;color:#2e7d32;font-weight:600;font-size:0.95rem;margin-top:18px;line-height:1.55;}
+/* ADMIN: cotizaciones */
+.badge-proceso{background:#fff3cd;color:#856404;padding:3px 10px;border-radius:100px;font-size:0.75rem;font-weight:700;}
+.badge-enviada{background:#d1e7dd;color:#0f5132;padding:3px 10px;border-radius:100px;font-size:0.75rem;font-weight:700;}
+.btn-cot-estado{padding:4px 10px;background:#0097A7;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.72rem;font-weight:700;}
 .hamburger{display:none;}
+@media(max-width:768px){.cot-form .cg{grid-template-columns:1fr;}.cot-form{padding:22px 16px;}}
 @media(max-width:1024px){
 .gallery-grid{grid-template-columns:repeat(2,1fr);}
 }
@@ -415,6 +435,7 @@ section{padding:56px 18px;}
   <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Abrir menú" aria-expanded="false">☰</button>
   <ul class="nav-links" id="nav-links">
     <li><a href="#paquetes">Paquetes</a></li>
+    <li><a href="#cotizacion">Cotización</a></li>
     <li><a href="#galeria">Galería</a></li>
     <li><a href="#nosotros">Nosotros</a></li>
     <li><a href="#testimonios">Reseñas</a></li>
@@ -488,6 +509,87 @@ section{padding:56px 18px;}
     <p class="section-sub">Dos formas de vivir Zipolite. Ninguna equivocada.</p>
     <div class="packages-grid" id="pkg-container">
       <div style="text-align:center;padding:40px;color:#aaa;grid-column:1/-1;"><span class="spin"></span> Cargando...</div>
+    </div>
+  </div>
+</section>
+
+<section id="cotizacion">
+  <div class="section-inner">
+    <span class="section-tag">Cotización personalizada</span>
+    <h2 class="section-title">Diseña tu viaje</h2>
+    <p class="section-sub">Cuéntanos tu aventura ideal — nosotros nos encargamos del resto.</p>
+    <div class="cot-aviso">✈️ Cotizamos paquete completo: vuelo + hotel + traslados. No cotizamos servicios por separado.</div>
+    <div class="cot-form">
+      <form id="form-cotizacion" onsubmit="submitCotizacion(event)">
+        <div class="cg">
+          <div class="cf">
+            <label>Nombre completo *</label>
+            <input type="text" id="cot-nombre" required placeholder="Tu nombre">
+          </div>
+          <div class="cf">
+            <label>WhatsApp *</label>
+            <input type="text" id="cot-wa" required placeholder="52 55 1234 5678">
+          </div>
+          <div class="cf">
+            <label>Email *</label>
+            <input type="email" id="cot-email" required placeholder="correo@ejemplo.com">
+          </div>
+          <div class="cf">
+            <label>Destino deseado *</label>
+            <input type="text" id="cot-destino" required placeholder="Ej. Bacalar, Los Cabos, Puerto Vallarta...">
+          </div>
+          <div class="cf">
+            <label>Ciudad de salida *</label>
+            <select id="cot-ciudad" required onchange="toggleOtraCiudad(this.value)">
+              <option value="">— Selecciona —</option>
+              <option value="Ciudad de México — AICM (Terminal 1 y 2)">Ciudad de México — AICM (Terminal 1 y 2)</option>
+              <option value="Ciudad de México — AIFA">Ciudad de México — AIFA</option>
+              <option value="Guadalajara — GDL">Guadalajara — GDL</option>
+              <option value="Monterrey — MTY">Monterrey — MTY</option>
+              <option value="Otra">Otra (especificar)</option>
+            </select>
+          </div>
+          <div class="cf" id="cot-otra-wrap" style="display:none;">
+            <label>¿Desde qué ciudad sales? *</label>
+            <input type="text" id="cot-otra-ciudad" placeholder="Escribe tu ciudad">
+          </div>
+          <div class="cf">
+            <label>Fecha de salida *</label>
+            <input type="date" id="cot-salida" required onchange="updateFechaRegreso()">
+          </div>
+          <div class="cf">
+            <label>Fecha de regreso *</label>
+            <input type="date" id="cot-regreso" required>
+          </div>
+          <div class="cf">
+            <label>Número de viajeros *</label>
+            <select id="cot-viajeros" required>
+              <option value="1">1 viajero</option>
+              <option value="2" selected>2 viajeros</option>
+              <option value="3">3 viajeros</option>
+              <option value="4">4 viajeros</option>
+              <option value="5">5 viajeros</option>
+              <option value="6+">6 o más</option>
+            </select>
+          </div>
+          <div class="cf">
+            <label>Presupuesto aproximado por persona</label>
+            <select id="cot-presupuesto">
+              <option value="Menos de $8,000 MXN">Menos de $8,000 MXN</option>
+              <option value="$8,000 — $15,000 MXN">$8,000 — $15,000 MXN</option>
+              <option value="$15,000 — $25,000 MXN">$15,000 — $25,000 MXN</option>
+              <option value="Más de $25,000 MXN">Más de $25,000 MXN</option>
+              <option value="Prefiero no decirlo" selected>Prefiero no decirlo</option>
+            </select>
+          </div>
+          <div class="cf full">
+            <label>Comentarios adicionales</label>
+            <textarea id="cot-comentarios" placeholder="¿Alguna preferencia especial? Hotel frente al mar, habitación para no fumadores, celebración especial..."></textarea>
+          </div>
+        </div>
+        <button type="submit" class="cot-submit" id="cot-btn">Solicitar cotización gratuita →</button>
+      </form>
+      <div class="cot-success" id="cot-success">¡Listo! Recibirás tu cotización por WhatsApp en menos de 24 horas. 🌊</div>
     </div>
   </div>
 </section>
@@ -864,6 +966,7 @@ section{padding:56px 18px;}
     <button class="admin-nav-btn" data-tab="notificaciones" onclick="switchAdminTab('notificaciones')">🔔 Push</button>
     <button class="admin-nav-btn" data-tab="descuentos" onclick="switchAdminTab('descuentos')">🏷️ Descuentos</button>
     <button class="admin-nav-btn" data-tab="reservaciones" onclick="switchAdminTab('reservaciones')">📋 Reservaciones <span class="adm-badge" id="badge-pendientes" style="display:none"></span></button>
+    <button class="admin-nav-btn" data-tab="cotizaciones" onclick="switchAdminTab('cotizaciones')">💬 Cotizaciones <span class="adm-badge" id="badge-cotizaciones" style="display:none"></span></button>
     <button class="admin-nav-btn" data-tab="configuracion" onclick="switchAdminTab('configuracion')">⚙️ Config</button>
   </div>
   <div class="admin-content">
@@ -1068,6 +1171,13 @@ section{padding:56px 18px;}
     </div>
     </div>
 
+    <div class="admin-section" id="admin-section-cotizaciones">
+    <div class="adm-sec">
+      <h3>💬 Cotizaciones recibidas</h3>
+      <div id="adm-cotizaciones"><div style="color:#aaa;font-size:0.85rem;"><span class="spin"></span> Cargando...</div></div>
+    </div>
+    </div>
+
     <div class="admin-section" id="admin-section-reservaciones">
     <div class="adm-sec">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #e8f4f5;">
@@ -1225,6 +1335,7 @@ function switchAdminTab(tabId) {
   });
   localStorage.setItem('adminActiveTab', tabId);
   if (tabId === 'configuracion') loadConfig();
+  if (tabId === 'cotizaciones') loadCotizaciones();
 }
 
 function openAdmin() {
@@ -1834,6 +1945,7 @@ async function loadAdminData() {
   loadConfig();
   loadDiscounts();
   loadReservaciones();
+  loadCotizaciones();
   loadPushStats();
   loadPushHistory();
   loadDescuentos();
@@ -2743,6 +2855,152 @@ function installPWA() {
   } else if (isMobile) {
     alert('Para instalar la app:\nToca el menú ⋮ → "Añadir a pantalla de inicio"');
   }
+}
+
+/*
+  SQL para crear la tabla cotizaciones en Supabase (ejecutar en SQL Editor):
+
+  CREATE TABLE IF NOT EXISTS public.cotizaciones (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    whatsapp TEXT NOT NULL,
+    email TEXT NOT NULL,
+    destino TEXT NOT NULL,
+    ciudad_salida TEXT NOT NULL,
+    fecha_salida DATE NOT NULL,
+    fecha_regreso DATE NOT NULL,
+    num_viajeros TEXT NOT NULL,
+    presupuesto TEXT,
+    comentarios TEXT,
+    estado TEXT DEFAULT 'pendiente',
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+  ALTER TABLE public.cotizaciones ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "Allow all" ON public.cotizaciones FOR ALL USING (true);
+*/
+
+// ---- COTIZACIÓN PÚBLICA ----
+
+(function initCotizacionDates() {
+  const today = new Date().toISOString().split('T')[0];
+  const salida = document.getElementById('cot-salida');
+  const regreso = document.getElementById('cot-regreso');
+  if (salida) { salida.min = today; salida.value = ''; }
+  if (regreso) { regreso.min = today; regreso.value = ''; }
+})();
+
+function toggleOtraCiudad(val) {
+  const wrap = document.getElementById('cot-otra-wrap');
+  const input = document.getElementById('cot-otra-ciudad');
+  const show = val === 'Otra';
+  wrap.style.display = show ? 'flex' : 'none';
+  input.required = show;
+}
+
+function updateFechaRegreso() {
+  const salida = document.getElementById('cot-salida').value;
+  const regreso = document.getElementById('cot-regreso');
+  if (salida) {
+    regreso.min = salida;
+    if (regreso.value && regreso.value < salida) regreso.value = '';
+  }
+}
+
+async function submitCotizacion(e) {
+  e.preventDefault();
+  const btn = document.getElementById('cot-btn');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  const ciudadVal = document.getElementById('cot-ciudad').value;
+  const ciudadFinal = ciudadVal === 'Otra'
+    ? (document.getElementById('cot-otra-ciudad').value.trim() || 'Otra')
+    : ciudadVal;
+
+  const payload = {
+    nombre: document.getElementById('cot-nombre').value.trim(),
+    whatsapp: document.getElementById('cot-wa').value.trim(),
+    email: document.getElementById('cot-email').value.trim(),
+    destino: document.getElementById('cot-destino').value.trim(),
+    ciudad_salida: ciudadFinal,
+    fecha_salida: document.getElementById('cot-salida').value,
+    fecha_regreso: document.getElementById('cot-regreso').value,
+    num_viajeros: document.getElementById('cot-viajeros').value,
+    presupuesto: document.getElementById('cot-presupuesto').value,
+    comentarios: document.getElementById('cot-comentarios').value.trim(),
+    estado: 'pendiente'
+  };
+
+  const { error } = await sb.from('cotizaciones').insert(payload);
+
+  if (error) {
+    alert('Error al enviar: ' + error.message);
+    btn.disabled = false;
+    btn.textContent = 'Solicitar cotización gratuita →';
+    return;
+  }
+
+  document.getElementById('form-cotizacion').reset();
+  document.getElementById('cot-otra-wrap').style.display = 'none';
+  document.getElementById('cot-otra-ciudad').required = false;
+  const success = document.getElementById('cot-success');
+  success.style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = 'Solicitar cotización gratuita →';
+  setTimeout(() => success.style.display = 'none', 7000);
+}
+
+// ---- ADMIN: COTIZACIONES ----
+
+async function loadCotizaciones() {
+  const container = document.getElementById('adm-cotizaciones');
+  container.innerHTML = '<div style="color:#aaa;font-size:0.85rem;"><span class="spin"></span> Cargando...</div>';
+  const { data, error } = await sb.from('cotizaciones').select('*').order('created_at', { ascending: false });
+  if (error) { container.innerHTML = '<p style="color:red;font-size:0.85rem;">Error: ' + error.message + '</p>'; return; }
+  if (!data || data.length === 0) { container.innerHTML = '<p style="color:#aaa;font-size:0.85rem;">Sin cotizaciones aún.</p>'; return; }
+
+  const badgeEl = document.getElementById('badge-cotizaciones');
+  const pendientes = data.filter(c => c.estado === 'pendiente').length;
+  if (pendientes > 0) { badgeEl.textContent = pendientes; badgeEl.style.display = 'inline-flex'; }
+  else { badgeEl.style.display = 'none'; }
+
+  const estadoBadge = e => {
+    if (e === 'pendiente') return '<span class="badge-pend">pendiente</span>';
+    if (e === 'en proceso') return '<span class="badge-proceso">en proceso</span>';
+    return '<span class="badge-enviada">enviada</span>';
+  };
+  const nextEstado = e => e === 'pendiente' ? 'en proceso' : e === 'en proceso' ? 'enviada' : 'pendiente';
+  const nextLabel = e => e === 'pendiente' ? '→ En proceso' : e === 'en proceso' ? '→ Enviada' : '↺ Pendiente';
+
+  const rows = data.map(c => `
+    <tr>
+      <td>${new Date(c.created_at).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'2-digit'})}</td>
+      <td><strong>${c.nombre}</strong><br><span style="color:#888;font-size:0.78rem;">${c.email}</span></td>
+      <td>${c.destino}</td>
+      <td style="white-space:nowrap;">${c.fecha_salida} → ${c.fecha_regreso}</td>
+      <td style="text-align:center;">${c.num_viajeros}</td>
+      <td>${c.presupuesto || '—'}</td>
+      <td><a href="https://wa.me/${c.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:#1a9fa0;font-weight:600;">${c.whatsapp}</a></td>
+      <td>${estadoBadge(c.estado)}</td>
+      <td><button class="btn-cot-estado" onclick="updateEstadoCot('${c.id}','${nextEstado(c.estado)}')">${nextLabel(c.estado)}</button></td>
+    </tr>`).join('');
+
+  container.innerHTML = `
+    <div class="res-table-wrap">
+      <table class="res-table">
+        <thead><tr>
+          <th>Fecha</th><th>Nombre</th><th>Destino</th><th>Fechas viaje</th>
+          <th>Viajeros</th><th>Presupuesto</th><th>WhatsApp</th><th>Estado</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+async function updateEstadoCot(id, nuevoEstado) {
+  const { error } = await sb.from('cotizaciones').update({ estado: nuevoEstado }).eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  loadCotizaciones();
 }
 </script>
 <div class="gallery-modal" id="gallery-modal" onclick="closeGalleryModal()">
