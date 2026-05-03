@@ -2942,6 +2942,12 @@ async function submitCotizacion(e) {
     return;
   }
 
+  fetch('/api/notify-cotizacion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+
   document.getElementById('form-cotizacion').reset();
   document.getElementById('cot-otra-wrap').style.display = 'none';
   document.getElementById('cot-otra-ciudad').required = false;
@@ -2984,7 +2990,7 @@ async function loadCotizaciones() {
       <td>${c.presupuesto || '—'}</td>
       <td><a href="https://wa.me/${c.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:#1a9fa0;font-weight:600;">${c.whatsapp}</a></td>
       <td>${estadoBadge(c.estado)}</td>
-      <td><button class="btn-cot-estado" onclick="updateEstadoCot('${c.id}','${nextEstado(c.estado)}')">${nextLabel(c.estado)}</button></td>
+      <td style="white-space:nowrap;"><button class="btn-cot-estado" onclick="updateEstadoCot('${c.id}','${nextEstado(c.estado)}')">${nextLabel(c.estado)}</button> <button class="btn-res-del" onclick="deleteCotizacion('${c.id}')">🗑️</button></td>
     </tr>`).join('');
 
   container.innerHTML = `
@@ -3002,6 +3008,13 @@ async function loadCotizaciones() {
 async function updateEstadoCot(id, nuevoEstado) {
   const { error } = await sb.from('cotizaciones').update({ estado: nuevoEstado }).eq('id', id);
   if (error) { alert('Error: ' + error.message); return; }
+  loadCotizaciones();
+}
+
+async function deleteCotizacion(id) {
+  if (!confirm('¿Eliminar esta cotización?')) return;
+  const { error } = await sb.from('cotizaciones').delete().eq('id', id);
+  if (error) { alert('Error al eliminar: ' + error.message); return; }
   loadCotizaciones();
 }
 </script>
