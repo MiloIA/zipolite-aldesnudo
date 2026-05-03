@@ -1305,7 +1305,7 @@ let pkgs = [], adminPkgs = [], curPkg = null, selPayment = 'anticipo';
 let tempPassword;
 let currentSession = null;
 let oaiKey = localStorage.getItem('oai_key') || '';
-let adminAuthenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
+let adminAuthenticated = !!sessionStorage.getItem('adminToken');
 
 const DEFAULT_PKGS = [
   {id:'d1',nombre:'Paquete Premium',descripcion:'Hotel Paraíso · Línea de playa · 5 noches',precio:8500,fechas:'Jueves a Martes',incluye:['Vuelo redondo CDMX — Zipolite','5 noches en Hotel Paraíso (línea de playa)','Traslados aeropuerto ↔ hotel','Habitación doble (asignamos compañero/a)','Ambiente 100% LGBT+'],nota:'💡 Habitación privada disponible: +$2,500–$3,000 MXN',icono:'✈️',badge:'⭐ Más popular',tipo:'primary'},
@@ -1333,13 +1333,15 @@ async function checkAdminPwd() {
       body: JSON.stringify({ password: pwd })
     });
     const data = await res.json();
-    if (data.ok) {
+    if (data.token) {
       adminAuthenticated = true;
-      sessionStorage.setItem('adminAuthenticated', 'true');
+      sessionStorage.setItem('adminToken', data.token);
       closeAdminLogin();
       openAdmin();
     } else {
-      document.getElementById('login-err').style.display = 'block';
+      const errEl = document.getElementById('login-err');
+      errEl.textContent = res.status === 429 ? data.error : 'Contraseña incorrecta';
+      errEl.style.display = 'block';
     }
   } catch {
     document.getElementById('login-err').textContent = 'Error de conexión. Intenta de nuevo.';
@@ -1349,19 +1351,7 @@ async function checkAdminPwd() {
 
 function checkFirstTimeSetup() {
   if (window.location.hash !== '#setup-admin') return;
-  const existing = localStorage.getItem('adm_pwd');
-  if (existing) {
-    alert('Ya existe una contraseña de admin. Inicia sesión normalmente.');
-    window.location.hash = '';
-    return;
-  }
-  const newPwd = prompt('Primera configuración: establece la contraseña del panel admin:');
-  if (newPwd && newPwd.trim()) {
-    localStorage.setItem('adm_pwd', newPwd.trim());
-    alert('✅ Contraseña establecida. Ya puedes acceder con Shift+Alt+A.');
-  } else {
-    alert('No se estableció contraseña.');
-  }
+  alert('La contraseña del admin se configura en las variables de entorno de Vercel (ADMIN_PASSWORD).');
   window.location.hash = '';
 }
 
@@ -2752,9 +2742,7 @@ async function saveCfg() {
     updated_at: new Date().toISOString()
   }, { onConflict: 'id' });
   if (error) { alert('Error al guardar en Supabase: ' + error.message); return; }
-  const newPwd = prompt('Establece o cambia la contraseña del panel admin (deja vacío para mantener la actual):');
-  if (newPwd) { localStorage.setItem('adm_pwd', newPwd); alert('✅ Contraseña actualizada'); }
-  const el = document.getElementById('cfg-saved'); el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2500);
+const el = document.getElementById('cfg-saved'); el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2500);
 }
 
 // Check auth state on load
@@ -2781,7 +2769,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof Stripe !== 'undefined') stripeClient = Stripe('pk_live_51MiPtBGs8JZIcNIhUF5aP5xPN7SEfz0wAaGA34mRgolM1TpK60tkzoSn9uQUf6ovLTmIlCjxNUZdUVuY5vw525uu00xDkZoygg');
   loadAll();
   checkFirstTimeSetup();
-  if (sessionStorage.getItem('adminAuthenticated') === 'true') openAdmin();
+  if (sessionStorage.getItem('adminToken')) {
+    fetch('/api/admin-verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: sessionStorage.getItem('adminToken') }),
+    }).then(r => r.json()).then(d => {
+      if (d.valid) openAdmin();
+      else { sessionStorage.removeItem('adminToken'); adminAuthenticated = false; }
+    }).catch(() => {});
+  }
   if (window.location.hash === '#login') { openRegister(); window.location.hash = ''; }
 });
 
