@@ -2319,7 +2319,32 @@ async function saveManualReservacion() {
 }
 
 async function confirmarReservacion(id) {
-  await sb.from('reservaciones').update({estado:'confirmado'}).eq('id',id);
+  const { data: r, error: fetchErr } = await sb.from('reservaciones').select('*').eq('id', id).single();
+  if (fetchErr || !r) { alert('Error al obtener la reservación'); return; }
+
+  const { error } = await sb.from('reservaciones').update({ estado: 'confirmado' }).eq('id', id);
+  if (error) { alert('Error al confirmar: ' + error.message); return; }
+
+  fetch('/api/confirm-payment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      reservacion_id: r.id,
+      nombre: r.nombre,
+      email: r.email,
+      whatsapp: r.whatsapp,
+      paquete_nombre: r.paquete_nombre,
+      personas: r.personas,
+      metodo_pago: r.metodo_pago,
+      total: r.total,
+      anticipo: r.anticipo,
+      fecha_inicio: r.fecha_inicio || '',
+      fecha_fin: r.fecha_fin || '',
+      bank_name: localStorage.getItem('bank_name') || '',
+      bank_clabe: localStorage.getItem('bank_clabe') || '',
+    }),
+  }).catch(e => console.error('confirm-payment:', e));
+
   loadReservaciones();
 }
 
