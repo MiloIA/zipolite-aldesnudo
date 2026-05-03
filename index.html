@@ -1174,6 +1174,7 @@ function switchAdminTab(tabId) {
     section.classList.toggle('active', section.id === 'admin-section-' + tabId);
   });
   localStorage.setItem('adminActiveTab', tabId);
+  if (tabId === 'configuracion') loadConfig();
 }
 
 function openAdmin() {
@@ -1780,14 +1781,7 @@ async function loadAdminData() {
   renderAdmGallery(gd||[]);
   const {data:bd}=await sb.from('blog').select('*').order('created_at',{ascending:false});
   renderAdmBlog(bd||[]);
-  const savedKey=localStorage.getItem('oai_key');
-  if (savedKey) document.getElementById('cfg-openai').value=savedKey;
-  const savedWa=localStorage.getItem('cfg_wa');
-  if (savedWa) document.getElementById('cfg-wa').value=savedWa;
-  const savedBanco=localStorage.getItem('bank_name');
-  if (savedBanco) document.getElementById('cfg-banco').value=savedBanco;
-  const savedClabe=localStorage.getItem('bank_clabe');
-  if (savedClabe) document.getElementById('cfg-clabe').value=savedClabe;
+  loadConfig();
   loadDiscounts();
   loadReservaciones();
   loadPushStats();
@@ -2426,18 +2420,41 @@ async function aiNota(){
   btn.disabled=false;btn.innerHTML='🤖 Generar con IA';
 }
 
-function saveCfg(){
-  const key=document.getElementById('cfg-openai').value;
-  if(key){oaiKey=key;localStorage.setItem('oai_key',key);}
-  const wa=document.getElementById('cfg-wa').value.trim();
-  if(wa) localStorage.setItem('cfg_wa',wa);
-  const banco=document.getElementById('cfg-banco').value.trim();
-  if(banco) localStorage.setItem('bank_name',banco);
-  const clabe=document.getElementById('cfg-clabe').value.trim();
-  if(clabe) localStorage.setItem('bank_clabe',clabe);
-  const newPwd=prompt('Establece o cambia la contraseña del panel admin (deja vacío para mantener la actual):');
-  if(newPwd){localStorage.setItem('adm_pwd',newPwd);alert('✅ Contraseña actualizada');}
-  const el=document.getElementById('cfg-saved');el.style.display='block';setTimeout(()=>el.style.display='none',2500);
+async function loadConfig() {
+  const { data } = await sb.from('configuracion').select('*').limit(1).single();
+  if (data) {
+    if (data.openai_api_key) { oaiKey = data.openai_api_key; document.getElementById('cfg-openai').value = data.openai_api_key; localStorage.setItem('oai_key', data.openai_api_key); }
+    if (data.whatsapp_agencia) { document.getElementById('cfg-wa').value = data.whatsapp_agencia; localStorage.setItem('cfg_wa', data.whatsapp_agencia); }
+    if (data.banco) { document.getElementById('cfg-banco').value = data.banco; localStorage.setItem('bank_name', data.banco); }
+    if (data.clabe_interbancaria) { document.getElementById('cfg-clabe').value = data.clabe_interbancaria; localStorage.setItem('bank_clabe', data.clabe_interbancaria); }
+  } else {
+    const savedKey = localStorage.getItem('oai_key'); if (savedKey) document.getElementById('cfg-openai').value = savedKey;
+    const savedWa = localStorage.getItem('cfg_wa'); if (savedWa) document.getElementById('cfg-wa').value = savedWa;
+    const savedBanco = localStorage.getItem('bank_name'); if (savedBanco) document.getElementById('cfg-banco').value = savedBanco;
+    const savedClabe = localStorage.getItem('bank_clabe'); if (savedClabe) document.getElementById('cfg-clabe').value = savedClabe;
+  }
+}
+
+async function saveCfg() {
+  const key = document.getElementById('cfg-openai').value.trim();
+  const wa = document.getElementById('cfg-wa').value.trim();
+  const banco = document.getElementById('cfg-banco').value.trim();
+  const clabe = document.getElementById('cfg-clabe').value.trim();
+  if (key) { oaiKey = key; localStorage.setItem('oai_key', key); }
+  if (wa) localStorage.setItem('cfg_wa', wa);
+  if (banco) localStorage.setItem('bank_name', banco);
+  if (clabe) localStorage.setItem('bank_clabe', clabe);
+  const { error } = await sb.from('configuracion').upsert({
+    id: 1,
+    openai_api_key: key || null,
+    whatsapp_agencia: wa || null,
+    banco: banco || null,
+    clabe_interbancaria: clabe || null
+  }, { onConflict: 'id' });
+  if (error) { alert('Error al guardar en Supabase: ' + error.message); return; }
+  const newPwd = prompt('Establece o cambia la contraseña del panel admin (deja vacío para mantener la actual):');
+  if (newPwd) { localStorage.setItem('adm_pwd', newPwd); alert('✅ Contraseña actualizada'); }
+  const el = document.getElementById('cfg-saved'); el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2500);
 }
 
 // Check auth state on load
