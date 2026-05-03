@@ -1942,11 +1942,26 @@ async function loadPushHistory() {
   if (!data?.length) { list.innerHTML = '<p style="color:#aaa">Sin historial aún.</p>'; return; }
   list.innerHTML = data.map(h => `
     <div class="push-history-item">
-      <strong>${h.title}</strong>
-      <p>${h.body}</p>
-      <small>Enviado a ${h.sent} personas · ${new Date(h.created_at).toLocaleDateString('es-MX')}</small>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <strong>${h.title}</strong>
+          <p>${h.body}</p>
+          <small>Enviado a ${h.sent} personas · ${new Date(h.created_at).toLocaleDateString('es-MX')}</small>
+        </div>
+        <button onclick="deleteNotif('${h.id}')"
+          style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;padding:4px 8px;flex-shrink:0"
+          title="Eliminar">🗑️</button>
+      </div>
     </div>
   `).join('');
+}
+
+async function deleteNotif(id) {
+  if (!confirm('¿Eliminar esta notificación? La mini-página también dejará de estar disponible.')) return;
+  const { error } = await sb.from('push_history').delete().eq('id', id);
+  if (error) { alert('Error al eliminar'); return; }
+  loadPushHistory();
+  loadPushStats();
 }
 
 async function loadReservaciones() {
