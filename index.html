@@ -174,12 +174,21 @@ section{padding:80px 40px;}
 .testi-trip{font-size:0.75rem;color:var(--ocean);margin-top:2px;font-weight:500;}
 #blog-section{background:#ffffff !important;}
 .blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;}
-.blog-card{background:var(--sand);border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,150,170,0.08);transition:transform 0.2s;}
-.blog-card:hover{transform:translateY(-4px);}
-.blog-card-body{padding:24px;}
-.blog-card-body h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;margin-bottom:8px;color:var(--dark);}
-.blog-card-body p{font-size:0.85rem;color:#5a7a86;line-height:1.6;}
+.blog-card{background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;}
+.blog-card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,0.12);}
+.blog-card-img{width:100%;height:180px;object-fit:cover;}
+.blog-card-img-placeholder{width:100%;height:180px;background:linear-gradient(135deg,#0d1b3e,#0891b2);display:flex;align-items:center;justify-content:center;font-size:3rem;}
+.blog-card-body{padding:20px;}
+.blog-card-body h3{font-size:1.05rem;color:#0d1b3e;margin:0 0 8px;line-height:1.4;}
+.blog-card-body p{font-size:0.88rem;color:#6b7280;margin:0 0 12px;line-height:1.6;}
+.blog-card-body small{color:#9ca3af;font-size:0.8rem;}
 .blog-date{font-size:0.75rem;color:#aaa;margin-top:12px;}
+.blog-drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:8000;}
+.blog-drawer-overlay.active{display:block;}
+.blog-drawer{position:fixed;bottom:-100%;left:0;right:0;height:85vh;background:white;border-radius:20px 20px 0 0;z-index:8001;transition:bottom 0.4s ease;overflow:hidden;display:flex;flex-direction:column;}
+.blog-drawer.active{bottom:0;}
+.blog-drawer-handle{width:40px;height:4px;background:#e5e7eb;border-radius:2px;margin:12px auto 0;cursor:pointer;flex-shrink:0;}
+.blog-drawer-close{position:absolute;top:12px;right:16px;background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center;}
 #redes{background:linear-gradient(160deg,#006080 0%,#00ACC1 100%);color:white;text-align:center;}
 #redes .section-title{color:white;}
 #redes .section-sub{color:rgba(255,255,255,0.75);margin:0 auto 38px;}
@@ -962,6 +971,16 @@ section{padding:56px 18px;}
           <label>Título <button class="ai-btn" onclick="aiSEO()" id="ai-seo-btn">🤖 Auto SEO</button></label>
           <input type="text" id="bf-titulo" placeholder="Ej. Guía completa de Zipolite 2025">
         </div>
+        <div class="af" style="margin-bottom:12px;">
+          <label>Imagen de portada</label>
+          <div class="push-img-upload">
+            <input type="file" id="bf-imagen-file" accept="image/*" onchange="uploadBlogImage(this)" style="display:none">
+            <button type="button" class="btn-upload-img" onclick="document.getElementById('bf-imagen-file').click()">📎 Subir imagen</button>
+            <span id="bf-imagen-name" style="font-size:0.85rem;color:#6b7280;margin-left:8px"></span>
+            <input type="hidden" id="bf-imagen" value="">
+            <img id="bf-imagen-preview" src="" style="display:none;width:100%;border-radius:8px;margin-top:8px;max-height:200px;object-fit:cover">
+          </div>
+        </div>
         <div class="af" style="margin-bottom:12px;"><label>Contenido</label><textarea id="bf-contenido" style="min-height:120px;" placeholder="Escribe aquí..."></textarea></div>
         <div class="ag">
           <div class="af"><label>Meta descripción SEO</label><input type="text" id="bf-meta" placeholder="Descripción para Google (máx 160 chars)"></div>
@@ -1211,12 +1230,15 @@ async function loadBlog() {
   const {data} = await sb.from('blog').select('*').eq('publicado',true).order('created_at',{ascending:false});
   const c = document.getElementById('blog-container');
   if (!data || !data.length) { c.innerHTML='<div class="empty-msg">✍️ Posts del blog aparecerán aquí.</div>'; return; }
-  c.innerHTML = data.map(post=>`
-    <div class="blog-card"><div class="blog-card-body">
-      <h3>${post.titulo}</h3>
-      <p>${(post.contenido||'').substring(0,150)}${post.contenido&&post.contenido.length>150?'...':''}</p>
-      <div class="blog-date">${new Date(post.created_at).toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})}</div>
-    </div></div>`).join('');
+  c.innerHTML = data.map(p=>`
+    <div class="blog-card" onclick="openBlogDrawer('${p.id}')">
+      ${p.imagen ? `<img src="${p.imagen}" class="blog-card-img">` : `<div class="blog-card-img-placeholder">📝</div>`}
+      <div class="blog-card-body">
+        <h3>${p.titulo}</h3>
+        <p>${(p.contenido||'').substring(0,120)}...</p>
+        <small>${new Date(p.created_at).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}</small>
+      </div>
+    </div>`).join('');
 }
 
 // ---- COTIZADOR ----
@@ -2211,8 +2233,45 @@ async function delPhoto(id) {
   loadGallery();
 }
 
+// BLOG UPLOAD & DRAWER
+async function uploadBlogImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop();
+  const path = `blog/${Date.now()}.${ext}`;
+  const { error } = await sb.storage.from('galeria').upload(path, file, { contentType: file.type });
+  if (error) { alert('Error al subir imagen: ' + error.message); return; }
+  const { data } = sb.storage.from('galeria').getPublicUrl(path);
+  document.getElementById('bf-imagen').value = data.publicUrl;
+  document.getElementById('bf-imagen-name').textContent = file.name;
+  document.getElementById('bf-imagen-preview').src = data.publicUrl;
+  document.getElementById('bf-imagen-preview').style.display = 'block';
+}
+async function openBlogDrawer(id) {
+  const overlay = document.getElementById('blog-drawer-overlay');
+  const drawer = document.getElementById('blog-drawer');
+  const content = document.getElementById('blog-drawer-content');
+  overlay.classList.add('active');
+  drawer.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  content.innerHTML = '<div style="text-align:center;padding:40px">⏳ Cargando...</div>';
+  const { data } = await sb.from('blog').select('*').eq('id', id).single();
+  if (!data) { content.innerHTML = '<p>Error al cargar</p>'; return; }
+  content.innerHTML = `
+    ${data.imagen ? `<img src="${data.imagen}" style="width:100%;border-radius:12px;margin-bottom:20px;max-height:280px;object-fit:cover">` : ''}
+    <h2 style="font-size:1.6rem;color:#0d1b3e;margin-bottom:12px">${data.titulo}</h2>
+    <small style="color:#9ca3af">${new Date(data.created_at).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}</small>
+    <div style="margin-top:20px;line-height:1.9;color:#374151;white-space:pre-wrap">${data.contenido}</div>
+  `;
+}
+function closeBlogDrawer() {
+  document.getElementById('blog-drawer-overlay').classList.remove('active');
+  document.getElementById('blog-drawer').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
 // BLOG CRUD
-function clearBlog(){['bf-id','bf-titulo','bf-contenido','bf-meta','bf-slug'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('bf-pub').value='false';}
+function clearBlog(){['bf-id','bf-titulo','bf-contenido','bf-meta','bf-slug','bf-imagen'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('bf-pub').value='false';document.getElementById('bf-imagen-name').textContent='';document.getElementById('bf-imagen-preview').style.display='none';document.getElementById('bf-imagen-preview').src='';}
 function editBlog(p){
   document.getElementById('bf-id').value=p.id;
   document.getElementById('bf-titulo').value=p.titulo||'';
@@ -2227,7 +2286,7 @@ async function saveBlog() {
   const titulo=document.getElementById('bf-titulo').value;
   if (!titulo){alert('El título es obligatorio');return;}
   const slug=document.getElementById('bf-slug').value||titulo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  const d={titulo,contenido:document.getElementById('bf-contenido').value,meta_descripcion:document.getElementById('bf-meta').value,slug,publicado:document.getElementById('bf-pub').value==='true'};
+  const d={titulo,contenido:document.getElementById('bf-contenido').value,meta_descripcion:document.getElementById('bf-meta').value,slug,publicado:document.getElementById('bf-pub').value==='true',imagen:document.getElementById('bf-imagen').value||null};
   const {error}=id?await sb.from('blog').update(d).eq('id',id):await sb.from('blog').insert([d]);
   if (error){alert('Error: '+error.message);return;}
   const el=document.getElementById('blog-saved');el.style.display='block';setTimeout(()=>el.style.display='none',2500);
@@ -2497,5 +2556,13 @@ window.addEventListener('load', () => {
   setTimeout(registerPush, 3000);
 });
 </script>
+<div class="blog-drawer-overlay" id="blog-drawer-overlay" onclick="closeBlogDrawer()"></div>
+<div class="blog-drawer" id="blog-drawer">
+  <div class="blog-drawer-handle" onclick="closeBlogDrawer()"></div>
+  <button class="blog-drawer-close" onclick="closeBlogDrawer()">✕</button>
+  <div id="blog-drawer-content" style="overflow-y:auto;height:100%;padding:24px 20px 40px">
+    <div id="blog-drawer-loading" style="text-align:center;padding:40px">⏳</div>
+  </div>
+</div>
 </body>
 </html>
