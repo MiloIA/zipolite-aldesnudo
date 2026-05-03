@@ -1089,7 +1089,17 @@ section{padding:56px 18px;}
               <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
             </select>
           </div>
-          <div class="af"><label>Monto anticipo (MXN)</label><input type="number" id="mrf-anticipo" placeholder="0" min="0"></div>
+          <div class="af"><label>Tipo de pago</label>
+            <select id="mrf-tipo-pago" onchange="onTipoPagoChange()" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">
+              <option value="anticipo">Anticipo (aparta el lugar)</option>
+              <option value="total">Pago total</option>
+            </select>
+          </div>
+          <div class="af">
+            <label>Monto a pagar hoy (MXN)</label>
+            <input type="number" id="mrf-anticipo" placeholder="0" min="0">
+            <small id="mrf-anticipo-hint" style="color:#9ca3af;font-size:0.78rem;display:block;margin-top:4px;"></small>
+          </div>
           <div class="af"><label>Método de pago</label>
             <select id="mrf-metodo" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">
               <option value="Transferencia/Depósito">Transferencia/Depósito</option>
@@ -2139,13 +2149,25 @@ async function loadPkgsForResForm() {
   const { data } = await sb.from('paquetes').select('id,nombre,precio,monto_anticipo').eq('activo',true).order('created_at');
   const sel = document.getElementById('mrf-paquete');
   sel.innerHTML = '<option value="">— Selecciona paquete —</option>' +
-    (data||[]).map(p => `<option value="${p.id}" data-anticipo="${p.monto_anticipo||0}">${p.nombre} — $${Math.round(Number(p.precio)||0).toLocaleString('es-MX')} MXN</option>`).join('');
+    (data||[]).map(p => `<option value="${p.id}" data-anticipo="${p.monto_anticipo||0}" data-precio="${p.precio||0}">${p.nombre} — $${Math.round(Number(p.precio)||0).toLocaleString('es-MX')} MXN</option>`).join('');
 }
 
 function autofillAnticipo(sel) {
   const opt = sel.options[sel.selectedIndex];
-  const anticipo = opt?.dataset?.anticipo;
-  if (anticipo !== undefined && anticipo !== '') document.getElementById('mrf-anticipo').value = anticipo;
+  const anticipo = opt?.dataset?.anticipo || '';
+  const precio = opt?.dataset?.precio || '';
+  const tipoPago = document.getElementById('mrf-tipo-pago')?.value || 'anticipo';
+  document.getElementById('mrf-anticipo').value = tipoPago === 'total' && precio ? precio : anticipo;
+  const hint = document.getElementById('mrf-anticipo-hint');
+  if (hint) hint.textContent = anticipo ? `El paquete tiene anticipo de $${Math.round(Number(anticipo)||0).toLocaleString('es-MX')} — puedes capturar el monto real pagado.` : '';
+}
+
+function onTipoPagoChange() {
+  const paqueteSel = document.getElementById('mrf-paquete');
+  const opt = paqueteSel.options[paqueteSel.selectedIndex];
+  const tipoPago = document.getElementById('mrf-tipo-pago').value;
+  const val = tipoPago === 'total' ? (opt?.dataset?.precio || '') : (opt?.dataset?.anticipo || '');
+  if (val) document.getElementById('mrf-anticipo').value = val;
 }
 
 async function saveManualReservacion() {
@@ -2176,7 +2198,9 @@ async function saveManualReservacion() {
   ['mrf-nombre','mrf-email','mrf-wa','mrf-anticipo','mrf-notas'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('mrf-paquete').value = '';
   document.getElementById('mrf-personas').value = '1';
+  document.getElementById('mrf-tipo-pago').value = 'anticipo';
   document.getElementById('mrf-estado').value = 'pendiente';
+  document.getElementById('mrf-anticipo-hint').textContent = '';
   loadReservaciones();
 }
 
