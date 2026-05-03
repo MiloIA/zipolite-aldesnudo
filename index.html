@@ -1960,8 +1960,9 @@ async function deleteNotif(id) {
   if (!confirm('¿Eliminar esta notificación? La mini-página también dejará de estar disponible.')) return;
   const { error } = await sb.from('push_history').delete().eq('id', id);
   if (error) { alert('Error al eliminar'); return; }
-  loadPushHistory();
-  loadPushStats();
+  await loadPushHistory();
+  await loadPushStats();
+  await loadNotifCenter();
 }
 
 async function loadReservaciones() {
