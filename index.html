@@ -3200,6 +3200,9 @@ function _renderFinanzas(reservas, egresosMap) {
       <td style="${tdS}">
         <button class="save-btn" style="margin:0;padding:5px 11px;font-size:0.78rem;" onclick="guardarEgreso('${r.id}')">💾 Guardar</button>
       </td>
+      <td style="${tdS}">
+        <button class="btn-res-del" style="padding:5px 9px;" onclick="eliminarEgreso('${r.id}')">🗑️</button>
+      </td>
     </tr>`;
   }).join('');
 
@@ -3211,7 +3214,7 @@ function _renderFinanzas(reservas, egresosMap) {
           <th ${thS}>Ingreso</th><th ${thS}>Vuelo</th><th ${thS}>Hotel</th>
           <th ${thS}>Traslados</th><th ${thS}>Experiencias</th><th ${thS}>Otros</th>
           <th ${thS}>Total Egresos</th><th ${thS}>Utilidad</th><th ${thS}>Margen %</th>
-          <th ${thS}></th>
+          <th ${thS}></th><th ${thS}></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -3269,6 +3272,14 @@ async function guardarEgreso(rid) {
 
   const btn = document.querySelector(`#fin-row-${rid} .save-btn`);
   if (btn) { btn.textContent = '✅ Guardado'; setTimeout(() => btn.textContent = '💾 Guardar', 1800); }
+}
+
+async function eliminarEgreso(rid) {
+  if (!confirm('¿Eliminar los egresos de esta reserva? Los datos capturados se perderán.')) return;
+  const { error } = await sb.from('egresos').delete().eq('reservacion_id', rid);
+  if (error) { alert('Error al eliminar: ' + error.message); return; }
+  document.querySelectorAll(`.fin-egr-inp[data-rid="${rid}"]`).forEach(inp => { inp.value = 0; });
+  recalcFinRow(rid);
 }
 </script>
 <div class="gallery-modal" id="gallery-modal" onclick="closeGalleryModal()">
