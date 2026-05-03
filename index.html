@@ -2770,14 +2770,25 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAll();
   checkFirstTimeSetup();
   if (sessionStorage.getItem('adminToken')) {
-    fetch('/api/admin-verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: sessionStorage.getItem('adminToken') }),
-    }).then(r => r.json()).then(d => {
-      if (d.valid) openAdmin();
-      else { sessionStorage.removeItem('adminToken'); adminAuthenticated = false; }
-    }).catch(() => {});
+    (async () => {
+      const token = sessionStorage.getItem('adminToken');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      try {
+        const res = await fetch('/api/admin-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        const data = await res.json();
+        if (data.valid) openAdmin();
+        else { sessionStorage.removeItem('adminToken'); adminAuthenticated = false; }
+      } catch(e) {
+        clearTimeout(timeout);
+      }
+    })();
   }
   if (window.location.hash === '#login') { openRegister(); window.location.hash = ''; }
 });
