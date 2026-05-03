@@ -14,6 +14,18 @@ export default async function handler(req, res) {
   const FROM  = 'Zipolite al Desnudo <reservaciones@zipolitealdesnudo.com>';
   const shortId = (reservacion_id || '').substring(0, 8).toUpperCase();
   const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+  const traducirMetodoPago = m => ({
+    'transfer': 'Transferencia / Depósito',
+    'Transferencia/Depósito': 'Transferencia / Depósito',
+    'card': 'Contado con tarjeta',
+    '3': 'Financiamiento 3 meses',
+    '6': 'Financiamiento 6 meses',
+    '9': 'Financiamiento 9 meses',
+    '12': 'Financiamiento 12 meses',
+    '18': 'Financiamiento 18 meses',
+    '24': 'Financiamiento 24 meses',
+    'Financiamiento': 'Financiamiento',
+  }[m] || m || '—');
 
   const financMeses = ['3', '6', '9', '12', '18', '24'];
   const isTransfer = metodo_pago === 'transfer' || metodo_pago === 'Transferencia/Depósito';
@@ -131,7 +143,7 @@ export default async function handler(req, res) {
     `<b>No. reserva:</b> ${shortId}\n` +
     `<b>Cliente:</b> ${nombre}\n` +
     `<b>Paquete:</b> ${paquete_nombre || '—'}\n` +
-    `<b>Método de pago:</b> ${metodo_pago || '—'}\n` +
+    `<b>Método de pago:</b> ${traducirMetodoPago(metodo_pago)}\n` +
     `<b>Total:</b> ${fmt(total)}`;
 
   try {
