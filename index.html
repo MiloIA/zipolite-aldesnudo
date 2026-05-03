@@ -434,6 +434,15 @@ section{padding:56px 18px;}
 .frow{grid-template-columns:1fr;}
 .gallery-grid{grid-template-columns:1fr;}
 }
+.pkg-share-wrap{position:relative;margin-top:10px;}
+.pkg-share-btn{width:100%;padding:10px 18px;background:transparent;border:1.5px solid #e5e7eb;border-radius:999px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;font-weight:600;color:#5a7a86;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.pkg-share-btn:hover{border-color:#0891b2;color:#0891b2;}
+.pkg-share-menu{display:none;position:absolute;bottom:calc(100% + 8px);left:0;right:0;background:white;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);border:1px solid #e5e7eb;overflow:hidden;z-index:50;}
+.pkg-share-menu.open{display:block;}
+.pkg-share-item{display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;background:white;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.88rem;font-weight:500;color:#1a3a4a;cursor:pointer;transition:background 0.15s;text-align:left;}
+.pkg-share-item:hover{background:#f0feff;}
+.pkg-share-item+.pkg-share-item{border-top:1px solid #f3f4f6;}
+.pkg-card.slug-highlight{outline:3px solid #00BCD4;outline-offset:2px;box-shadow:0 0 0 6px rgba(0,188,212,0.15),0 16px 48px rgba(0,0,0,0.18)!important;}
 </style>
 <link rel="manifest" href="/manifest.json">
 </head>
@@ -1302,6 +1311,19 @@ let stripeClient;
 // Admin auth via localStorage
 
 let pkgs = [], adminPkgs = [], curPkg = null, selPayment = 'anticipo';
+let pendingSlug = null;
+function slugify(nombre) {
+  return nombre.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+function closeShareMenus(except) {
+  document.querySelectorAll('.pkg-share-menu.open').forEach(m => { if (m !== except) m.classList.remove('open'); });
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.pkg-share-wrap')) closeShareMenus(null);
+});
 let tempPassword;
 let currentSession = null;
 let oaiKey = localStorage.getItem('oai_key') || '';
@@ -1398,6 +1420,7 @@ async function loadPkgs() {
   const vigentes = (data||[]).filter(p => !p.fecha_fin || p.fecha_fin >= today);
   pkgs = vigentes.length > 0 ? vigentes : DEFAULT_PKGS;
   renderPkgs(pkgs);
+  if (pendingSlug) { activateSlugCard(pendingSlug); pendingSlug = null; }
 }
 
 function renderPkgs(list) {
@@ -1424,7 +1447,9 @@ function renderPkgs(list) {
             <p>${p.descripcion||''}</p>
           </div>
         </div>`;
-    return `<div class="pkg-card">
+    const slug = slugify(p.nombre);
+    const shareUrl = `https://zipolitealdesnudo.com/?paquete=${slug}`;
+    return `<div class="pkg-card" data-slug="${slug}">
       ${header}
       <div class="pkg-body">
         <div class="pkg-price"><span class="currency">MXN $</span><span class="amount">${Number(p.precio).toLocaleString()}</span><span class="per">/ persona</span></div>
@@ -1433,6 +1458,14 @@ function renderPkgs(list) {
         <button class="pkg-btn pkg-btn-${p.tipo||'primary'}" onclick="openPay('${p.id}')">
           ${p.tipo==='secondary'?'⛺ Apartar mi lugar':'🏖️ Reservar ahora'}
         </button>
+        <div class="pkg-share-wrap">
+          <button class="pkg-share-btn" onclick="toggleShareMenu(this)">🔗 Compartir</button>
+          <div class="pkg-share-menu">
+            <button class="pkg-share-item" onclick="copyPkgLink('${shareUrl}',this)">📋 Copiar link</button>
+            <button class="pkg-share-item" onclick="sharePkgWhatsapp('${shareUrl}','${p.nombre.replace(/'/g,"\\'")}')">💬 WhatsApp</button>
+            <button class="pkg-share-item" onclick="sharePkgFacebook('${shareUrl}')">📘 Facebook</button>
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1445,6 +1478,40 @@ function toggleExtras(btn) {
   btn.textContent = isOpen
     ? `+ ${extras.children.length} más incluidos ▾`
     : 'Ver menos ▴';
+}
+
+function toggleShareMenu(btn) {
+  const menu = btn.nextElementSibling;
+  const isOpen = menu.classList.contains('open');
+  closeShareMenus(null);
+  if (!isOpen) menu.classList.add('open');
+}
+
+function copyPkgLink(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '¡Link copiado!';
+    setTimeout(() => { btn.textContent = orig; btn.closest('.pkg-share-menu').classList.remove('open'); }, 2000);
+  });
+}
+
+function sharePkgWhatsapp(url, nombre) {
+  const text = encodeURIComponent(`¡Mira este paquete de Zipolite al Desnudo! ${nombre} ${url}`);
+  window.open(`https://wa.me/?text=${text}`, '_blank');
+}
+
+function sharePkgFacebook(url) {
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+}
+
+function activateSlugCard(slug) {
+  const card = document.querySelector(`.pkg-card[data-slug="${slug}"]`);
+  if (!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.classList.add('slug-highlight');
+  setTimeout(() => card.classList.remove('slug-highlight'), 2000);
+  const pkg = pkgs.find(p => slugify(p.nombre) === slug);
+  if (pkg) setTimeout(() => openPay(pkg.id), 600);
 }
 
 async function loadGallery() {
@@ -2765,7 +2832,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'cuenta.html' + window.location.hash;
     return;
   }
-  window.scrollTo(0, 0);
+  const _slugParam = new URLSearchParams(window.location.search).get('paquete');
+  if (_slugParam) { pendingSlug = _slugParam; } else { window.scrollTo(0, 0); }
   if (typeof Stripe !== 'undefined') stripeClient = Stripe('pk_live_51MiPtBGs8JZIcNIhUF5aP5xPN7SEfz0wAaGA34mRgolM1TpK60tkzoSn9uQUf6ovLTmIlCjxNUZdUVuY5vw525uu00xDkZoygg');
   loadAll();
   checkFirstTimeSetup();
