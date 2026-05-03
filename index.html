@@ -2566,7 +2566,8 @@ async function saveCfg() {
     openai_api_key: key || null,
     whatsapp_agencia: wa || null,
     banco: banco || null,
-    clabe_interbancaria: clabe || null
+    clabe_interbancaria: clabe || null,
+    updated_at: new Date().toISOString()
   }, { onConflict: 'id' });
   if (error) { alert('Error al guardar en Supabase: ' + error.message); return; }
   const newPwd = prompt('Establece o cambia la contraseña del panel admin (deja vacío para mantener la actual):');
