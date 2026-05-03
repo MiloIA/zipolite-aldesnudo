@@ -397,7 +397,19 @@ footer a{color:var(--teal);text-decoration:none;}
 .badge-proceso{background:#fff3cd;color:#856404;padding:3px 10px;border-radius:100px;font-size:0.75rem;font-weight:700;}
 .badge-enviada{background:#d1e7dd;color:#0f5132;padding:3px 10px;border-radius:100px;font-size:0.75rem;font-weight:700;}
 .btn-cot-estado{padding:4px 10px;background:#0097A7;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.72rem;font-weight:700;}
+/* FINANZAS ADMIN */
+.fin-controls{display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap;}
+.fin-controls label{font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#888;}
+.fin-controls input[type=month]{padding:7px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.88rem;outline:none;}
+.fin-controls input[type=month]:focus{border-color:#1a9fa0;}
+.fin-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.fin-card{background:white;border-radius:14px;padding:20px 22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);}
+.fin-card .fc-label{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#999;margin-bottom:8px;}
+.fin-card .fc-val{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:900;line-height:1.1;}
+.fin-egr-inp{width:80px;padding:5px 6px;border:1.5px solid transparent;border-radius:6px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.82rem;text-align:center;background:transparent;outline:none;transition:border-color 0.15s,background 0.15s;}
+.fin-egr-inp:focus{border-color:#1a9fa0;background:white;}
 .hamburger{display:none;}
+@media(max-width:900px){.fin-metrics{grid-template-columns:1fr 1fr;}}
 @media(max-width:768px){.cot-form .cg{grid-template-columns:1fr;}.cot-form{padding:22px 16px;}}
 @media(max-width:1024px){
 .gallery-grid{grid-template-columns:repeat(2,1fr);}
@@ -969,6 +981,7 @@ section{padding:56px 18px;}
     <button class="admin-nav-btn" data-tab="descuentos" onclick="switchAdminTab('descuentos')">🏷️ Descuentos</button>
     <button class="admin-nav-btn" data-tab="reservaciones" onclick="switchAdminTab('reservaciones')">📋 Reservaciones <span class="adm-badge" id="badge-pendientes" style="display:none"></span></button>
     <button class="admin-nav-btn" data-tab="cotizaciones" onclick="switchAdminTab('cotizaciones')">💬 Cotizaciones <span class="adm-badge" id="badge-cotizaciones" style="display:none"></span></button>
+    <button class="admin-nav-btn" data-tab="finanzas" onclick="switchAdminTab('finanzas')">📊 Finanzas</button>
     <button class="admin-nav-btn" data-tab="configuracion" onclick="switchAdminTab('configuracion')">⚙️ Config</button>
   </div>
   <div class="admin-content">
@@ -1173,6 +1186,35 @@ section{padding:56px 18px;}
     </div>
     </div>
 
+    <div class="admin-section" id="admin-section-finanzas">
+    <div class="adm-sec">
+      <h3>📊 Finanzas</h3>
+      <div class="fin-controls">
+        <label>Período:</label>
+        <input type="month" id="fin-mes" onchange="loadFinanzas()">
+      </div>
+      <div class="fin-metrics">
+        <div class="fin-card">
+          <div class="fc-label">💰 Ingresos</div>
+          <div class="fc-val" id="fin-v-ingresos" style="color:#1a9fa0;">—</div>
+        </div>
+        <div class="fin-card">
+          <div class="fc-label">💸 Egresos</div>
+          <div class="fc-val" id="fin-v-egresos" style="color:#e53935;">—</div>
+        </div>
+        <div class="fin-card">
+          <div class="fc-label">📈 Utilidad</div>
+          <div class="fc-val" id="fin-v-utilidad" style="color:#43a047;">—</div>
+        </div>
+        <div class="fin-card">
+          <div class="fc-label">📊 Margen</div>
+          <div class="fc-val" id="fin-v-margen" style="color:#0d1b3e;">—</div>
+        </div>
+      </div>
+      <div id="fin-tabla"></div>
+    </div>
+    </div>
+
     <div class="admin-section" id="admin-section-cotizaciones">
     <div class="adm-sec">
       <h3>💬 Cotizaciones recibidas</h3>
@@ -1338,6 +1380,7 @@ function switchAdminTab(tabId) {
   localStorage.setItem('adminActiveTab', tabId);
   if (tabId === 'configuracion') loadConfig();
   if (tabId === 'cotizaciones') loadCotizaciones();
+  if (tabId === 'finanzas') loadFinanzas();
 }
 
 function openAdmin() {
@@ -3041,6 +3084,191 @@ async function deleteCotizacion(id) {
   const { error } = await sb.from('cotizaciones').delete().eq('id', id);
   if (error) { alert('Error al eliminar: ' + error.message); return; }
   loadCotizaciones();
+}
+
+/*
+  SQL para crear la tabla egresos en Supabase (ejecutar en SQL Editor):
+
+  CREATE TABLE IF NOT EXISTS public.egresos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    reservacion_id UUID NOT NULL UNIQUE,
+    vuelo NUMERIC DEFAULT 0,
+    hotel NUMERIC DEFAULT 0,
+    traslados NUMERIC DEFAULT 0,
+    experiencias NUMERIC DEFAULT 0,
+    otros NUMERIC DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT NOW()
+  );
+  ALTER TABLE public.egresos ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "Allow all" ON public.egresos FOR ALL USING (true);
+*/
+
+// ---- ADMIN: FINANZAS ----
+
+async function loadFinanzas() {
+  const mesEl = document.getElementById('fin-mes');
+  if (!mesEl) return;
+  if (!mesEl.value) {
+    const now = new Date();
+    mesEl.value = now.toISOString().slice(0, 7);
+  }
+  const [year, month] = mesEl.value.split('-').map(Number);
+  const desde = `${year}-${String(month).padStart(2,'0')}-01`;
+  const hasta = new Date(year, month, 1).toISOString().split('T')[0];
+
+  const tablaEl = document.getElementById('fin-tabla');
+  tablaEl.innerHTML = '<div style="color:#aaa;font-size:0.85rem;"><span class="spin"></span> Cargando...</div>';
+
+  const { data: reservas, error } = await sb.from('reservaciones')
+    .select('id,nombre,paquete_nombre,total')
+    .eq('estado', 'confirmado')
+    .gte('created_at', desde)
+    .lt('created_at', hasta)
+    .order('created_at', { ascending: false });
+
+  if (error) { tablaEl.innerHTML = `<p style="color:red;font-size:0.85rem;">Error: ${error.message}</p>`; return; }
+
+  const ids = (reservas || []).map(r => r.id);
+  let egresosMap = {};
+  if (ids.length) {
+    const { data: eg } = await sb.from('egresos').select('*').in('reservacion_id', ids);
+    (eg || []).forEach(e => { egresosMap[e.reservacion_id] = e; });
+  }
+
+  _renderFinanzas(reservas || [], egresosMap);
+}
+
+function _renderFinanzas(reservas, egresosMap) {
+  const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+
+  let sumIng = 0, sumEg = 0;
+  reservas.forEach(r => {
+    const e = egresosMap[r.id] || {};
+    sumIng += Number(r.total) || 0;
+    sumEg += (Number(e.vuelo)||0)+(Number(e.hotel)||0)+(Number(e.traslados)||0)+(Number(e.experiencias)||0)+(Number(e.otros)||0);
+  });
+  const util = sumIng - sumEg;
+  const margen = sumIng > 0 ? (util / sumIng * 100).toFixed(1) : 0;
+
+  document.getElementById('fin-v-ingresos').textContent = fmt(sumIng);
+  document.getElementById('fin-v-egresos').textContent  = fmt(sumEg);
+  const uEl = document.getElementById('fin-v-utilidad');
+  uEl.textContent = fmt(util); uEl.style.color = util >= 0 ? '#43a047' : '#e53935';
+  document.getElementById('fin-v-margen').textContent = margen + '%';
+
+  const tablaEl = document.getElementById('fin-tabla');
+  if (!reservas.length) {
+    tablaEl.innerHTML = '<p style="color:#aaa;font-size:0.85rem;">Sin reservas confirmadas en este período.</p>';
+    return;
+  }
+
+  const thS = 'style="background:#f0f4f6;padding:8px 10px;text-align:left;font-size:0.72rem;font-weight:700;color:#888;white-space:nowrap;"';
+  const tdS = 'padding:8px 6px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;';
+
+  const rows = reservas.map(r => {
+    const e = egresosMap[r.id] || {};
+    const vuelo        = Number(e.vuelo)        || 0;
+    const hotel        = Number(e.hotel)        || 0;
+    const traslados    = Number(e.traslados)    || 0;
+    const experiencias = Number(e.experiencias) || 0;
+    const otros        = Number(e.otros)        || 0;
+    const egTotal = vuelo + hotel + traslados + experiencias + otros;
+    const ingreso = Number(r.total) || 0;
+    const rowUtil = ingreso - egTotal;
+    const rowMrgn = ingreso > 0 ? (rowUtil / ingreso * 100).toFixed(1) : '—';
+    const uColor = rowUtil >= 0 ? '#43a047' : '#e53935';
+    const shortId = r.id.substring(0, 8).toUpperCase();
+
+    const inp = (field, val) =>
+      `<input class="fin-egr-inp" type="number" min="0" step="1"
+        data-rid="${r.id}" data-field="${field}" value="${val}"
+        oninput="recalcFinRow('${r.id}')">`;
+
+    return `<tr id="fin-row-${r.id}" data-ingreso="${ingreso}">
+      <td style="${tdS}font-family:monospace;color:#0097A7;">#${shortId}</td>
+      <td style="${tdS}">${r.nombre || '—'}</td>
+      <td style="${tdS}max-width:130px;overflow:hidden;text-overflow:ellipsis;">${r.paquete_nombre || '—'}</td>
+      <td style="${tdS}font-weight:700;">${fmt(ingreso)}</td>
+      <td style="${tdS}padding-left:4px;padding-right:4px;">${inp('vuelo', vuelo)}</td>
+      <td style="${tdS}padding-left:4px;padding-right:4px;">${inp('hotel', hotel)}</td>
+      <td style="${tdS}padding-left:4px;padding-right:4px;">${inp('traslados', traslados)}</td>
+      <td style="${tdS}padding-left:4px;padding-right:4px;">${inp('experiencias', experiencias)}</td>
+      <td style="${tdS}padding-left:4px;padding-right:4px;">${inp('otros', otros)}</td>
+      <td style="${tdS}font-weight:700;" id="fin-egtot-${r.id}">${fmt(egTotal)}</td>
+      <td style="${tdS}font-weight:700;color:${uColor};" id="fin-util-${r.id}">${fmt(rowUtil)}</td>
+      <td style="${tdS}color:${uColor};" id="fin-mrgn-${r.id}">${rowMrgn === '—' ? '—' : rowMrgn + '%'}</td>
+      <td style="${tdS}">
+        <button class="save-btn" style="margin:0;padding:5px 11px;font-size:0.78rem;" onclick="guardarEgreso('${r.id}')">💾 Guardar</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tablaEl.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;min-width:980px;">
+        <thead><tr>
+          <th ${thS}>No. Reserva</th><th ${thS}>Cliente</th><th ${thS}>Paquete</th>
+          <th ${thS}>Ingreso</th><th ${thS}>Vuelo</th><th ${thS}>Hotel</th>
+          <th ${thS}>Traslados</th><th ${thS}>Experiencias</th><th ${thS}>Otros</th>
+          <th ${thS}>Total Egresos</th><th ${thS}>Utilidad</th><th ${thS}>Margen %</th>
+          <th ${thS}></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function recalcFinRow(rid) {
+  const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+  let egTotal = 0;
+  document.querySelectorAll(`.fin-egr-inp[data-rid="${rid}"]`).forEach(inp => {
+    egTotal += Number(inp.value) || 0;
+  });
+
+  const row = document.getElementById(`fin-row-${rid}`);
+  const ingreso = Number(row?.dataset?.ingreso) || 0;
+  const util = ingreso - egTotal;
+  const mrgn = ingreso > 0 ? (util / ingreso * 100).toFixed(1) : '—';
+  const uColor = util >= 0 ? '#43a047' : '#e53935';
+
+  document.getElementById(`fin-egtot-${rid}`).textContent = fmt(egTotal);
+  const uEl = document.getElementById(`fin-util-${rid}`);
+  uEl.textContent = fmt(util); uEl.style.color = uColor;
+  const mEl = document.getElementById(`fin-mrgn-${rid}`);
+  mEl.textContent = mrgn === '—' ? '—' : mrgn + '%'; mEl.style.color = uColor;
+
+  _updateFinMetrics();
+}
+
+function _updateFinMetrics() {
+  const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+  let sumIng = 0, sumEg = 0;
+  document.querySelectorAll('#fin-tabla tbody tr[data-ingreso]').forEach(row => {
+    const rid = row.id.replace('fin-row-', '');
+    sumIng += Number(row.dataset.ingreso) || 0;
+    const egtEl = document.getElementById(`fin-egtot-${rid}`);
+    sumEg += Number((egtEl?.textContent || '').replace(/[$,.]/g, '').replace(/\s/g, '')) || 0;
+  });
+  const util = sumIng - sumEg;
+  const margen = sumIng > 0 ? (util / sumIng * 100).toFixed(1) : 0;
+  document.getElementById('fin-v-ingresos').textContent = fmt(sumIng);
+  document.getElementById('fin-v-egresos').textContent  = fmt(sumEg);
+  const uEl = document.getElementById('fin-v-utilidad');
+  uEl.textContent = fmt(util); uEl.style.color = util >= 0 ? '#43a047' : '#e53935';
+  document.getElementById('fin-v-margen').textContent = margen + '%';
+}
+
+async function guardarEgreso(rid) {
+  const payload = { reservacion_id: rid, updated_at: new Date().toISOString() };
+  document.querySelectorAll(`.fin-egr-inp[data-rid="${rid}"]`).forEach(inp => {
+    payload[inp.dataset.field] = Number(inp.value) || 0;
+  });
+
+  const { error } = await sb.from('egresos').upsert(payload, { onConflict: 'reservacion_id' });
+  if (error) { alert('Error al guardar: ' + error.message); return; }
+
+  const btn = document.querySelector(`#fin-row-${rid} .save-btn`);
+  if (btn) { btn.textContent = '✅ Guardado'; setTimeout(() => btn.textContent = '💾 Guardar', 1800); }
 }
 </script>
 <div class="gallery-modal" id="gallery-modal" onclick="closeGalleryModal()">
