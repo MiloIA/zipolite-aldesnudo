@@ -173,16 +173,19 @@ section{padding:80px 40px;}
 .testi-name{font-weight:600;font-size:0.88rem;color:var(--dark);}
 .testi-trip{font-size:0.75rem;color:var(--ocean);margin-top:2px;font-weight:500;}
 #blog-section{background:#ffffff !important;}
-.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;}
-.blog-card{background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;}
-.blog-card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,0.12);}
-.blog-card-img{width:100%;height:180px;object-fit:cover;}
-.blog-card-img-placeholder{width:100%;height:180px;background:linear-gradient(135deg,#0d1b3e,#0891b2);display:flex;align-items:center;justify-content:center;font-size:3rem;}
-.blog-card-body{padding:20px;}
-.blog-card-body h3{font-size:1.05rem;color:#0d1b3e;margin:0 0 8px;line-height:1.4;}
-.blog-card-body p{font-size:0.88rem;color:#6b7280;margin:0 0 12px;line-height:1.6;}
-.blog-card-body small{color:#9ca3af;font-size:0.8rem;}
+.blog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:32px;}
+.blog-card{background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);cursor:pointer;transition:transform 0.3s ease,box-shadow 0.3s ease;border:1px solid #f3f4f6;}
+.blog-card:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(0,0,0,0.14);}
+.blog-card-img{width:100%;height:200px;object-fit:cover;display:block;}
+.blog-card-img-placeholder{width:100%;height:200px;background:linear-gradient(135deg,#0d1b3e 0%,#0891b2 100%);display:flex;align-items:center;justify-content:center;font-size:3.5rem;}
+.blog-card-body{padding:24px;}
+.blog-card-body h3{font-size:1.05rem;font-weight:700;color:#0d1b3e;margin:0 0 10px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.blog-card-body p{font-size:0.88rem;color:#6b7280;margin:0 0 16px;line-height:1.65;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.blog-card-footer{display:flex;align-items:center;justify-content:space-between;}
+.blog-card-date{font-size:0.78rem;color:#9ca3af;}
+.blog-card-cta{font-size:0.82rem;font-weight:700;color:#0891b2;}
 .blog-date{font-size:0.75rem;color:#aaa;margin-top:12px;}
+@media(max-width:768px){.blog-grid{grid-template-columns:1fr;gap:20px;}}
 .blog-drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:8000;}
 .blog-drawer-overlay.active{display:block;}
 .blog-drawer{position:fixed;bottom:-100%;left:0;right:0;height:85vh;background:white;border-radius:20px 20px 0 0;z-index:8001;transition:bottom 0.4s ease;overflow:hidden;display:flex;flex-direction:column;}
@@ -1232,11 +1235,14 @@ async function loadBlog() {
   if (!data || !data.length) { c.innerHTML='<div class="empty-msg">✍️ Posts del blog aparecerán aquí.</div>'; return; }
   c.innerHTML = data.map(p=>`
     <div class="blog-card" onclick="openBlogDrawer('${p.id}')">
-      ${p.imagen ? `<img src="${p.imagen}" class="blog-card-img">` : `<div class="blog-card-img-placeholder">📝</div>`}
+      ${p.imagen ? `<img src="${p.imagen}" class="blog-card-img" alt="${p.titulo}">` : `<div class="blog-card-img-placeholder">🌊</div>`}
       <div class="blog-card-body">
         <h3>${p.titulo}</h3>
-        <p>${(p.contenido||'').substring(0,120)}...</p>
-        <small>${new Date(p.created_at).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}</small>
+        <p>${(p.contenido||'').substring(0,150)}...</p>
+        <div class="blog-card-footer">
+          <span class="blog-card-date">${new Date(p.created_at).toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}</span>
+          <span class="blog-card-cta">Leer más →</span>
+        </div>
       </div>
     </div>`).join('');
 }
