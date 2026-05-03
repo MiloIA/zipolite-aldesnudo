@@ -1070,7 +1070,46 @@ section{padding:56px 18px;}
 
     <div class="admin-section" id="admin-section-reservaciones">
     <div class="adm-sec">
-      <h3>📋 Reservaciones</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #e8f4f5;">
+        <h3 style="margin:0;padding:0;border:none;font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;color:var(--dark);">📋 Reservaciones</h3>
+        <button class="add-btn" onclick="toggleManualResForm()" style="margin:0">➕ Agregar reserva</button>
+      </div>
+      <div id="manual-res-form" class="sub-form" style="display:none;margin-bottom:18px;">
+        <div class="ag">
+          <div class="af"><label>Nombre completo</label><input type="text" id="mrf-nombre" placeholder="Nombre Apellido"></div>
+          <div class="af"><label>Email</label><input type="email" id="mrf-email" placeholder="correo@ejemplo.com"></div>
+          <div class="af"><label>WhatsApp</label><input type="text" id="mrf-wa" placeholder="529582199953"></div>
+          <div class="af"><label>Paquete</label>
+            <select id="mrf-paquete" onchange="autofillAnticipo(this)" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">
+              <option value="">— Selecciona paquete —</option>
+            </select>
+          </div>
+          <div class="af"><label>Número de personas</label>
+            <select id="mrf-personas" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            </select>
+          </div>
+          <div class="af"><label>Monto anticipo (MXN)</label><input type="number" id="mrf-anticipo" placeholder="0" min="0"></div>
+          <div class="af"><label>Método de pago</label>
+            <select id="mrf-metodo" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">
+              <option value="Transferencia/Depósito">Transferencia/Depósito</option>
+              <option value="Financiamiento">Financiamiento</option>
+            </select>
+          </div>
+          <div class="af"><label>Estado</label>
+            <select id="mrf-estado" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">
+              <option value="pendiente">pendiente</option>
+              <option value="confirmada">confirmada</option>
+              <option value="cancelada">cancelada</option>
+            </select>
+          </div>
+          <div class="af" style="grid-column:1/-1"><label>Notas (opcional)</label><textarea id="mrf-notas" placeholder="Observaciones internas..."></textarea></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+          <button class="save-btn" onclick="saveManualReservacion()">💾 Guardar reserva</button>
+          <button onclick="toggleManualResForm()" style="padding:10px 18px;background:#eee;border:none;border-radius:10px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">Cancelar</button>
+        </div>
+      </div>
       <div id="adm-reservaciones"><div style="color:#aaa;font-size:0.85rem;">Cargando...</div></div>
     </div>
     </div>
@@ -2052,7 +2091,7 @@ function renderReservaciones(list) {
   const badgeClass = e => e==='confirmado'?'badge-conf':e==='cancelado'?'badge-canc':'badge-pend';
   const thS = 'style="background:#f0f4f6;padding:8px 10px;text-align:left;font-size:0.75rem;font-weight:700;color:#666;white-space:nowrap;"';
   const tdS = 'style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;"';
-  const rows = list.map(r => {
+  const rows = list.map((r, i) => {
     const fecha = r.created_at ? r.created_at.substring(0,10) : '—';
     const shortId = (r.id||'').substring(0,8).toUpperCase();
     const estado = r.estado || 'pendiente';
@@ -2067,6 +2106,7 @@ function renderReservaciones(list) {
       : '';
     const td = (extra,content) => `<td style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;${extra||''}">${content}</td>`;
     return `<tr>
+      ${td('text-align:center;font-weight:700;color:#aaa;font-size:0.78rem;', i+1)}
       ${td('',fecha)}
       ${td('font-family:monospace;font-weight:700;color:#0097A7;','#'+shortId)}
       ${td('',r.nombre||'—')}
@@ -2081,11 +2121,64 @@ function renderReservaciones(list) {
   }).join('');
   c.innerHTML = `<div style="overflow-x:auto;width:100%;"><table style="width:100%;border-collapse:collapse;min-width:600px;">
     <thead><tr>
-      <th ${thS}>Fecha</th><th ${thS}>No. Reserva</th><th ${thS}>Nombre</th><th ${thS}>Email</th><th ${thS}>WhatsApp</th><th ${thS}>Paquete</th>
+      <th ${thS}>#</th><th ${thS}>Fecha</th><th ${thS}>No. Reserva</th><th ${thS}>Nombre</th><th ${thS}>Email</th><th ${thS}>WhatsApp</th><th ${thS}>Paquete</th>
       <th ${thS}>Pers.</th><th ${thS}>Total</th><th ${thS}>Estado</th><th ${thS}>Acciones</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
+}
+
+function toggleManualResForm() {
+  const f = document.getElementById('manual-res-form');
+  const opening = f.style.display === 'none';
+  f.style.display = opening ? 'block' : 'none';
+  if (opening) loadPkgsForResForm();
+}
+
+async function loadPkgsForResForm() {
+  const { data } = await sb.from('paquetes').select('id,nombre,precio,monto_anticipo').eq('activo',true).order('created_at');
+  const sel = document.getElementById('mrf-paquete');
+  sel.innerHTML = '<option value="">— Selecciona paquete —</option>' +
+    (data||[]).map(p => `<option value="${p.id}" data-anticipo="${p.monto_anticipo||0}">${p.nombre} — $${Math.round(Number(p.precio)||0).toLocaleString('es-MX')} MXN</option>`).join('');
+}
+
+function autofillAnticipo(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const anticipo = opt?.dataset?.anticipo;
+  if (anticipo !== undefined && anticipo !== '') document.getElementById('mrf-anticipo').value = anticipo;
+}
+
+async function saveManualReservacion() {
+  const nombre = document.getElementById('mrf-nombre').value.trim();
+  const email = document.getElementById('mrf-email').value.trim();
+  if (!nombre || !email) { alert('Nombre y email son obligatorios'); return; }
+  const paqueteSel = document.getElementById('mrf-paquete');
+  const paqueteId = paqueteSel.value || null;
+  const paqueteNombre = paqueteId ? (paqueteSel.options[paqueteSel.selectedIndex]?.text?.split(' — ')[0] || '') : null;
+  const personas = parseInt(document.getElementById('mrf-personas').value) || 1;
+  const anticipo = parseFloat(document.getElementById('mrf-anticipo').value) || 0;
+  const folio = '#' + Math.random().toString(36).substring(2,10).toUpperCase();
+  const { error } = await sb.from('reservaciones').insert([{
+    nombre,
+    email,
+    whatsapp: document.getElementById('mrf-wa').value.trim() || null,
+    paquete_id: paqueteId,
+    paquete_nombre: paqueteNombre,
+    personas,
+    anticipo_pagado: anticipo,
+    total: anticipo,
+    metodo_pago: document.getElementById('mrf-metodo').value,
+    estado: document.getElementById('mrf-estado').value,
+    notas: document.getElementById('mrf-notas').value.trim() || null,
+    numero_reserva: folio
+  }]);
+  if (error) { alert('Error al guardar: ' + error.message); return; }
+  document.getElementById('manual-res-form').style.display = 'none';
+  ['mrf-nombre','mrf-email','mrf-wa','mrf-anticipo','mrf-notas'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('mrf-paquete').value = '';
+  document.getElementById('mrf-personas').value = '1';
+  document.getElementById('mrf-estado').value = 'pendiente';
+  loadReservaciones();
 }
 
 async function confirmarReservacion(id) {
