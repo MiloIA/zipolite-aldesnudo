@@ -231,6 +231,15 @@ footer a{color:var(--teal);text-decoration:none;}
 .adm-body{max-width:860px;margin:0 auto;padding:28px 18px;}
 .adm-sec{background:white;border-radius:14px;padding:24px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,0.05);}
 .adm-sec h3{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;margin-bottom:18px;color:var(--dark);padding-bottom:10px;border-bottom:2px solid #e8f4f5;}
+.admin-nav{display:flex;flex-wrap:wrap;gap:0.5rem;padding:1rem 1.5rem;background:#0d1b3e;border-bottom:3px solid #1a9fa0;position:sticky;top:0;z-index:100;}
+.admin-nav-btn{display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:transparent;color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.2);border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:500;transition:all 0.2s;font-family:'Plus Jakarta Sans',sans-serif;}
+.admin-nav-btn:hover{background:rgba(255,255,255,0.1);color:#ffffff;}
+.admin-nav-btn.active{background:#1a9fa0;color:#ffffff;border-color:#1a9fa0;font-weight:700;}
+.admin-content{max-width:900px;margin:0 auto;}
+.admin-section{display:none;padding:1.5rem;animation:fadeIn 0.2s ease;}
+.admin-section.active{display:block;}
+.adm-badge{background:#ef4444;color:white;font-size:0.7rem;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:4px;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 .res-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .res-table{width:100%;border-collapse:collapse;font-size:0.8rem;}
 .res-table th{background:#f0f4f6;padding:8px 10px;text-align:left;font-size:0.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;}
@@ -847,8 +856,18 @@ section{padding:56px 18px;}
     <h2>⚙️ Panel de Administración — Zipolite al Desnudo</h2>
     <button class="adm-close" onclick="closeAdmin()">✕ Cerrar</button>
   </div>
-  <div class="adm-body">
+  <div class="admin-nav">
+    <button class="admin-nav-btn" data-tab="paquetes" onclick="switchAdminTab('paquetes')">📦 Paquetes</button>
+    <button class="admin-nav-btn" data-tab="galeria" onclick="switchAdminTab('galeria')">🖼️ Galería</button>
+    <button class="admin-nav-btn" data-tab="blog" onclick="switchAdminTab('blog')">✍️ Blog & Guías</button>
+    <button class="admin-nav-btn" data-tab="notificaciones" onclick="switchAdminTab('notificaciones')">🔔 Push</button>
+    <button class="admin-nav-btn" data-tab="descuentos" onclick="switchAdminTab('descuentos')">🏷️ Descuentos</button>
+    <button class="admin-nav-btn" data-tab="reservaciones" onclick="switchAdminTab('reservaciones')">📋 Reservaciones <span class="adm-badge" id="badge-pendientes" style="display:none"></span></button>
+    <button class="admin-nav-btn" data-tab="configuracion" onclick="switchAdminTab('configuracion')">⚙️ Config</button>
+  </div>
+  <div class="admin-content">
 
+    <div class="admin-section" id="admin-section-paquetes">
     <div class="adm-sec">
       <h3>✈️ Paquetes de Viaje</h3>
       <div id="adm-pkgs"><div style="color:#aaa;font-size:0.85rem;">Cargando...</div></div>
@@ -887,7 +906,9 @@ section{padding:56px 18px;}
         <div class="saved-msg" id="pkg-saved">✅ ¡Guardado!</div>
       </div>
     </div>
+    </div>
 
+    <div class="admin-section" id="admin-section-galeria">
     <div class="adm-sec">
       <h3>📸 Galería de Fotos</h3>
       <div class="upload-area" onclick="document.getElementById('gal-input').click()">
@@ -898,7 +919,9 @@ section{padding:56px 18px;}
       </div>
       <div class="gal-prev" id="adm-gallery"><div style="color:#aaa;font-size:0.82rem;">Sin fotos aún.</div></div>
     </div>
+    </div>
 
+    <div class="admin-section" id="admin-section-notificaciones">
     <div class="adm-sec" id="adm-push">
       <h3>🔔 Notificaciones Push</h3>
 
@@ -968,7 +991,9 @@ section{padding:56px 18px;}
         <div id="push-history-list"><p style="color:#aaa">Sin historial aún.</p></div>
       </div>
     </div>
+    </div>
 
+    <div class="admin-section" id="admin-section-blog">
     <div class="adm-sec">
       <h3>📝 Blog & Guías</h3>
       <div id="adm-blog"><div style="color:#aaa;font-size:0.85rem;">Cargando...</div></div>
@@ -1001,7 +1026,9 @@ section{padding:56px 18px;}
         <div class="saved-msg" id="blog-saved">✅ ¡Guardado!</div>
       </div>
     </div>
+    </div>
 
+    <div class="admin-section" id="admin-section-configuracion">
     <div class="adm-sec">
       <h3>🔑 Configuración</h3>
       <div class="ag">
@@ -1013,7 +1040,9 @@ section{padding:56px 18px;}
       <button class="save-btn" onclick="saveCfg()">💾 Guardar</button>
       <div class="saved-msg" id="cfg-saved">✅ ¡Guardado!</div>
     </div>
+    </div>
 
+    <div class="admin-section" id="admin-section-descuentos">
     <div class="adm-sec">
       <h3>🏷️ Códigos de Descuento</h3>
       <div id="adm-disc-list"><div style="color:#aaa;font-size:0.85rem;">Cargando...</div></div>
@@ -1036,10 +1065,13 @@ section{padding:56px 18px;}
         <button class="add-btn" onclick="saveDiscount()" style="margin-top:10px;">+ Agregar código</button>
       </div>
     </div>
+    </div>
 
+    <div class="admin-section" id="admin-section-reservaciones">
     <div class="adm-sec">
       <h3>📋 Reservaciones</h3>
       <div id="adm-reservaciones"><div style="color:#aaa;font-size:0.85rem;">Cargando...</div></div>
+    </div>
     </div>
 
   </div>
@@ -1134,10 +1166,22 @@ async function hashStr(str) {
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
+function switchAdminTab(tabId) {
+  document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll('.admin-section').forEach(section => {
+    section.classList.toggle('active', section.id === 'admin-section-' + tabId);
+  });
+  localStorage.setItem('adminActiveTab', tabId);
+}
+
 function openAdmin() {
   if (!adminAuthenticated) { openAdminLogin(); return; }
   document.getElementById('admin-panel').style.display = 'block';
   loadAdminData();
+  const savedTab = localStorage.getItem('adminActiveTab') || 'paquetes';
+  switchAdminTab(savedTab);
 }
 function closeAdmin() {
   document.getElementById('admin-panel').style.display = 'none';
@@ -2004,6 +2048,9 @@ async function loadReservaciones() {
 }
 
 function renderReservaciones(list) {
+  const pendientes = list.filter(r => r.estado === 'pendiente').length;
+  const badge = document.getElementById('badge-pendientes');
+  if (badge) { badge.textContent = pendientes; badge.style.display = pendientes > 0 ? 'inline' : 'none'; }
   const c = document.getElementById('adm-reservaciones');
   if (!list.length) { c.innerHTML='<p style="color:#aaa;font-size:0.85rem;">Sin reservaciones aún.</p>'; return; }
   const fmt = n => '$'+Math.round(Number(n)||0).toLocaleString('es-MX');
