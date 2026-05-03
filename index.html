@@ -189,10 +189,13 @@ section{padding:80px 40px;}
 .blog-drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:8000;}
 .blog-drawer-overlay.active{display:block;}
 .blog-drawer{position:fixed;bottom:-100%;left:0;right:0;height:85vh;background:#ffffff !important;border-radius:20px 20px 0 0;z-index:8001;transition:bottom 0.4s ease;overflow:hidden;display:flex;flex-direction:column;}
+.blog-drawer *{background-color:transparent;}
 .blog-drawer.active{bottom:0;}
 .blog-drawer-handle{width:40px;height:4px;background:#e5e7eb;border-radius:2px;margin:12px auto 0;cursor:pointer;flex-shrink:0;}
 .blog-drawer-close{position:absolute;top:12px;right:16px;background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center;}
 #blog-drawer-content{background:#ffffff !important;margin:0;padding:0;}
+.blog-drawer-body{background:#ffffff !important;padding:3rem 4rem !important;max-width:780px !important;margin:0 auto !important;font-family:'Georgia',serif !important;font-size:1.125rem !important;line-height:1.9 !important;color:#1a1a1a !important;}
+@media(max-width:768px){.blog-drawer-body{padding:2rem 1.5rem !important;}}
 #redes{background:linear-gradient(160deg,#006080 0%,#00ACC1 100%);color:white;text-align:center;}
 #redes .section-title{color:white;}
 #redes .section-sub{color:rgba(255,255,255,0.75);margin:0 auto 38px;}
@@ -2285,9 +2288,9 @@ async function openBlogDrawer(id) {
       </div>
     </div>
 
-    <div style="background:white;padding:28px 24px 48px;margin:0 -20px">
+    <div class="blog-drawer-body">
       ${(data.contenido||'').split('\n').filter(p=>p.trim()).map(p=>
-        `<p style="color:#374151;line-height:1.9;margin:0 0 18px;font-size:0.97rem">${p}</p>`
+        `<p style="margin:0 0 18px">${p}</p>`
       ).join('')}
 
       <div style="margin-top:36px">
@@ -2595,7 +2598,7 @@ window.addEventListener('load', () => {
 <div class="blog-drawer" id="blog-drawer">
   <div class="blog-drawer-handle" onclick="closeBlogDrawer()"></div>
   <button class="blog-drawer-close" onclick="closeBlogDrawer()">✕</button>
-  <div id="blog-drawer-content" style="overflow-y:auto;height:100%;padding:24px 20px 40px;background:#ffffff;color:#1a1a1a;line-height:1.8">
+  <div id="blog-drawer-content" style="overflow-y:auto;height:100%;background:#ffffff">
     <div id="blog-drawer-loading" style="text-align:center;padding:40px">⏳</div>
   </div>
 </div>
