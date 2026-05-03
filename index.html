@@ -2157,20 +2157,19 @@ async function saveManualReservacion() {
   const paqueteNombre = paqueteId ? (paqueteSel.options[paqueteSel.selectedIndex]?.text?.split(' — ')[0] || '') : null;
   const personas = parseInt(document.getElementById('mrf-personas').value) || 1;
   const anticipo = parseFloat(document.getElementById('mrf-anticipo').value) || 0;
-  const folio = '#' + Math.random().toString(36).substring(2,10).toUpperCase();
   const { error } = await sb.from('reservaciones').insert([{
+    paquete_id: paqueteId ? String(paqueteId) : null,
+    paquete_nombre: paqueteNombre,
     nombre,
     email,
     whatsapp: document.getElementById('mrf-wa').value.trim() || null,
-    paquete_id: paqueteId,
-    paquete_nombre: paqueteNombre,
     personas,
-    anticipo: anticipo,
-    total: anticipo,
     metodo_pago: document.getElementById('mrf-metodo').value,
-    estado: document.getElementById('mrf-estado').value,
-    notas: document.getElementById('mrf-notas').value.trim() || null,
-    numero_reserva: folio
+    total: anticipo,
+    anticipo,
+    fecha_inicio: null,
+    fecha_fin: null,
+    estado: document.getElementById('mrf-estado').value
   }]);
   if (error) { alert('Error al guardar: ' + error.message); return; }
   document.getElementById('manual-res-form').style.display = 'none';
