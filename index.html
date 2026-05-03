@@ -188,11 +188,11 @@ section{padding:80px 40px;}
 @media(max-width:768px){.blog-grid{grid-template-columns:1fr;gap:20px;}}
 .blog-drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:8000;}
 .blog-drawer-overlay.active{display:block;}
-.blog-drawer{position:fixed;bottom:-100%;left:0;right:0;height:85vh;background:#f8f9fa !important;border-radius:20px 20px 0 0;z-index:8001;transition:bottom 0.4s ease;overflow:hidden;display:flex;flex-direction:column;}
+.blog-drawer{position:fixed;bottom:-100%;left:0;right:0;height:85vh;background:#ffffff !important;border-radius:20px 20px 0 0;z-index:8001;transition:bottom 0.4s ease;overflow:hidden;display:flex;flex-direction:column;}
 .blog-drawer.active{bottom:0;}
 .blog-drawer-handle{width:40px;height:4px;background:#e5e7eb;border-radius:2px;margin:12px auto 0;cursor:pointer;flex-shrink:0;}
 .blog-drawer-close{position:absolute;top:12px;right:16px;background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center;}
-#blog-drawer-content{background:white;margin:0;padding:0;}
+#blog-drawer-content{background:#ffffff !important;margin:0;padding:0;}
 #redes{background:linear-gradient(160deg,#006080 0%,#00ACC1 100%);color:white;text-align:center;}
 #redes .section-title{color:white;}
 #redes .section-sub{color:rgba(255,255,255,0.75);margin:0 auto 38px;}
@@ -2595,7 +2595,7 @@ window.addEventListener('load', () => {
 <div class="blog-drawer" id="blog-drawer">
   <div class="blog-drawer-handle" onclick="closeBlogDrawer()"></div>
   <button class="blog-drawer-close" onclick="closeBlogDrawer()">✕</button>
-  <div id="blog-drawer-content" style="overflow-y:auto;height:100%;padding:24px 20px 40px">
+  <div id="blog-drawer-content" style="overflow-y:auto;height:100%;padding:24px 20px 40px;background:#ffffff;color:#1a1a1a;line-height:1.8">
     <div id="blog-drawer-loading" style="text-align:center;padding:40px">⏳</div>
   </div>
 </div>
