@@ -316,9 +316,12 @@ function renderReservaciones(list) {
       ? `<button class="btn-res-ok" onclick="confirmarReservacion('${r.id}')">✅ Confirmar</button>` : '';
     const btnDel = `<button class="btn-res-del" onclick="eliminarReservacion('${r.id}')">🗑 Eliminar</button>`;
     const btnViajeros = `<button class="btn-res-ok" style="background:#0097A7;" onclick="event.stopPropagation();verViajeros('${r.id}','${(r.paquete_nombre||'').replace(/'/g,"\\'")}')">👥 Viajeros</button>`;
+    const safeName = (r.nombre||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const safeEmail = (r.email||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const safeWa = (r.whatsapp||r.telefono||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const btnContrato = r.contrato_url
-      ? `<a href="${r.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;padding:5px 10px;background:#1A3A4A;color:#fff;border-radius:6px;font-size:0.78rem;font-weight:600;text-decoration:none;vertical-align:middle;">📄 Contrato</a>`
-      : '';
+      ? `<a href="${r.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;padding:5px 10px;background:#1A3A4A;color:#fff;border-radius:6px;font-size:0.78rem;font-weight:600;text-decoration:none;vertical-align:middle;">📄 Ver</a>`
+      : `<button id="btn-contrato-${r.id}" class="btn-res-ok" style="background:#0d6b6b;" onclick="openContratoModal('${r.id}','${safeName}','${safeEmail}','${safeWa}')">📄 Contrato</button>`;
     const td = (extra,content) => `<td style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;${extra||''}">${content}</td>`;
     return `<tr>
       ${td('text-align:center;font-weight:700;color:#aaa;font-size:0.78rem;', i+1)}
@@ -1007,4 +1010,110 @@ async function eliminarEgreso(rid) {
   if (error) { alert('Error al eliminar: ' + error.message); return; }
   document.querySelectorAll(`.fin-egr-inp[data-rid="${rid}"]`).forEach(inp => { inp.value = 0; });
   recalcFinRow(rid);
+}
+
+// ---- CONTRATO ----
+
+function openContratoModal(resId, nombre, email, whatsapp) {
+  document.getElementById('cm-res-id').value = resId;
+  document.getElementById('cm-nombre').value = nombre || '';
+  document.getElementById('cm-ap-paterno').value = '';
+  document.getElementById('cm-ap-materno').value = '';
+  document.getElementById('cm-fecha-nac').value = '';
+  document.getElementById('cm-nacionalidad').value = 'Mexicana';
+  document.getElementById('cm-correo').value = email || '';
+  document.getElementById('cm-whatsapp').value = whatsapp || '';
+  document.getElementById('cm-emergencia').value = '';
+  document.getElementById('cm-alergias').value = '';
+  document.getElementById('contrato-modal-sub').textContent = 'Folio: ' + resId.substring(0, 8).toUpperCase();
+  const btn = document.getElementById('btn-generar-contrato');
+  btn.innerHTML = '📄 Generar contrato';
+  btn.disabled = false;
+  document.getElementById('contrato-modal').classList.add('open');
+}
+
+function closeContratoModal() {
+  document.getElementById('contrato-modal').classList.remove('open');
+}
+
+async function generarContrato() {
+  const resId = document.getElementById('cm-res-id').value;
+  const nombre = document.getElementById('cm-nombre').value.trim();
+  const apPaterno = document.getElementById('cm-ap-paterno').value.trim();
+  const apMaterno = document.getElementById('cm-ap-materno').value.trim();
+  const fechaNac = document.getElementById('cm-fecha-nac').value;
+  const nacionalidad = document.getElementById('cm-nacionalidad').value.trim() || 'Mexicana';
+  const correo = document.getElementById('cm-correo').value.trim();
+  const whatsapp = document.getElementById('cm-whatsapp').value.trim();
+  const emergencia = document.getElementById('cm-emergencia').value.trim();
+  const alergias = document.getElementById('cm-alergias').value.trim();
+
+  if (!apPaterno || !apMaterno || !fechaNac) {
+    alert('Apellido paterno, materno y fecha de nacimiento son obligatorios.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-generar-contrato');
+  btn.innerHTML = '<span class="spin"></span> Generando...';
+  btn.disabled = true;
+
+  await sb.from('viajeros').delete().eq('reservacion_id', resId).eq('es_titular', true);
+  const { error: vErr } = await sb.from('viajeros').insert([{
+    reservacion_id: resId,
+    nombre,
+    ap_paterno: apPaterno,
+    ap_materno: apMaterno,
+    fecha_nacimiento: fechaNac,
+    nacionalidad,
+    correo,
+    whatsapp,
+    contacto_emergencia: emergencia || null,
+    alergias: alergias || null,
+    es_titular: true
+  }]);
+
+  if (vErr) {
+    btn.innerHTML = '📄 Generar contrato';
+    btn.disabled = false;
+    alert('Error al guardar viajero: ' + vErr.message);
+    return;
+  }
+
+  const res = await fetch('/api/generate-contract', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reservacion_id: resId })
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    btn.innerHTML = '📄 Generar contrato';
+    btn.disabled = false;
+    alert('Error al generar contrato: ' + (data.error || res.statusText));
+    return;
+  }
+
+  const contratoUrl = data.contrato_url || data.url;
+  const btnRow = document.getElementById('btn-contrato-' + resId);
+  if (btnRow && contratoUrl) {
+    btnRow.outerHTML = `<a href="${contratoUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:5px 10px;background:#1A3A4A;color:#fff;border-radius:6px;font-size:0.78rem;font-weight:600;text-decoration:none;vertical-align:middle;">📄 Ver</a>`;
+  }
+
+  closeContratoModal();
+  showToast('✅ Contrato generado');
+}
+
+function showToast(msg) {
+  let t = document.getElementById('admin-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'admin-toast';
+    t.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#0d9488;color:#fff;padding:12px 26px;border-radius:12px;font-weight:700;font-size:0.95rem;z-index:9999;box-shadow:0 4px 18px rgba(0,0,0,0.18);transition:opacity 0.4s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => { t.style.opacity = '0'; }, 3000);
 }
