@@ -81,7 +81,7 @@ function renderPkgs(list) {
         <div class="pkg-urgency">${p.tipo==='secondary'?'🏕️ ¡Solo 48 lugares disponibles!':'✈️ Incluye vuelo, hotel y traslados'}</div>
         <ul class="pkg-features">${inc.slice(0,5).map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}${inc.length>5?`<div class="pkg-extra-items" style="display:none">${inc.slice(5).map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}</div><button class="pkg-more-btn" onclick="toggleExtras(this)">+ ${inc.length-5} más incluidos ▾</button>`:''}</ul>
         <button class="pkg-btn pkg-btn-${p.tipo||'primary'}" onclick="openPay('${p.id}')">
-          ${p.tipo==='secondary'?'⛺ Apartar mi lugar':'🏖️ Reservar ahora'}
+          🏖️ Reservar ahora
         </button>
         <div class="pkg-share-wrap">
           <button class="pkg-share-btn" onclick="toggleShareMenu(this)">🔗 Compartir</button>

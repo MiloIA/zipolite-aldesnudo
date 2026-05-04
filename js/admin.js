@@ -436,6 +436,7 @@ async function confirmarReservacion(id) {
       fecha_fin: r.fecha_fin || '',
       bank_name: localStorage.getItem('bank_name') || '',
       bank_clabe: localStorage.getItem('bank_clabe') || '',
+      contrato_url: r.contrato_url || null,
     }),
   }).catch(e => console.error('confirm-payment:', e));
 

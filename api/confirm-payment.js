@@ -6,6 +6,7 @@ export default async function handler(req, res) {
     personas, metodo_pago, total, anticipo,
     fecha_inicio, fecha_fin,
     bank_name, bank_clabe,
+    contrato_url,
   } = req.body || {};
 
   if (!email || !nombre) return res.status(400).json({ ok: false, error: 'Faltan campos' });
@@ -127,6 +128,14 @@ export default async function handler(req, res) {
           ¿Dudas? Escríbenos por WhatsApp al <strong>958 219 9953</strong> mencionando tu número de reserva <strong>${shortId}</strong>
         </div>
       </td></tr>
+
+      ${contrato_url ? `<tr><td style="padding:20px 32px 0;">
+        <div style="margin-top:24px;padding:16px;background:#f0fdf4;border-radius:8px;border-left:4px solid #1a9fa0;">
+          <p style="margin:0 0 8px;font-weight:600;color:#1a1a1a;">📄 Tu contrato de viaje</p>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">Tu contrato está listo. Descárgalo y guárdalo para cualquier consulta.</p>
+          <a href="${contrato_url}" style="display:inline-block;padding:10px 20px;background:#1a9fa0;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Descargar contrato PDF →</a>
+        </div>
+      </td></tr>` : ''}
 
       <tr><td style="padding:24px 32px 28px;text-align:center;border-top:1px solid #e8f5f7;margin-top:24px;">
         <p style="margin:0;font-size:0.75rem;color:#aaa;">Zipolite al Desnudo &nbsp;•&nbsp; zipolitealdesnudo.com &nbsp;•&nbsp; WhatsApp: 958 219 9953</p>
