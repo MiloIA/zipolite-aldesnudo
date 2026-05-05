@@ -815,6 +815,24 @@ document.addEventListener('keydown', e => {
   if (e.shiftKey && e.altKey && e.key === 'A') { e.preventDefault(); openAdminLogin(); }
 });
 
+(function initAdminTapZone() {
+  let tapCount = 0;
+  let tapTimer = null;
+  const zone = document.getElementById('admin-tap-zone');
+  if (!zone) return;
+  zone.addEventListener('click', () => {
+    tapCount++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
+    if (tapCount >= 5) {
+      tapCount = 0;
+      clearTimeout(tapTimer);
+      document.getElementById('admin-login').classList.add('open');
+      setTimeout(() => document.getElementById('admin-pwd').focus(), 100);
+    }
+  });
+})();
+
 function toggleMobileMenu() {
   const nav = document.getElementById('nav-links');
   const btn = document.getElementById('hamburger');
