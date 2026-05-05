@@ -1081,9 +1081,13 @@ async function generarContrato() {
     return;
   }
 
+  const adminToken = sessionStorage.getItem('adminToken');
   const res = await fetch('/api/generate-contract', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${adminToken}`
+    },
     body: JSON.stringify({ reservacion_id: resId })
   });
 
