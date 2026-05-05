@@ -14,6 +14,24 @@ webpush.setVapidDetails(
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
+
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.replace('Bearer ', '');
+
+  if (!token) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+
+  const { data: session } = await supabase
+    .from('admin_sessions')
+    .select('expires_at')
+    .eq('token', token)
+    .single();
+
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return res.status(401).json({ error: 'Sesión expirada' });
+  }
+
   console.log('VAPID PUBLIC:', process.env.VAPID_PUBLIC_KEY ? 'OK' : 'MISSING');
   console.log('VAPID PRIVATE:', process.env.VAPID_PRIVATE_KEY ? 'OK' : 'MISSING');
   console.log('VAPID EMAIL:', process.env.VAPID_EMAIL ? 'OK' : 'MISSING');

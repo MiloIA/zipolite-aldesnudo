@@ -220,9 +220,13 @@ async function sendPushNotification() {
   btn.textContent = '⏳ Enviando...';
   btn.disabled = true;
 
+  const adminToken = sessionStorage.getItem('adminToken');
   const res = await fetch('/api/send-notification', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${adminToken}`
+    },
     body: JSON.stringify({ title, body, image, url })
   });
 
