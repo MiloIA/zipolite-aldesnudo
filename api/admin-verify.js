@@ -8,13 +8,16 @@ const supabase = createClient(
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { token } = req.body || {};
+  const { token } = req.body;
+
+  if (!token || typeof token !== 'string' || token.length !== 64 || !/^[a-f0-9]+$/.test(token)) {
+    return res.status(400).json({ valid: false, error: 'Token inválido' });
+  }
+
   const now = new Date().toISOString();
 
   // Purge expired tokens
   await supabase.from('admin_sessions').delete().lt('expires_at', now);
-
-  if (!token) return res.status(200).json({ valid: false });
 
   const { data } = await supabase
     .from('admin_sessions')
