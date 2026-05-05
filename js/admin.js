@@ -426,7 +426,10 @@ async function confirmarReservacion(id) {
 
   fetch('/api/confirm-payment', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${sessionStorage.getItem('adminToken')}`
+    },
     body: JSON.stringify({
       reservacion_id: r.id,
       nombre: r.nombre,

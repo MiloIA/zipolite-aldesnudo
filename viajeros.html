@@ -648,7 +648,8 @@ async function submitTravelers() {
     metodo: reserva.metodo_pago,
     total: reserva.total,
     anticipo: reserva.anticipo,
-    paquete: reserva.paquete_nombre
+    paquete: reserva.paquete_nombre,
+    paquete_id: reserva.paquete_id
   }));
   window.location.href = 'pago.html';
 }

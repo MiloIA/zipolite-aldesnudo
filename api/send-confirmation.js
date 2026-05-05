@@ -1,6 +1,44 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+
+  // Auth: admin token O reservación reciente (≤30 min) para permitir el flujo público post-reserva
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.replace('Bearer ', '');
+
+  if (token) {
+    const { data: session } = await supabase
+      .from('admin_sessions')
+      .select('expires_at')
+      .eq('token', token)
+      .single();
+    if (!session || new Date(session.expires_at) < new Date()) {
+      return res.status(401).json({ error: 'Sesión expirada' });
+    }
+  } else {
+    const reservacion_id = req.body?.reservacion_id;
+    if (!reservacion_id) return res.status(401).json({ error: 'No autorizado' });
+
+    const { data: reservaCheck } = await supabase
+      .from('reservaciones')
+      .select('created_at')
+      .eq('id', reservacion_id)
+      .single();
+
+    if (!reservaCheck) return res.status(404).json({ error: 'Reservación no encontrada' });
+
+    const minutosDesdeCreacion = (Date.now() - new Date(reservaCheck.created_at)) / 60000;
+    if (minutosDesdeCreacion > 30) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
   }
 
   const {

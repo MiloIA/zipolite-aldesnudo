@@ -419,7 +419,8 @@ async function handleCardPayment() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        amount: reserva.anticipo,
+        monto: reserva.anticipo,
+        paquete_id: reserva.paquete_id,
         reservacion_id: reserva.id
       })
     });

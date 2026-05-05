@@ -1,5 +1,27 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false });
+
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.replace('Bearer ', '');
+
+  if (!token) return res.status(401).json({ error: 'No autorizado' });
+
+  const { data: session } = await supabase
+    .from('admin_sessions')
+    .select('expires_at')
+    .eq('token', token)
+    .single();
+
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return res.status(401).json({ error: 'Sesión expirada' });
+  }
 
   const {
     reservacion_id, nombre, email, whatsapp, paquete_nombre,
