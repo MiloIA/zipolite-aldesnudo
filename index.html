@@ -576,6 +576,7 @@
     <button class="admin-nav-btn" data-tab="reservaciones" onclick="switchAdminTab('reservaciones')">📋 Reservaciones <span class="adm-badge" id="badge-pendientes" style="display:none"></span></button>
     <button class="admin-nav-btn" data-tab="cotizaciones" onclick="switchAdminTab('cotizaciones')">💬 Cotizaciones <span class="adm-badge" id="badge-cotizaciones" style="display:none"></span></button>
     <button class="admin-nav-btn" data-tab="finanzas" onclick="switchAdminTab('finanzas')">📊 Finanzas</button>
+    <button class="admin-nav-btn" data-tab="comisiones" onclick="switchAdminTab('comisiones')">💳 Comisiones</button>
     <button class="admin-nav-btn" data-tab="configuracion" onclick="switchAdminTab('configuracion')">⚙️ Config</button>
   </div>
   <div class="admin-content">
@@ -806,6 +807,15 @@
         </div>
       </div>
       <div id="fin-tabla"></div>
+    </div>
+    </div>
+
+    <div class="admin-section" id="admin-section-comisiones">
+    <div class="adm-sec">
+      <h3>💳 Comisiones Stripe por Paquete</h3>
+      <div id="comisiones-resumen" style="margin-bottom:16px;font-size:0.9rem;font-weight:600;"></div>
+      <button class="add-btn" onclick="loadComisiones()" style="margin-bottom:18px;">🔄 Recalcular</button>
+      <div id="comisiones-tablas"></div>
     </div>
     </div>
 

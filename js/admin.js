@@ -57,6 +57,7 @@ function switchAdminTab(tabId) {
   if (tabId === 'configuracion') loadConfig();
   if (tabId === 'cotizaciones') loadCotizaciones();
   if (tabId === 'finanzas') loadFinanzas();
+  if (tabId === 'comisiones') loadComisiones();
 }
 
 function openAdmin() {
@@ -1103,6 +1104,91 @@ async function generarContrato() {
 
   closeContratoModal();
   showToast('✅ Contrato generado');
+}
+
+// ---- ADMIN: COMISIONES ----
+
+const _COM_RATES = {
+  card: { rate: 3.6,  flat: 3, months: 0,  label: 'Contado tarjeta' },
+  '3':  { rate: 8.6,  flat: 3, months: 3,  label: '3 meses' },
+  '6':  { rate: 11.1, flat: 3, months: 6,  label: '6 meses' },
+  '9':  { rate: 13.6, flat: 3, months: 9,  label: '9 meses' },
+  '12': { rate: 16.1, flat: 3, months: 12, label: '12 meses' },
+  '18': { rate: 21.1, flat: 3, months: 18, label: '18 meses' },
+  '24': { rate: 25.1, flat: 3, months: 24, label: '24 meses' },
+};
+
+async function loadComisiones() {
+  const resumenEl = document.getElementById('comisiones-resumen');
+  const tablasEl  = document.getElementById('comisiones-tablas');
+  resumenEl.innerHTML = '';
+  tablasEl.innerHTML  = '<div style="color:#aaa;font-size:0.85rem;"><span class="spin"></span> Cargando paquetes...</div>';
+
+  const { data, error } = await sb.from('paquetes').select('id,nombre,precio').eq('activo', true).order('created_at');
+  if (error) { tablasEl.innerHTML = `<p style="color:red;font-size:0.85rem;">Error: ${error.message}</p>`; return; }
+  if (!data || !data.length) { tablasEl.innerHTML = '<p style="color:#aaa;font-size:0.85rem;">Sin paquetes activos.</p>'; return; }
+
+  let inconsistentes = 0;
+  const html = data.map(pkg => {
+    const base = Number(pkg.precio) || 0;
+    const thS = 'style="background:#f0f4f6;padding:7px 10px;text-align:left;font-size:0.72rem;font-weight:700;color:#666;white-space:nowrap;"';
+    const tdS = (extra) => `style="padding:7px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;${extra||''}"`;
+
+    // Fila transferencia
+    const rows = [`<tr>
+      <td ${tdS()}>Transferencia / Depósito</td>
+      <td ${tdS('font-weight:700;')}>$${base.toLocaleString('es-MX')}</td>
+      <td ${tdS('color:#2e7d32;')}>Sin comisión</td>
+      <td ${tdS('font-weight:700;')}>$${base.toLocaleString('es-MX')}</td>
+      <td ${tdS('color:#aaa;')}>—</td>
+      <td ${tdS()}>✅</td>
+    </tr>`];
+
+    // Filas Stripe
+    for (const [key, cfg] of Object.entries(_COM_RATES)) {
+      const total    = grossUp(base, cfg.rate, cfg.flat);
+      const comision = total - base;
+      const verify   = grossUp(base, cfg.rate, cfg.flat);
+      const valido   = total === verify;
+      if (!valido) inconsistentes++;
+      const mensualidad = cfg.months > 0
+        ? `$${Math.ceil(total / cfg.months).toLocaleString('es-MX')} × ${cfg.months}`
+        : '—';
+      rows.push(`<tr>
+        <td ${tdS()}>${cfg.label}</td>
+        <td ${tdS('font-weight:700;')}>$${base.toLocaleString('es-MX')}</td>
+        <td ${tdS()}>+$${comision.toLocaleString('es-MX')}</td>
+        <td ${tdS('font-weight:700;')}>$${total.toLocaleString('es-MX')}</td>
+        <td ${tdS()}>${mensualidad}</td>
+        <td ${tdS(valido ? '' : 'color:#e53935;font-weight:700;')}>${valido ? '✅' : '❌'}</td>
+      </tr>`);
+    }
+
+    return `<div style="margin-bottom:28px;">
+      <h4 style="font-size:0.95rem;font-weight:700;margin:0 0 10px;color:#1A3A4A;">${pkg.nombre} — precio base $${base.toLocaleString('es-MX')} MXN</h4>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;min-width:560px;">
+          <thead><tr>
+            <th ${thS}>Método de pago</th>
+            <th ${thS}>Precio base</th>
+            <th ${thS}>Comisión Stripe</th>
+            <th ${thS}>Total al cliente</th>
+            <th ${thS}>Mensualidad</th>
+            <th ${thS}>Válido</th>
+          </tr></thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+
+  tablasEl.innerHTML = html;
+
+  if (inconsistentes === 0) {
+    resumenEl.innerHTML = `<span style="color:#2e7d32;">${data.length} paquetes verificados — todos correctos ✅</span>`;
+  } else {
+    resumenEl.innerHTML = `<span style="color:#e53935;">⚠️ ${inconsistentes} inconsistencia${inconsistentes > 1 ? 's' : ''} detectada${inconsistentes > 1 ? 's' : ''} en ${data.length} paquetes</span>`;
+  }
 }
 
 function showToast(msg) {
