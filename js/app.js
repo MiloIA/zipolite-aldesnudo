@@ -771,6 +771,13 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('admin') === 'true') {
+    window.history.replaceState({}, document.title, window.location.pathname);
+    document.getElementById('admin-login').classList.add('open');
+    setTimeout(() => document.getElementById('admin-pwd').focus(), 100);
+  }
+
   if (window.location.hash.includes('access_token') && window.location.hash.includes('type=recovery')) {
     window.location.href = 'cuenta.html' + window.location.hash;
     return;
