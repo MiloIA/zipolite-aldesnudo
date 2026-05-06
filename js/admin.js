@@ -1437,13 +1437,21 @@ async function runQA() {
   }
   qaResults.push({ fase: 1, status: calcOk ? '✅' : '🔴', texto: calcOk ? 'Cálculos de financiamiento correctos' : 'Error en cálculos de financiamiento' });
 
-  const tablas = ['paquetes', 'reservaciones', 'viajeros', 'cotizaciones', 'egresos', 'admin_sessions', 'login_attempts'];
-  for (const tabla of tablas) {
-    const { error } = await sb.from(tabla).select('id').limit(1);
+  const tablas = [
+    { nombre: 'paquetes',       col: 'id'    },
+    { nombre: 'reservaciones',  col: 'id'    },
+    { nombre: 'viajeros',       col: 'id'    },
+    { nombre: 'cotizaciones',   col: 'id'    },
+    { nombre: 'egresos',        col: 'id'    },
+    { nombre: 'admin_sessions', col: 'token' },
+    { nombre: 'login_attempts', col: 'ip'    },
+  ];
+  for (const { nombre, col } of tablas) {
+    const { error } = await sb.from(nombre).select(col).limit(1);
     if (error) {
-      qaResults.push({ fase: 1, status: '🔴', texto: `Tabla '${tabla}' no accesible: ${error.message}` });
+      qaResults.push({ fase: 1, status: '🔴', texto: `Tabla '${nombre}' no accesible: ${error.message}` });
     } else {
-      qaResults.push({ fase: 1, status: '✅', texto: `Tabla '${tabla}' accesible` });
+      qaResults.push({ fase: 1, status: '✅', texto: `Tabla '${nombre}' accesible` });
     }
   }
 
