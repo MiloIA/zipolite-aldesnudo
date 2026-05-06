@@ -422,4 +422,5 @@ section{padding:56px 18px;}
 .pkg-option-item strong{color:#0d1b3e;font-size:0.95rem;white-space:nowrap;}
 .pkg-precio-resumen{display:flex;justify-content:space-between;align-items:center;padding:1rem;background:#f0fdf9;border-radius:8px;margin:1rem 0;}
 .pkg-precio-resumen strong{font-size:1.3rem;color:#1a9fa0;}
+#login-required-msg{background:#fff3cd;color:#856404;padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-weight:600;font-size:0.9rem;display:none;}
 .pkg-card.slug-highlight{outline:3px solid #00BCD4;outline-offset:2px;box-shadow:0 0 0 6px rgba(0,188,212,0.15),0 16px 48px rgba(0,0,0,0.18)!important;}
