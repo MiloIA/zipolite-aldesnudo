@@ -508,6 +508,11 @@
       <ul id="s1-incluye" style="list-style:none;margin-bottom:16px;padding:0;"></ul>
       <div id="s1-nota" style="background:#f0feff;border-left:3px solid var(--ocean);padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.83rem;color:#2a6a7a;margin-bottom:18px;display:none;"></div>
       <button class="pay-btn" onclick="document.getElementById('modal-step-1').style.display='none';document.getElementById('modal-step-2').style.display='block';">Quiero este paquete →</button>
+      <div id="grupo-option" style="display:none;margin-top:1rem;padding:1rem;background:#f0fdf9;border-radius:8px;border:1px solid #1a9fa0;">
+        <div style="font-weight:700;color:#0d1b3e;margin-bottom:0.5rem;">👥 ¿Viajan en grupo?</div>
+        <div style="font-size:0.85rem;color:#666;margin-bottom:0.75rem;">Crea un grupo y cada integrante paga su parte por separado</div>
+        <button id="btn-crear-grupo" onclick="crearGrupo()" style="width:100%;padding:0.6rem;background:white;border:2px solid #1a9fa0;border-radius:8px;color:#1a9fa0;font-weight:700;cursor:pointer;">🔗 Crear grupo y compartir link</button>
+      </div>
     </div>
 
     <!-- PASO 2: Formulario de reserva -->
@@ -845,7 +850,10 @@
     <div class="adm-sec">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #e8f4f5;">
         <h3 style="margin:0;padding:0;border:none;font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;color:var(--dark);">📋 Reservaciones</h3>
-        <button class="add-btn" onclick="toggleManualResForm()" style="margin:0">➕ Agregar reserva</button>
+        <div style="display:flex;gap:8px;">
+          <button class="add-btn" onclick="toggleGruposView()" id="btn-ver-grupos" style="margin:0;background:#1a9fa0;">👥 Ver grupos</button>
+          <button class="add-btn" onclick="toggleManualResForm()" style="margin:0">➕ Agregar reserva</button>
+        </div>
       </div>
       <div id="manual-res-form" class="sub-form" style="display:none;margin-bottom:18px;">
         <div class="ag">
@@ -893,6 +901,7 @@
           <button onclick="toggleManualResForm()" style="padding:10px 18px;background:#eee;border:none;border-radius:10px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">Cancelar</button>
         </div>
       </div>
+      <div id="adm-grupos" style="display:none;margin-bottom:18px;"></div>
       <div id="adm-reservaciones"><div style="color:#aaa;font-size:0.85rem;">Cargando...</div></div>
     </div>
     </div>

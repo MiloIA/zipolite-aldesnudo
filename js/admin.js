@@ -296,12 +296,18 @@ async function deleteNotif(id) {
 }
 
 async function loadReservaciones() {
-  const {data,error} = await sb.from('reservaciones').select('*').order('created_at',{ascending:false});
+  const [{ data, error }, { data: grupos }] = await Promise.all([
+    sb.from('reservaciones').select('*').order('created_at', { ascending: false }),
+    sb.from('grupos').select('id, codigo, paquete_nombre, organizador_nombre, personas_esperadas')
+  ]);
   if (error) { document.getElementById('adm-reservaciones').innerHTML='<p style="color:red;font-size:0.85rem;">Error cargando reservaciones.</p>'; return; }
-  renderReservaciones(data||[]);
+  const gruposMap = Object.fromEntries((grupos||[]).map(g => [g.id, g]));
+  renderReservaciones(data||[], gruposMap);
+  window._admGruposMap = gruposMap;
+  window._admReservaciones = data||[];
 }
 
-function renderReservaciones(list) {
+function renderReservaciones(list, gruposMap = {}) {
   const pendientes = list.filter(r => r.estado === 'pendiente').length;
   const badge = document.getElementById('badge-pendientes');
   if (badge) { badge.textContent = pendientes; badge.style.display = pendientes > 0 ? 'inline' : 'none'; }
@@ -315,6 +321,9 @@ function renderReservaciones(list) {
     const fecha = r.created_at ? r.created_at.substring(0,10) : '—';
     const shortId = (r.id||'').substring(0,8).toUpperCase();
     const estado = r.estado || 'pendiente';
+    const grupoBadge = r.grupo_id && gruposMap[r.grupo_id]
+      ? `<span style="display:inline-block;background:#e0f7f7;color:#1a9fa0;font-size:0.72rem;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:4px;">👥 ${gruposMap[r.grupo_id].codigo}</span>`
+      : '';
     const emailRaw = r.email || '—';
     const email = emailRaw.length > 20 ? emailRaw.substring(0,20)+'…' : emailRaw;
     const btnConfirm = estado !== 'confirmado'
@@ -332,7 +341,7 @@ function renderReservaciones(list) {
       ${td('text-align:center;font-weight:700;color:#aaa;font-size:0.78rem;', i+1)}
       ${td('',fecha)}
       ${td('font-family:monospace;font-weight:700;color:#0097A7;','#'+shortId)}
-      ${td('',r.nombre||'—')}
+      <td style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;">${r.nombre||'—'}${grupoBadge}</td>
       <td style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;" title="${r.email||''}">${email}</td>
       ${td('',r.whatsapp||r.telefono||'—')}
       ${td('max-width:160px;overflow:hidden;text-overflow:ellipsis;',r.paquete_nombre||'—')}
@@ -349,6 +358,58 @@ function renderReservaciones(list) {
     </tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
+}
+
+function toggleGruposView() {
+  const gruposEl = document.getElementById('adm-grupos');
+  const btn = document.getElementById('btn-ver-grupos');
+  const isOpen = gruposEl.style.display !== 'none';
+  if (isOpen) {
+    gruposEl.style.display = 'none';
+    btn.textContent = '👥 Ver grupos';
+  } else {
+    gruposEl.style.display = 'block';
+    btn.textContent = '👥 Ocultar grupos';
+    loadGrupos();
+  }
+}
+
+async function loadGrupos() {
+  const { data: grupos, error } = await sb.from('grupos').select('*').order('created_at', { ascending: false });
+  if (error) { document.getElementById('adm-grupos').innerHTML = '<p style="color:red;font-size:0.85rem;">Error cargando grupos.</p>'; return; }
+  renderGrupos(grupos||[], window._admReservaciones||[]);
+}
+
+function renderGrupos(grupos, reservaciones) {
+  const el = document.getElementById('adm-grupos');
+  if (!grupos.length) { el.innerHTML = '<p style="color:#aaa;font-size:0.85rem;margin-bottom:12px;">Sin grupos creados aún.</p>'; return; }
+  const thS = 'style="background:#e0f7f7;padding:8px 10px;text-align:left;font-size:0.75rem;font-weight:700;color:#1a9fa0;white-space:nowrap;"';
+  const rows = grupos.map(g => {
+    const miembros = reservaciones.filter(r => r.grupo_id === g.id);
+    const confirmados = miembros.filter(r => r.estado === 'confirmado' || r.estado === 'confirmada').length;
+    const estado = miembros.length >= g.personas_esperadas ? '✅ Completo' : `⏳ ${miembros.length}/${g.personas_esperadas}`;
+    const detalles = miembros.length
+      ? miembros.map(r => `<div style="font-size:0.78rem;color:#555;padding:2px 0;">${r.nombre||'—'} · ${r.estado||'pendiente'}</div>`).join('')
+      : '<div style="font-size:0.78rem;color:#aaa;">Sin reservas vinculadas</div>';
+    return `<tr>
+      <td style="padding:8px 10px;font-size:0.85rem;font-weight:800;color:#1a9fa0;font-family:monospace;">${g.codigo}</td>
+      <td style="padding:8px 10px;font-size:0.82rem;">${g.paquete_nombre||'—'}</td>
+      <td style="padding:8px 10px;font-size:0.82rem;">${g.organizador_nombre||'—'}</td>
+      <td style="padding:8px 10px;font-size:0.82rem;text-align:center;">${estado} <span style="color:#888;">(${confirmados} conf.)</span></td>
+      <td style="padding:8px 10px;font-size:0.82rem;">${g.alojamiento||'—'}</td>
+      <td style="padding:8px 10px;font-size:0.82rem;min-width:180px;">${detalles}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<div style="margin-bottom:12px;padding:12px;background:#f0fdf9;border-radius:8px;border:1px solid #1a9fa0;">
+    <strong style="font-size:0.9rem;color:#0d1b3e;">👥 Grupos activos (${grupos.length})</strong>
+    <div style="overflow-x:auto;margin-top:10px;"><table style="width:100%;border-collapse:collapse;min-width:500px;">
+      <thead><tr>
+        <th ${thS}>Código</th><th ${thS}>Paquete</th><th ${thS}>Organizador</th>
+        <th ${thS}>Personas</th><th ${thS}>Alojamiento</th><th ${thS}>Miembros</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
 }
 
 function toggleManualResForm() {

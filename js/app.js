@@ -270,9 +270,83 @@ function confirmarPersonalizacion() {
     selectPersonas.dispatchEvent(new Event('change'));
   }
 
+  window._paso0Alojamiento = document.querySelector('input[name="alojamiento"]:checked')?.value || 'camping';
+  window._paso0PersonasHab = parseInt(document.querySelector('input[name="habitacion-personas"]:checked')?.value || 1);
+  window._paso0Tour = document.getElementById('tour-carrizalillo')?.checked || false;
+
   document.getElementById('modal-step-0').style.display = 'none';
   document.getElementById('modal-step-1').style.display = 'block';
+  const grupoOpt = document.getElementById('grupo-option');
+  if (grupoOpt) {
+    grupoOpt.style.display = 'block';
+    const btn = document.getElementById('btn-crear-grupo');
+    if (btn) { btn.textContent = '🔗 Crear grupo y compartir link'; btn.disabled = false; }
+  }
   calcCotizador();
+}
+
+async function crearGrupo() {
+  const { data: { session } } = await sb.auth.getSession();
+  const alojamiento = window._paso0Alojamiento || 'camping';
+  const personasHab = window._paso0PersonasHab || 1;
+  const tourIncluido = window._paso0Tour || false;
+  const precioPersona = curPkg.precio;
+  const personasEsperadas = parseInt(document.getElementById('m-personas')?.value || 1);
+
+  const btn = document.getElementById('btn-crear-grupo');
+  btn.textContent = 'Creando grupo...';
+  btn.disabled = true;
+
+  const res = await fetch('/api/crear-grupo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      paquete_id: curPkg.id,
+      paquete_nombre: curPkg.nombre,
+      organizador_id: session?.user?.id || null,
+      organizador_nombre: session?.user?.user_metadata?.full_name || '',
+      organizador_email: session?.user?.email || '',
+      personas_esperadas: personasEsperadas,
+      alojamiento,
+      personas_habitacion: personasHab,
+      tour_incluido: tourIncluido,
+      precio_por_persona: precioPersona
+    })
+  });
+
+  const data = await res.json();
+  if (!data.ok) {
+    btn.textContent = '🔗 Crear grupo y compartir link';
+    btn.disabled = false;
+    return;
+  }
+
+  window._grupoId = data.grupo_id;
+  const grupoUrl = `https://zipolitealdesnudo.com/?grupo=${data.codigo}`;
+  document.getElementById('grupo-option').innerHTML = `
+    <div style="font-weight:700;color:#0d1b3e;margin-bottom:0.5rem;">✅ Grupo creado</div>
+    <div style="background:white;border:1px solid #e0e0e0;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
+      <div style="font-size:0.8rem;color:#666;margin-bottom:0.25rem;">Código de grupo</div>
+      <div style="font-size:1.3rem;font-weight:800;color:#1a9fa0;letter-spacing:0.1em;">${data.codigo}</div>
+    </div>
+    <button onclick="navigator.clipboard.writeText('${grupoUrl}').then(()=>this.textContent='✅ ¡Copiado!')"
+      style="width:100%;padding:0.6rem;background:#1a9fa0;border:none;border-radius:8px;color:white;font-weight:700;cursor:pointer;margin-bottom:0.5rem;">
+      📋 Copiar link del grupo
+    </button>
+    <a href="https://wa.me/?text=${encodeURIComponent('¡Únete a nuestro viaje de Año Nuevo en Zipolite! 🌊🏳️‍🌈 Reserva tu lugar aquí: ' + grupoUrl)}"
+      target="_blank"
+      style="display:block;text-align:center;padding:0.6rem;background:#25D366;border-radius:8px;color:white;font-weight:700;text-decoration:none;">
+      💬 Compartir por WhatsApp
+    </a>
+  `;
+}
+
+function mostrarBannerGrupo(grupo) {
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#0d1b3e;color:white;padding:0.75rem 1.5rem;border-radius:12px;z-index:9999;font-weight:600;font-size:0.9rem;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+  banner.innerHTML = `👥 Te uniste al grupo <strong>${grupo.codigo}</strong> — ${grupo.paquete_nombre}`;
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 4000);
 }
 
 function openPay(id) {
@@ -482,6 +556,7 @@ async function confirmarReserva() {
     anticipo,
     fecha_inicio: curPkg.fecha_inicio || null,
     fecha_fin: curPkg.fecha_fin || null,
+    grupo_id: window._grupoId || null,
     estado: 'pendiente'
   }]).select().single();
   if (error) { errEl.textContent = 'Error al guardar reserva: ' + error.message; errEl.style.display = 'block'; resetBtn(); return; }
@@ -945,6 +1020,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const _slugParam = new URLSearchParams(window.location.search).get('paquete');
   if (_slugParam) { pendingSlug = _slugParam; } else { window.scrollTo(0, 0); }
+
+  const grupoParam = new URLSearchParams(window.location.search).get('grupo');
+  if (grupoParam) {
+    (async () => {
+      const { data: grupo } = await sb.from('grupos').select('*').eq('codigo', grupoParam).single();
+      if (grupo) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        window._grupoId = grupo.id;
+        window._grupoData = grupo;
+        mostrarBannerGrupo(grupo);
+        setTimeout(() => openPay(grupo.paquete_id), 500);
+      }
+    })();
+  }
   if (typeof Stripe !== 'undefined') stripeClient = Stripe('pk_live_51TTtl8GZiSqY5s2qtJhc06lhXuoCUBFFRNN8kZa7XJtnwpwjaHWnkkXolOEYk5XywllFXXQeD6sAbAIehdTCdt4M00EtP6jfWW');
   loadAll();
   checkFirstTimeSetup();
