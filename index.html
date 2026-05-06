@@ -579,6 +579,7 @@
     <button class="admin-nav-btn" data-tab="finanzas" onclick="switchAdminTab('finanzas')">📊 Finanzas</button>
     <button class="admin-nav-btn" data-tab="comisiones" onclick="switchAdminTab('comisiones')">💳 Comisiones</button>
     <button class="admin-nav-btn" data-tab="configuracion" onclick="switchAdminTab('configuracion')">⚙️ Config</button>
+    <button class="admin-nav-btn" data-tab="auditoria" onclick="switchAdminTab('auditoria')">🔍 Auditoría</button>
   </div>
   <div class="admin-content">
 
@@ -880,6 +881,18 @@
         </div>
       </div>
       <div id="adm-reservaciones"><div style="color:#aaa;font-size:0.85rem;">Cargando...</div></div>
+    </div>
+    </div>
+
+    <div class="admin-section" id="admin-section-auditoria">
+    <div class="adm-sec">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #e8f4f5;">
+        <h3 style="margin:0;padding:0;border:none;font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;color:var(--dark);">🔍 Auditoría del Sistema</h3>
+        <button id="btn-auditoria" onclick="runAuditoria()" style="padding:9px 20px;background:#0d9488;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;font-weight:600;">▶ Ejecutar auditoría</button>
+      </div>
+      <div id="auditoria-ultima" style="color:#aaa;font-size:0.8rem;margin-bottom:14px;"></div>
+      <div id="auditoria-resumen" style="margin-bottom:18px;"></div>
+      <div id="auditoria-resultados"></div>
     </div>
     </div>
 

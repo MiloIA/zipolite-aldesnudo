@@ -1202,6 +1202,183 @@ async function loadComisiones() {
   }
 }
 
+// ---- ADMIN: AUDITORÍA ----
+
+const _AUDIT_RATES = {
+  card: { rate: 3.6,  flat: 3 },
+  '3':  { rate: 8.6,  flat: 3 },
+  '6':  { rate: 11.1, flat: 3 },
+  '9':  { rate: 13.6, flat: 3 },
+  '12': { rate: 16.1, flat: 3 },
+  '18': { rate: 21.1, flat: 3 },
+  '24': { rate: 25.1, flat: 3 },
+};
+
+async function runAuditoria() {
+  const btn        = document.getElementById('btn-auditoria');
+  const resumenEl  = document.getElementById('auditoria-resumen');
+  const resultsEl  = document.getElementById('auditoria-resultados');
+  const ultimaEl   = document.getElementById('auditoria-ultima');
+
+  btn.disabled    = true;
+  btn.textContent = '⏳ Analizando...';
+  resumenEl.innerHTML  = '';
+  resultsEl.innerHTML  = '<div style="color:#aaa;font-size:0.85rem;"><span class="spin"></span> Ejecutando auditoría...</div>';
+
+  const criticos = [], advertencias = [], avisos = [];
+  const categorias = [];
+
+  // Datos base reutilizados por varias categorías
+  const [{ data: paquetes }, { data: reservasConf }] = await Promise.all([
+    sb.from('paquetes').select('id,nombre,precio,activo,lugares_totales,fecha_fin'),
+    sb.from('reservaciones')
+      .select('id,nombre,email,total,personas,paquete_id,metodo_pago,contrato_url,created_at')
+      .in('estado', ['confirmado', 'confirmada']),
+  ]);
+  const paqMap = {};
+  (paquetes || []).forEach(p => { paqMap[p.id] = p; });
+
+  // --- CAT 1: Montos incorrectos ---
+  const cat1 = [];
+  for (const r of (reservasConf || [])) {
+    const metodo = r.metodo_pago;
+    if (!metodo || metodo === 'transfer') continue;
+    const cfg = _AUDIT_RATES[metodo];
+    if (!cfg) continue;
+    const pkg = paqMap[r.paquete_id];
+    if (!pkg) continue;
+    const base     = Number(pkg.precio) * (Number(r.personas) || 1);
+    const expected = grossUp(base, cfg.rate, cfg.flat);
+    const actual   = Number(r.total) || 0;
+    if (Math.abs(expected - actual) > 10) {
+      cat1.push({
+        id: r.id, tab: 'reservaciones',
+        label: `#${r.id.substring(0,8).toUpperCase()} — ${r.nombre || r.email}`,
+        desc:  `Total registrado $${actual.toLocaleString('es-MX')} · esperado $${expected.toLocaleString('es-MX')} (${metodo === 'card' ? 'tarjeta' : metodo + ' meses'})`,
+      });
+      criticos.push(r.id);
+    }
+  }
+  categorias.push({ icono: cat1.length ? '🔴' : '✅', nombre: 'Reservaciones con monto incorrecto', items: cat1 });
+
+  // --- CAT 2: Confirmadas sin contrato ---
+  const cat2 = (reservasConf || [])
+    .filter(r => !r.contrato_url)
+    .map(r => ({
+      id: r.id, tab: 'reservaciones',
+      label: `#${r.id.substring(0,8).toUpperCase()} — ${r.nombre || r.email}`,
+      desc:  'Reservación confirmada sin contrato generado',
+    }));
+  cat2.forEach(() => advertencias.push(1));
+  categorias.push({ icono: cat2.length ? '🟠' : '✅', nombre: 'Confirmadas sin contrato', items: cat2 });
+
+  // --- CAT 3: Paquetes vencidos activos ---
+  const hoy = new Date().toISOString().split('T')[0];
+  const cat3 = (paquetes || [])
+    .filter(p => p.activo && p.fecha_fin && p.fecha_fin < hoy)
+    .map(p => ({
+      id: p.id, tab: 'paquetes',
+      label: p.nombre,
+      desc:  `Activo pero venció el ${p.fecha_fin}`,
+    }));
+  cat3.forEach(() => advertencias.push(1));
+  categorias.push({ icono: cat3.length ? '🟠' : '✅', nombre: 'Paquetes vencidos aún activos', items: cat3 });
+
+  // --- CAT 4: Pendientes > 7 días ---
+  const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: pendientesViejas } = await sb
+    .from('reservaciones')
+    .select('id,nombre,email,created_at')
+    .eq('estado', 'pendiente')
+    .lt('created_at', hace7dias);
+  const cat4 = (pendientesViejas || []).map(r => ({
+    id: r.id, tab: 'reservaciones',
+    label: `#${r.id.substring(0,8).toUpperCase()} — ${r.nombre || r.email}`,
+    desc:  `Pendiente desde ${new Date(r.created_at).toLocaleDateString('es-MX')}`,
+  }));
+  cat4.forEach(() => avisos.push(1));
+  categorias.push({ icono: cat4.length ? '🟡' : '✅', nombre: 'Reservaciones pendientes > 7 días', items: cat4 });
+
+  // --- CAT 5: Lugares sobrevendidos ---
+  const cat5 = [];
+  for (const pkg of (paquetes || [])) {
+    if (!pkg.activo || pkg.lugares_totales == null) continue;
+    const confirmadas = (reservasConf || []).filter(r => r.paquete_id === pkg.id).length;
+    if (confirmadas > pkg.lugares_totales) {
+      cat5.push({
+        id: pkg.id, tab: 'paquetes',
+        label: pkg.nombre,
+        desc:  `${confirmadas} confirmadas · ${pkg.lugares_totales} lugares disponibles`,
+      });
+      criticos.push(pkg.id);
+    }
+  }
+  categorias.push({ icono: cat5.length ? '🔴' : '✅', nombre: 'Lugares sobrevendidos', items: cat5 });
+
+  // --- CAT 6: Descuentos vencidos activos ---
+  const { data: descVencidos } = await sb
+    .from('descuentos')
+    .select('id,codigo,valido_hasta')
+    .eq('activo', true)
+    .lt('valido_hasta', new Date().toISOString());
+  const cat6 = (descVencidos || []).map(d => ({
+    id: d.id, tab: 'descuentos',
+    label: d.codigo,
+    desc:  `Activo pero venció el ${new Date(d.valido_hasta).toLocaleDateString('es-MX')}`,
+  }));
+  cat6.forEach(() => avisos.push(1));
+  categorias.push({ icono: cat6.length ? '🟡' : '✅', nombre: 'Códigos de descuento vencidos activos', items: cat6 });
+
+  // --- RESUMEN ---
+  const nCrit = criticos.length, nAdv = advertencias.length, nAvis = avisos.length;
+  if (nCrit === 0 && nAdv === 0 && nAvis === 0) {
+    resumenEl.innerHTML = `<div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:14px 18px;color:#166534;font-weight:700;">✅ Todo correcto — Sin problemas detectados</div>`;
+  } else {
+    const parts = [];
+    if (nCrit > 0) parts.push(`<span style="color:#dc2626;font-weight:700;">🔴 ${nCrit} problema${nCrit>1?'s':''} crítico${nCrit>1?'s':''}</span>`);
+    if (nAdv  > 0) parts.push(`<span style="color:#ea580c;font-weight:700;">🟠 ${nAdv} advertencia${nAdv>1?'s':''}</span>`);
+    if (nAvis > 0) parts.push(`<span style="color:#ca8a04;font-weight:700;">🟡 ${nAvis} aviso${nAvis>1?'s':''}</span>`);
+    resumenEl.innerHTML = `<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:14px 18px;display:flex;gap:20px;flex-wrap:wrap;">${parts.join('')}</div>`;
+  }
+
+  // --- CATEGORÍAS ---
+  resultsEl.innerHTML = categorias.map(cat => {
+    const bg  = cat.icono==='🔴'?'#fef2f2':cat.icono==='🟠'?'#fff7ed':cat.icono==='🟡'?'#fefce8':'#f0fdf4';
+    const bdr = cat.icono==='🔴'?'#fca5a5':cat.icono==='🟠'?'#fed7aa':cat.icono==='🟡'?'#fde047':'#86efac';
+    const detail = cat.items.map(item => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;gap:10px;">
+        <div style="font-size:0.82rem;min-width:0;">
+          <span style="font-weight:600;">${item.label}</span>
+          <span style="color:#888;margin-left:8px;">${item.desc}</span>
+        </div>
+        <button onclick="switchAdminTab('${item.tab}')" style="flex-shrink:0;padding:4px 12px;background:#0097A7;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:0.78rem;">Ver</button>
+      </div>`).join('');
+    const hasItems = cat.items.length > 0;
+    return `<div style="background:${bg};border:1.5px solid ${bdr};border-radius:12px;padding:14px 18px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;${hasItems?'cursor:pointer;':''}" ${hasItems?`onclick="const d=this.nextElementSibling;d.style.display=d.style.display==='none'?'block':'none'"`:''}>
+        <div style="font-weight:700;font-size:0.95rem;">${cat.icono} ${cat.nombre} <span style="font-weight:400;font-size:0.82rem;color:#888;">(${cat.items.length})</span></div>
+        ${hasItems?'<span style="color:#888;font-size:0.8rem;">▼ detalle</span>':''}
+      </div>
+      <div style="display:${hasItems?'block':'none'};">${detail}</div>
+    </div>`;
+  }).join('');
+
+  // --- GUARDAR HISTORIAL ---
+  const now = new Date().toISOString();
+  await sb.from('auditoria_resultados').upsert({
+    id: 1,
+    ejecutada_at: now,
+    criticos: nCrit,
+    advertencias: nAdv,
+    avisos: nAvis,
+    detalle: JSON.stringify(categorias.map(c => ({ nombre: c.nombre, icono: c.icono, count: c.items.length }))),
+  }, { onConflict: 'id' });
+
+  ultimaEl.textContent = `Última ejecución: ${new Date(now).toLocaleString('es-MX')}`;
+  btn.disabled    = false;
+  btn.textContent = '▶ Ejecutar auditoría';
+}
+
 function showToast(msg) {
   let t = document.getElementById('admin-toast');
   if (!t) {
