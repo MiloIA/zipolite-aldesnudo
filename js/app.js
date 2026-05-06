@@ -258,6 +258,18 @@ function confirmarPersonalizacion() {
   window.pkgExtraTour = tourExtra;
   if (!curPkg._precioOriginal) curPkg._precioOriginal = curPkg.precio;
   curPkg.precio = totalPorPersona;
+
+  const alojamiento = document.querySelector('input[name="alojamiento"]:checked')?.value;
+  let personasSeleccionadas = 1;
+  if (alojamiento === 'habitacion') {
+    personasSeleccionadas = parseInt(document.querySelector('input[name="habitacion-personas"]:checked')?.value || 1);
+  }
+  const selectPersonas = document.getElementById('m-personas');
+  if (selectPersonas) {
+    selectPersonas.value = personasSeleccionadas;
+    selectPersonas.dispatchEvent(new Event('change'));
+  }
+
   document.getElementById('modal-step-0').style.display = 'none';
   document.getElementById('modal-step-1').style.display = 'block';
   calcCotizador();
