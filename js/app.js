@@ -25,6 +25,7 @@ let tempPassword;
 let currentSession = null;
 let oaiKey = localStorage.getItem('oai_key') || '';
 let adminAuthenticated = !!sessionStorage.getItem('adminToken');
+let _reservando = false;
 
 const DEFAULT_PKGS = [
   {id:'d1',nombre:'Paquete Premium',descripcion:'Hotel Paraíso · Línea de playa · 5 noches',precio:8500,fechas:'Jueves a Martes',incluye:['Vuelo redondo CDMX — Zipolite','5 noches en Hotel Paraíso (línea de playa)','Traslados aeropuerto ↔ hotel','Habitación doble (asignamos compañero/a)','Ambiente 100% LGBT+'],nota:'💡 Habitación privada disponible: +$2,500–$3,000 MXN',icono:'✈️',badge:'⭐ Más popular',tipo:'primary'},
@@ -219,6 +220,10 @@ function buildPersonasOptions(max) {
 function openPay(id) {
   curPkg = pkgs.find(p=>String(p.id)===String(id)) || pkgs[0];
   if (!curPkg) return;
+  _reservando = false;
+  const _cbtn = document.getElementById('confirm-btn');
+  if (_cbtn) { _cbtn.disabled = false; _cbtn.textContent = 'Confirmar reserva'; }
+  sessionStorage.removeItem('reservacion_pendiente');
 
   // Poblar paso 1
   const s1inc = Array.isArray(curPkg.incluye) ? curPkg.incluye : (curPkg.incluye||'').split('\n').filter(i=>i.trim());
@@ -295,20 +300,48 @@ function closePay() {
   document.getElementById('modal-step-1').style.display = 'block';
   document.getElementById('modal-step-2').style.display = 'none';
   document.getElementById('modal-step-3').style.display = 'none';
+  _reservando = false;
+  const _cbtn = document.getElementById('confirm-btn');
+  if (_cbtn) { _cbtn.disabled = false; _cbtn.textContent = 'Confirmar reserva'; }
 }
 
 async function confirmarReserva() {
+  if (_reservando) return;
+  _reservando = true;
+
+  const btn = document.getElementById('confirm-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
+
   const nombre = document.getElementById('r-nombre').value.trim();
   const email = document.getElementById('r-email').value.trim();
   const whatsapp = document.getElementById('r-whatsapp').value.trim();
   const errEl = document.getElementById('reserva-error');
-  if (!nombre || !email || !whatsapp) { errEl.textContent = 'Por favor completa todos los campos'; errEl.style.display = 'block'; return; }
+
+  const resetBtn = () => {
+    _reservando = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirmar reserva'; }
+  };
+
+  if (!nombre || !email || !whatsapp) {
+    errEl.textContent = 'Por favor completa todos los campos';
+    errEl.style.display = 'block';
+    resetBtn();
+    return;
+  }
   errEl.style.display = 'none';
   const metodo = document.getElementById('m-metodo').value;
   const p = parseInt(document.getElementById('m-personas').value);
   const cuanto = document.getElementById('r-cuanto').value;
   const anticipo = cuanto === 'anticipo' ? (curPkg.monto_anticipo || 3000) * p : lastTotal;
 
+  // Verificar disponibilidad antes de crear la reserva
+  const { data: paquete } = await sb.from('paquetes').select('lugares_totales, lugares_vendidos').eq('nombre', curPkg.nombre).single();
+  if (paquete?.lugares_totales != null && (paquete.lugares_vendidos || 0) >= paquete.lugares_totales) {
+    errEl.textContent = 'Lo sentimos, este paquete ya no tiene lugares disponibles.';
+    errEl.style.display = 'block';
+    resetBtn();
+    return;
+  }
 
   console.log('[reserva] fechas del paquete:', curPkg.fecha_inicio, curPkg.fecha_fin, curPkg.fechas);
   const {data, error} = await sb.from('reservaciones').insert([{
@@ -323,7 +356,7 @@ async function confirmarReserva() {
     fecha_fin: curPkg.fecha_fin || null,
     estado: 'pendiente'
   }]).select().single();
-  if (error) { alert('Error al guardar reserva: ' + error.message); return; }
+  if (error) { errEl.textContent = 'Error al guardar reserva: ' + error.message; errEl.style.display = 'block'; resetBtn(); return; }
   fetch('/api/send-confirmation', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
