@@ -213,6 +213,12 @@ const STRIPE_RATES = {
   '18': {rate:21.1, flat:3, months:18},
   '24': {rate:25.1, flat:3, months:24},
 };
+const HABITACION_PRECIOS = {
+  1: 6400,
+  2: 3200,
+  3: 2133,
+  4: 3200,
+};
 let activeDiscount = null, lastTotal = 0;
 
 function grossUp(base, rate, flat) { return Math.ceil((base + flat) / (1 - rate / 100)); }
@@ -230,6 +236,31 @@ function buildPersonasOptions(max) {
     sel.appendChild(o);
   }
   sel.value = String(def);
+}
+
+function calcStep0() {
+  const alojamiento = document.querySelector('input[name="alojamiento"]:checked')?.value;
+  const personasHab = parseInt(document.querySelector('input[name="habitacion-personas"]:checked')?.value || 1);
+  const tourExtra = document.getElementById('tour-carrizalillo')?.checked ? 800 : 0;
+  let extraPorPersona = 0;
+  if (alojamiento === 'habitacion') {
+    extraPorPersona = HABITACION_PRECIOS[personasHab] || HABITACION_PRECIOS[1];
+  }
+  const totalPorPersona = (curPkg._precioOriginal || curPkg.precio) + extraPorPersona + tourExtra;
+  const el = document.getElementById('step0-total');
+  if (el) el.textContent = '$' + totalPorPersona.toLocaleString('es-MX') + '/persona';
+  return { extraPorPersona, tourExtra, totalPorPersona };
+}
+
+function confirmarPersonalizacion() {
+  const { extraPorPersona, tourExtra, totalPorPersona } = calcStep0();
+  window.pkgExtraHabitacion = extraPorPersona;
+  window.pkgExtraTour = tourExtra;
+  if (!curPkg._precioOriginal) curPkg._precioOriginal = curPkg.precio;
+  curPkg.precio = totalPorPersona;
+  document.getElementById('modal-step-0').style.display = 'none';
+  document.getElementById('modal-step-1').style.display = 'block';
+  calcCotizador();
 }
 
 function openPay(id) {
@@ -304,14 +335,82 @@ function openPay(id) {
   document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(curPkg.monto_anticipo||3000)} — aparta todos los lugares`;
   document.getElementById('modal-step-3').style.display = 'none';
 
-  // Siempre abrir en paso 1
-  document.getElementById('modal-step-1').style.display = 'block';
   document.getElementById('modal-step-2').style.display = 'none';
+  const _isCustomizable = curPkg.tipo === 'secondary' || (curPkg.nombre||'').toLowerCase().includes('nuevo');
+  const _step0 = document.getElementById('modal-step-0');
+  if (_isCustomizable && _step0) {
+    _step0.innerHTML = `
+      <h3 style="font-family:'Fraunces',serif;font-size:1.35rem;font-weight:800;color:var(--dark);margin-bottom:16px;">¿Cómo quieres vivir tu Año Nuevo?</h3>
+      <div class="pkg-option-group">
+        <label class="pkg-option-title">🏕️ Alojamiento</label>
+        <div class="pkg-option-items">
+          <label class="pkg-option-item">
+            <input type="radio" name="alojamiento" value="camping" checked>
+            <span>🏕️ Camping — incluido en el paquete</span>
+            <strong>$0 extra</strong>
+          </label>
+          <label class="pkg-option-item">
+            <input type="radio" name="alojamiento" value="habitacion">
+            <span>🛏️ Habitación privada</span>
+            <strong>ver precios →</strong>
+          </label>
+        </div>
+      </div>
+      <div id="habitacion-options" style="display:none">
+        <label class="pkg-option-title">¿Cuántos van en la habitación?</label>
+        <div class="pkg-option-items" id="habitacion-personas"></div>
+      </div>
+      <div class="pkg-option-group">
+        <label class="pkg-option-title">🌊 Tours opcionales</label>
+        <label class="pkg-option-item">
+          <input type="checkbox" id="tour-carrizalillo" value="800">
+          <span>🏖️ Carrizalillo + Bioluminiscencia</span>
+          <strong>+$800/persona</strong>
+        </label>
+      </div>
+      <div class="pkg-precio-resumen">
+        <span>Total estimado:</span>
+        <strong id="step0-total">$${(curPkg.precio||0).toLocaleString('es-MX')}/persona</strong>
+      </div>
+      <button onclick="confirmarPersonalizacion()" class="pay-btn">Continuar →</button>
+    `;
+    _step0.style.display = 'block';
+    document.getElementById('modal-step-1').style.display = 'none';
+    document.querySelectorAll('input[name="alojamiento"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const habOpts = document.getElementById('habitacion-options');
+        if (r.value === 'habitacion' && r.checked) {
+          habOpts.style.display = 'block';
+          document.getElementById('habitacion-personas').innerHTML = [1,2,3,4].map(n =>
+            `<label class="pkg-option-item">
+              <input type="radio" name="habitacion-personas" value="${n}" ${n===2?'checked':''}>
+              <span>${n} persona${n>1?'s':''}</span>
+              <strong>+$${HABITACION_PRECIOS[n].toLocaleString('es-MX')}/persona</strong>
+            </label>`
+          ).join('');
+          document.querySelectorAll('input[name="habitacion-personas"]').forEach(r2 => r2.addEventListener('change', calcStep0));
+        } else {
+          habOpts.style.display = 'none';
+        }
+        calcStep0();
+      });
+    });
+    document.getElementById('tour-carrizalillo').addEventListener('change', calcStep0);
+  } else {
+    if (_step0) _step0.style.display = 'none';
+    document.getElementById('modal-step-1').style.display = 'block';
+  }
   document.getElementById('pay-modal').classList.add('open');
 }
 
 function closePay() {
   document.getElementById('pay-modal').classList.remove('open');
+  if (curPkg && curPkg._precioOriginal) {
+    curPkg.precio = curPkg._precioOriginal;
+    delete curPkg._precioOriginal;
+  }
+  const _step0 = document.getElementById('modal-step-0');
+  if (_step0) _step0.style.display = 'none';
   document.getElementById('modal-step-1').style.display = 'block';
   document.getElementById('modal-step-2').style.display = 'none';
   document.getElementById('modal-step-3').style.display = 'none';
