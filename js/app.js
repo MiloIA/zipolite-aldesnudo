@@ -15,6 +15,15 @@ function slugify(nombre) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
+function formatearFecha(fechaStr) {
+  if (!fechaStr) return '';
+  const fecha = new Date(fechaStr + 'T12:00:00');
+  return fecha.toLocaleDateString('es-MX', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+}
 function closeShareMenus(except) {
   document.querySelectorAll('.pkg-share-menu.open').forEach(m => { if (m !== except) m.classList.remove('open'); });
 }
@@ -63,6 +72,9 @@ function renderPkgs(list) {
             <div class="pkg-icon">${p.icono||'✈️'}</div>
             <h3>${p.nombre}</h3>
             <p>${p.descripcion||''}</p>
+            <div class="pkg-fechas">
+              📅 ${formatearFecha(p.fecha_inicio)} — ${formatearFecha(p.fecha_fin)}
+            </div>
           </div>
         </div>`
       : `<div class="pkg-img-wrap">
@@ -71,6 +83,9 @@ function renderPkgs(list) {
           <div class="pkg-img-overlay">
             <h3>${p.nombre}</h3>
             <p>${p.descripcion||''}</p>
+            <div class="pkg-fechas">
+              📅 ${formatearFecha(p.fecha_inicio)} — ${formatearFecha(p.fecha_fin)}
+            </div>
           </div>
         </div>`;
     const slug = slugify(p.nombre);
