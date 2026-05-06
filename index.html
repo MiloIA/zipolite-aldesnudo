@@ -495,29 +495,25 @@
   <div class="modal">
     <button class="modal-close" onclick="closePay()">✕</button>
 
-    <!-- PASO 0: Personalización (paquetes secundarios) -->
-    <div id="modal-step-0" style="display:none;"></div>
-
-    <!-- PASO 1: Detalles del paquete -->
-    <div id="modal-step-1">
+    <!-- PASO 0: Detalles del paquete -->
+    <div id="modal-step-0">
       <h3 id="s1-name" style="font-family:'Fraunces',serif;font-size:1.35rem;font-weight:800;color:var(--dark);margin-bottom:4px;"></h3>
       <p id="s1-desc" style="font-size:0.85rem;color:#888;margin-bottom:6px;"></p>
       <div id="s1-lugares" class="m-lugares" style="margin-bottom:8px;"></div>
       <div id="s1-fechas" style="font-size:0.82rem;color:var(--ocean);font-weight:600;margin-bottom:14px;display:none;">📅 <span id="s1-fechas-text"></span></div>
       <div id="s1-highlights" style="background:#f0feff;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:none;"></div>
+      <div id="s1-itinerario" style="display:none;margin-bottom:1rem;"></div>
       <ul id="s1-incluye" style="list-style:none;margin-bottom:16px;padding:0;"></ul>
       <div id="s1-nota" style="background:#f0feff;border-left:3px solid var(--ocean);padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.83rem;color:#2a6a7a;margin-bottom:18px;display:none;"></div>
-      <button class="pay-btn" onclick="document.getElementById('modal-step-1').style.display='none';document.getElementById('modal-step-2').style.display='block';">Quiero este paquete →</button>
-      <div id="grupo-option" style="display:none;margin-top:1rem;padding:1rem;background:#f0fdf9;border-radius:8px;border:1px solid #1a9fa0;">
-        <div style="font-weight:700;color:#0d1b3e;margin-bottom:0.5rem;">👥 ¿Viajan en grupo?</div>
-        <div style="font-size:0.85rem;color:#666;margin-bottom:0.75rem;">Crea un grupo y cada integrante paga su parte por separado</div>
-        <button id="btn-crear-grupo" onclick="crearGrupo()" style="width:100%;padding:0.6rem;background:white;border:2px solid #1a9fa0;border-radius:8px;color:#1a9fa0;font-weight:700;cursor:pointer;">🔗 Crear grupo y compartir link</button>
-      </div>
+      <button id="btn-quiero-paquete" class="pay-btn" onclick="avanzarDesdeDetalles()">Quiero este paquete →</button>
     </div>
+
+    <!-- PASO 1: Personalizador (paquetes secundarios) -->
+    <div id="modal-step-1" style="display:none;"></div>
 
     <!-- PASO 2: Formulario de reserva -->
     <div id="modal-step-2" style="display:none;">
-      <a href="#" onclick="document.getElementById('modal-step-2').style.display='none';document.getElementById('modal-step-1').style.display='block';return false;" style="font-size:0.82rem;color:var(--ocean);text-decoration:none;font-weight:600;display:inline-block;margin-bottom:14px;">← Ver detalles</a>
+      <a href="#" onclick="document.getElementById('modal-step-2').style.display='none';document.getElementById('modal-step-0').style.display='block';return false;" style="font-size:0.82rem;color:var(--ocean);text-decoration:none;font-weight:600;display:inline-block;margin-bottom:14px;">← Ver detalles</a>
       <div class="pkg-summary" style="margin-bottom:16px;">
         <div><div class="sname" id="m-name">Paquete</div><div style="font-size:0.76rem;color:#888;" id="m-desc"></div><div class="m-lugares" id="m-lugares"></div></div>
         <div class="stotal" id="m-price-base">$0</div>
