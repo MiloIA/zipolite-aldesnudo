@@ -817,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const _slugParam = new URLSearchParams(window.location.search).get('paquete');
   if (_slugParam) { pendingSlug = _slugParam; } else { window.scrollTo(0, 0); }
-  if (typeof Stripe !== 'undefined') stripeClient = Stripe('pk_live_51MiPtBGs8JZIcNIhUF5aP5xPN7SEfz0wAaGA34mRgolM1TpK60tkzoSn9uQUf6ovLTmIlCjxNUZdUVuY5vw525uu00xDkZoygg');
+  if (typeof Stripe !== 'undefined') stripeClient = Stripe('pk_live_51TTtl8GZiSqY5s2qtJhc06lhXuoCUBFFRNN8kZa7XJtnwpwjaHWnkkXolOEYk5XywllFXXQeD6sAbAIehdTCdt4M00EtP6jfWW');
   loadAll();
   checkFirstTimeSetup();
   if (sessionStorage.getItem('adminToken')) {
