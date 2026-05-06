@@ -517,6 +517,16 @@
         <div><div class="sname" id="m-name">Paquete</div><div style="font-size:0.76rem;color:#888;" id="m-desc"></div><div class="m-lugares" id="m-lugares"></div></div>
         <div class="stotal" id="m-price-base">$0</div>
       </div>
+      <div id="login-suggest-banner" style="display:none">
+        <div style="background:#f0fdf9;border:1px solid #1a9fa0;border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;">
+          <span style="font-size:1.2rem">👤</span>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:0.85rem;color:#0d1b3e">¿Tienes cuenta? Inicia sesión</div>
+            <div style="font-size:0.8rem;color:#666">Autocompletamos tus datos y guardamos tu historial</div>
+          </div>
+          <button onclick="signInGoogle()" style="background:#1a9fa0;color:white;border:none;border-radius:6px;padding:0.4rem 0.8rem;font-size:0.8rem;font-weight:600;cursor:pointer;">Google</button>
+        </div>
+      </div>
       <div class="fg"><label>Nombre completo</label><input type="text" id="r-nombre" placeholder="Tu nombre completo"></div>
       <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="tu@email.com"></div>
       <p id="login-hint" style="font-size:0.78rem;color:#888;margin-top:-8px;margin-bottom:4px;">¿Ya tienes cuenta? <a href="#" onclick="closePay();openRegister();return false;" style="color:var(--ocean);font-weight:600;">Inicia sesión para autocompletar</a></p>

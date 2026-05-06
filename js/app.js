@@ -263,23 +263,7 @@ function confirmarPersonalizacion() {
   calcCotizador();
 }
 
-async function openPay(id) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    sessionStorage.setItem('pendingPkgId', id);
-    document.getElementById('user-register').classList.add('open');
-    const existing = document.getElementById('login-required-msg');
-    if (existing) {
-      existing.style.display = 'block';
-    } else {
-      const msg = document.createElement('div');
-      msg.id = 'login-required-msg';
-      msg.textContent = '🔐 Crea tu cuenta o inicia sesión para reservar';
-      const drawer = document.getElementById('user-register');
-      drawer.insertBefore(msg, drawer.firstChild);
-    }
-    return;
-  }
+function openPay(id) {
   curPkg = pkgs.find(p=>String(p.id)===String(id)) || pkgs[0];
   if (!curPkg) return;
   _reservando = false;
@@ -346,6 +330,8 @@ async function openPay(id) {
     document.getElementById('r-email').value = session?.user?.email || '';
     document.getElementById('r-whatsapp').value = session?.user?.user_metadata?.whatsapp || '';
     if (session) document.getElementById('login-hint').style.display = 'none';
+    const banner = document.getElementById('login-suggest-banner');
+    if (banner) banner.style.display = session ? 'none' : 'block';
   });
   document.getElementById('r-cuanto').value = 'anticipo';
   document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(curPkg.monto_anticipo||3000)} — aparta todos los lugares`;
@@ -919,7 +905,7 @@ function closeBlogDrawer() {
 }
 
 // Check auth state on load
-sb.auth.onAuthStateChange(async (event, session) => {
+sb.auth.onAuthStateChange((event, session) => {
   const btn = document.querySelector('a[onclick="openRegister();return false;"]');
   if (session && btn) {
     const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
@@ -930,15 +916,6 @@ sb.auth.onAuthStateChange(async (event, session) => {
     btn.textContent = '👤 Mi cuenta';
     btn.href = '#';
     btn.setAttribute('onclick', 'openRegister();return false;');
-  }
-
-  if (event === 'SIGNED_IN') {
-    const pendingPkgId = sessionStorage.getItem('pendingPkgId');
-    if (pendingPkgId) {
-      sessionStorage.removeItem('pendingPkgId');
-      document.getElementById('user-register').classList.remove('open');
-      setTimeout(() => openPay(pendingPkgId), 300);
-    }
   }
 });
 
