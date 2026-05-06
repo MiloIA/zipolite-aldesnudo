@@ -553,6 +553,29 @@
           <option value="24">Financiamiento 24 meses</option>
         </select>
       </div>
+      <div id="grupo-pago-section" style="margin-bottom:1rem;">
+        <div style="font-size:0.8rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">¿CÓMO QUIEREN PAGAR?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+          <button id="btn-pago-individual" class="pago-tipo-btn active" onclick="setPagoTipo('individual')">
+            <span>💳</span>
+            <span>Pago individual</span>
+            <span>Pago yo solo</span>
+          </button>
+          <button id="btn-pago-grupal" class="pago-tipo-btn" onclick="setPagoTipo('grupal')">
+            <span>👥</span>
+            <span>Pago grupal</span>
+            <span>Cada quien paga</span>
+          </button>
+        </div>
+        <div id="grupo-link-section" style="display:none;padding:0.75rem;background:#f0fdf9;border-radius:8px;border:1px solid #1a9fa0;">
+          <div style="font-size:0.85rem;color:#0d1b3e;margin-bottom:0.5rem;font-weight:600;">Comparte este link con tu grupo:</div>
+          <div id="grupo-codigo-display" style="font-size:1.1rem;font-weight:800;color:#1a9fa0;margin-bottom:0.75rem;letter-spacing:0.1em;"></div>
+          <div style="display:flex;gap:0.5rem;">
+            <button onclick="copiarLinkGrupo()" style="flex:1;padding:0.5rem;background:#1a9fa0;color:white;border:none;border-radius:6px;font-weight:600;font-size:0.8rem;cursor:pointer;">📋 Copiar link</button>
+            <button onclick="compartirWhatsAppGrupo()" style="flex:1;padding:0.5rem;background:#25D366;color:white;border:none;border-radius:6px;font-weight:600;font-size:0.8rem;cursor:pointer;">💬 WhatsApp</button>
+          </div>
+        </div>
+      </div>
       <div class="fg">
         <label>Código de descuento</label>
         <div class="disc-row">

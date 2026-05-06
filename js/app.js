@@ -388,6 +388,9 @@ async function crearGrupo() {
   }
 
   window._grupoId = data.grupo_id;
+  window._grupoCodigo = data.codigo;
+  const codigoDisplay = document.getElementById('grupo-codigo-display');
+  if (codigoDisplay) codigoDisplay.textContent = data.codigo;
   const grupoUrl = `https://zipolitealdesnudo.com/?grupo=${data.codigo}`;
   document.getElementById('grupo-option').innerHTML = `
     <div style="font-weight:700;color:#0d1b3e;margin-bottom:0.5rem;">✅ Grupo creado</div>
@@ -405,6 +408,31 @@ async function crearGrupo() {
       💬 Compartir por WhatsApp
     </a>
   `;
+}
+
+function setPagoTipo(tipo) {
+  document.getElementById('btn-pago-individual').classList.toggle('active', tipo === 'individual');
+  document.getElementById('btn-pago-grupal').classList.toggle('active', tipo === 'grupal');
+  const grupoSection = document.getElementById('grupo-link-section');
+  if (tipo === 'grupal') {
+    grupoSection.style.display = 'block';
+    if (!window._grupoId) crearGrupo();
+  } else {
+    grupoSection.style.display = 'none';
+  }
+}
+
+function copiarLinkGrupo() {
+  const url = 'https://zipolitealdesnudo.com/?grupo=' + window._grupoCodigo;
+  navigator.clipboard.writeText(url).then(() => {
+    event.target.textContent = '✅ Copiado';
+    setTimeout(() => event.target.textContent = '📋 Copiar link', 2000);
+  });
+}
+
+function compartirWhatsAppGrupo() {
+  const url = 'https://zipolitealdesnudo.com/?grupo=' + window._grupoCodigo;
+  window.open('https://wa.me/?text=' + encodeURIComponent('¡Únete a nuestro viaje! 🌊🏳️‍🌈 Reserva tu lugar aquí: ' + url), '_blank');
 }
 
 function mostrarBannerGrupo(grupo) {

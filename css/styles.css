@@ -424,3 +424,16 @@ section{padding:56px 18px;}
 .pkg-precio-resumen strong{font-size:1.3rem;color:#1a9fa0;}
 #login-required-msg{background:#fff3cd;color:#856404;padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-weight:600;font-size:0.9rem;display:none;}
 .pkg-card.slug-highlight{outline:3px solid #00BCD4;outline-offset:2px;box-shadow:0 0 0 6px rgba(0,188,212,0.15),0 16px 48px rgba(0,0,0,0.18)!important;}
+.itinerario-timeline{margin:1.5rem 0;padding-left:1rem;border-left:3px solid #1a9fa0;}
+.itinerario-title{font-weight:800;color:#0d1b3e;margin-bottom:1rem;font-size:0.95rem;text-transform:uppercase;letter-spacing:0.05em;}
+.itinerario-item{display:flex;gap:1rem;margin-bottom:1.25rem;position:relative;}
+.itinerario-dot{width:36px;height:36px;min-width:36px;background:#1a9fa0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;margin-left:-1.55rem;}
+.itinerario-content{flex:1;}
+.itinerario-dia{font-size:0.75rem;color:#1a9fa0;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;}
+.itinerario-titulo{font-weight:700;color:#0d1b3e;margin:0.1rem 0;font-size:0.95rem;}
+.itinerario-desc{font-size:0.85rem;color:#666;line-height:1.5;}
+.pago-tipo-btn{padding:0.75rem;border:2px solid #e0e0e0;border-radius:10px;background:white;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.25rem;transition:all 0.2s;font-size:1.2rem;width:100%;}
+.pago-tipo-btn.active{border-color:#1a9fa0;background:#f0fdf9;}
+.pago-tipo-btn:hover{border-color:#1a9fa0;}
+.pago-tipo-btn span:nth-child(2){font-weight:700;font-size:0.85rem;color:#0d1b3e;}
+.pago-tipo-btn span:nth-child(3){font-size:0.75rem;color:#666;}
