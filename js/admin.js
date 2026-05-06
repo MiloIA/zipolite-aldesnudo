@@ -1379,6 +1379,180 @@ async function runAuditoria() {
   btn.textContent = '▶ Ejecutar auditoría';
 }
 
+// ---- ADMIN: QA AGENT ----
+
+async function runQA() {
+  const btn      = document.getElementById('btn-qa');
+  const areaEl   = document.getElementById('qa-area');
+  const resultEl = document.getElementById('qa-resultados');
+
+  btn.disabled    = true;
+  btn.textContent = '⏳ Ejecutando...';
+  areaEl.style.display  = 'block';
+  resultEl.innerHTML    = '<div style="color:#aaa;font-size:0.88rem;padding:14px 0;"><span class="spin"></span> Ejecutando pruebas... por favor espera</div>';
+
+  const t0 = Date.now();
+  const qaResults = [];
+
+  // ── FASE 1: Verificación estática ──────────────────────────────────────
+
+  const endpoints = [
+    '/api/admin-verify',
+    '/api/send-notification',
+    '/api/generate-contract',
+    '/api/confirm-payment',
+    '/api/send-confirmation',
+  ];
+  for (const ep of endpoints) {
+    try {
+      const r = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      if (r.status === 500) {
+        qaResults.push({ fase: 1, status: '🔴', texto: `${ep} devuelve 500 — error interno` });
+      } else {
+        qaResults.push({ fase: 1, status: '✅', texto: `${ep} responde correctamente (${r.status})` });
+      }
+    } catch (e) {
+      qaResults.push({ fase: 1, status: '🔴', texto: `${ep} no responde — ${e.message}` });
+    }
+  }
+
+  const { data: paquetes } = await sb.from('paquetes').select('*').eq('activo', true);
+  if (!paquetes || paquetes.length === 0) {
+    qaResults.push({ fase: 1, status: '🔴', texto: 'No hay paquetes activos' });
+  } else {
+    qaResults.push({ fase: 1, status: '✅', texto: `${paquetes.length} paquetes activos encontrados` });
+  }
+
+  const QA_RATES = {
+    '3':  { rate: 8.6,  flat: 3 }, '6':  { rate: 11.1, flat: 3 },
+    '9':  { rate: 13.6, flat: 3 }, '12': { rate: 16.1, flat: 3 },
+    '18': { rate: 21.1, flat: 3 }, '24': { rate: 25.1, flat: 3 },
+  };
+  function qaGrossUp(base, rate, flat) { return Math.ceil((base + flat) / (1 - rate / 100)); }
+  let calcOk = true;
+  for (const p of (paquetes || [])) {
+    for (const cfg of Object.values(QA_RATES)) {
+      if (qaGrossUp(p.precio, cfg.rate, cfg.flat) <= p.precio) { calcOk = false; }
+    }
+  }
+  qaResults.push({ fase: 1, status: calcOk ? '✅' : '🔴', texto: calcOk ? 'Cálculos de financiamiento correctos' : 'Error en cálculos de financiamiento' });
+
+  const tablas = ['paquetes', 'reservaciones', 'viajeros', 'cotizaciones', 'egresos', 'admin_sessions', 'login_attempts'];
+  for (const tabla of tablas) {
+    const { error } = await sb.from(tabla).select('id').limit(1);
+    if (error) {
+      qaResults.push({ fase: 1, status: '🔴', texto: `Tabla '${tabla}' no accesible: ${error.message}` });
+    } else {
+      qaResults.push({ fase: 1, status: '✅', texto: `Tabla '${tabla}' accesible` });
+    }
+  }
+
+  // ── FASE 2: Flujo completo ─────────────────────────────────────────────
+
+  let reservaTest = null;
+  const paqueteTest = (paquetes || [])[0];
+
+  if (paqueteTest) {
+    const { data: rt, error: errReserva } = await sb.from('reservaciones').insert({
+      nombre: 'QA Test Agent',
+      email: 'qa@zipolitealdesnudo.com',
+      whatsapp: '5500000000',
+      paquete_nombre: paqueteTest.nombre,
+      personas: 1,
+      total: paqueteTest.precio,
+      anticipo: paqueteTest.monto_anticipo,
+      metodo_pago: 'transfer',
+      estado: 'pendiente',
+      fecha_inicio: paqueteTest.fecha_inicio,
+      fecha_fin: paqueteTest.fecha_fin,
+      created_at: new Date().toISOString(),
+    }).select().single();
+
+    if (errReserva) {
+      qaResults.push({ fase: 2, status: '🔴', texto: `Error creando reserva de prueba: ${errReserva.message}` });
+    } else {
+      reservaTest = rt;
+      qaResults.push({ fase: 2, status: '✅', texto: `Reserva de prueba creada: #${rt.id.slice(0, 8).toUpperCase()}` });
+    }
+  } else {
+    qaResults.push({ fase: 2, status: '🔴', texto: 'Sin paquetes activos — no se puede ejecutar Fase 2' });
+  }
+
+  if (reservaTest) {
+    const { error: errViajero } = await sb.from('viajeros').insert({
+      reservacion_id: reservaTest.id,
+      nombre: 'QA', ap_paterno: 'Test', ap_materno: 'Agent',
+      fecha_nacimiento: '1990-01-01', nacionalidad: 'Mexicana',
+      correo: 'qa@zipolitealdesnudo.com', whatsapp: '5500000000',
+      contacto_emergencia: 'QA Emergency 5500000000',
+      alergias: 'Ninguna', es_titular: true,
+    });
+    qaResults.push({ fase: 2, status: errViajero ? '🔴' : '✅', texto: errViajero ? `Error creando viajero: ${errViajero.message}` : 'Viajero de prueba creado' });
+  }
+
+  if (reservaTest) {
+    const adminToken = sessionStorage.getItem('adminToken');
+    const contractRes = await fetch('/api/generate-contract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+      body: JSON.stringify({ reservacion_id: reservaTest.id }),
+    });
+    qaResults.push({ fase: 2, status: contractRes.ok ? '✅' : '🔴', texto: contractRes.ok ? 'Contrato PDF generado correctamente' : `Error generando contrato: ${contractRes.status}` });
+  }
+
+  if (reservaTest) {
+    const { error: errConfirm } = await sb.from('reservaciones').update({ estado: 'confirmada' }).eq('id', reservaTest.id);
+    qaResults.push({ fase: 2, status: errConfirm ? '🔴' : '✅', texto: errConfirm ? `Error confirmando reserva: ${errConfirm.message}` : 'Reserva confirmada correctamente' });
+  }
+
+  if (reservaTest) {
+    await sb.from('viajeros').delete().eq('reservacion_id', reservaTest.id);
+    await sb.from('egresos').delete().eq('reservacion_id', reservaTest.id);
+    await sb.from('reservaciones').delete().eq('id', reservaTest.id);
+    await sb.storage.from('contratos').remove([`${reservaTest.id}.pdf`]);
+    qaResults.push({ fase: 2, status: '✅', texto: 'Datos de prueba limpiados correctamente' });
+  }
+
+  // ── RENDER ─────────────────────────────────────────────────────────────
+
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+  const pasaron = qaResults.filter(r => r.status === '✅').length;
+  const fallaron = qaResults.filter(r => r.status === '🔴').length;
+
+  const fase1 = qaResults.filter(r => r.fase === 1);
+  const fase2 = qaResults.filter(r => r.fase === 2);
+
+  const renderRows = rows => rows.map(r =>
+    `<div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:0.83rem;">
+      <span style="flex-shrink:0;font-size:1rem;">${r.status}</span>
+      <span style="color:#333;">${r.texto}</span>
+    </div>`
+  ).join('');
+
+  const sectionStyle = 'background:#f9f9fb;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin-bottom:14px;';
+  const headStyle = 'font-weight:700;font-size:0.92rem;color:#1A3A4A;margin-bottom:10px;';
+
+  resultEl.innerHTML = `
+    <div style="${sectionStyle}">
+      <div style="${headStyle}">Fase 1 — Verificación estática</div>
+      ${renderRows(fase1)}
+    </div>
+    <div style="${sectionStyle}">
+      <div style="${headStyle}">Fase 2 — Flujo completo</div>
+      ${renderRows(fase2)}
+    </div>
+    <div style="background:${fallaron===0?'#f0fdf4':'#fff7ed'};border:1.5px solid ${fallaron===0?'#86efac':'#fed7aa'};border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <span style="font-weight:700;font-size:0.95rem;">
+        <span style="color:#16a34a;">✅ ${pasaron} prueba${pasaron!==1?'s':''} pasaron</span>
+        ${fallaron>0?`&nbsp;&nbsp;<span style="color:#dc2626;">🔴 ${fallaron} fallaron</span>`:''}
+      </span>
+      <span style="color:#888;font-size:0.82rem;">Tiempo total: ${elapsed}s</span>
+    </div>`;
+
+  btn.disabled    = false;
+  btn.textContent = '🧪 Ejecutar QA';
+}
+
 function showToast(msg) {
   let t = document.getElementById('admin-toast');
   if (!t) {
