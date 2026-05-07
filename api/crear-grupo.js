@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   const {
     paquete_id, paquete_nombre, organizador_id, organizador_nombre,
     organizador_email, personas_esperadas, alojamiento, personas_habitacion,
-    tour_incluido, precio_por_persona
+    tour_incluido, precio_por_persona, total_esperados, miembros_esperados
   } = req.body;
 
   const codigo = 'ZIP' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -24,6 +24,8 @@ export default async function handler(req, res) {
     personas_habitacion,
     tour_incluido,
     precio_por_persona,
+    total_esperados: total_esperados || 1,
+    miembros_esperados: miembros_esperados || [],
   }).select().single();
 
   if (error) return res.status(500).json({ error: error.message });

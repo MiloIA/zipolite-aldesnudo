@@ -359,6 +359,18 @@ async function crearGrupo() {
   const precioPersona = curPkg.precio;
   const personasEsperadas = parseInt(document.getElementById('m-personas')?.value || 1);
 
+  const totalPersonas = parseInt(document.getElementById('grupo-total-personas')?.value || '1');
+  const miembros = [];
+  for (let i = 1; i <= totalPersonas; i++) {
+    miembros.push({
+      numero: i,
+      nombre: document.getElementById(`ac-nombre-${i}`)?.value?.trim() || '',
+      apellido: document.getElementById(`ac-apellido-${i}`)?.value?.trim() || '',
+      email: document.getElementById(`ac-email-${i}`)?.value?.trim() || '',
+      es_organizador: i === 1
+    });
+  }
+
   const btn = document.getElementById('btn-crear-grupo');
   if (btn) { btn.textContent = 'Creando grupo...'; btn.disabled = true; }
 
@@ -375,7 +387,9 @@ async function crearGrupo() {
       alojamiento,
       personas_habitacion: personasHab,
       tour_incluido: tourIncluido,
-      precio_por_persona: precioPersona
+      precio_por_persona: precioPersona,
+      total_esperados: totalPersonas,
+      miembros_esperados: miembros
     })
   });
 
@@ -416,6 +430,8 @@ function setPagoTipo(tipo) {
   document.getElementById('btn-pago-grupal').classList.toggle('active', tipo === 'grupal');
   const grupoSection = document.getElementById('grupo-link-section');
   if (tipo === 'grupal') {
+    document.getElementById('m-personas').value = '1';
+    document.getElementById('m-personas').closest('.fg').style.display = 'none';
     grupoSection.innerHTML = `
       <div style="margin-bottom:0.75rem;">
         <div style="font-weight:700;color:#0d1b3e;margin-bottom:0.5rem;">👥 Cómo funciona el pago grupal:</div>
@@ -434,20 +450,91 @@ function setPagoTipo(tipo) {
           <button onclick="compartirWhatsAppGrupo()" style="flex:1;padding:0.5rem;background:#25D366;color:white;border:none;border-radius:6px;font-weight:600;font-size:0.8rem;cursor:pointer;">💬 WhatsApp</button>
         </div>
       </div>
+      <div id="grupo-total-section" style="margin:12px 0">
+        <label style="font-size:13px;font-weight:600;color:#444;
+          display:block;margin-bottom:6px">
+          ¿CUÁNTOS VIAJAN EN TOTAL (incluyéndote)?
+        </label>
+        <select id="grupo-total-personas"
+          onchange="renderCamposAcompanantes()"
+          style="width:100%;padding:10px;border:1.5px solid #ddd;
+                 border-radius:10px;font-size:15px">
+          <option value="2">2 personas</option>
+          <option value="3">3 personas</option>
+          <option value="4">4 personas</option>
+          <option value="5">5 personas</option>
+          <option value="6">6 personas</option>
+          <option value="8">8 personas</option>
+          <option value="10">10 personas</option>
+        </select>
+      </div>
+      <div id="acompanantes-fields" style="margin:12px 0"></div>
       <button id="btn-generar-codigo" onclick="generarCodigoGrupo()" style="width:100%;padding:0.6rem;background:#1a9fa0;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-top:0.5rem;">
         🔗 Generar código de grupo
       </button>
     `;
     grupoSection.style.display = 'block';
+    renderCamposAcompanantes();
   } else {
     grupoSection.style.display = 'none';
-    const selectPersonas = document.getElementById('m-personas');
-    if (selectPersonas) {
-      selectPersonas.value = '1';
-      selectPersonas.dispatchEvent(new Event('change'));
+    const mPersonas = document.getElementById('m-personas');
+    if (mPersonas) {
+      mPersonas.closest('.fg').style.display = 'block';
+      mPersonas.value = '1';
+      mPersonas.dispatchEvent(new Event('change'));
     }
+    const acompFields = document.getElementById('acompanantes-fields');
+    if (acompFields) acompFields.innerHTML = '';
+    const grupoTotalSection = document.getElementById('grupo-total-section');
+    if (grupoTotalSection) grupoTotalSection.remove();
   }
 }
+
+function renderCamposAcompanantes() {
+  const total = parseInt(document.getElementById('grupo-total-personas')?.value || '2');
+  const organizadorNombre = document.getElementById('r-nombre')?.value || '';
+  const container = document.getElementById('acompanantes-fields');
+  if (!container) return;
+
+  let html = `<div style="font-size:13px;font-weight:600;color:#444;margin-bottom:8px">
+    VIAJEROS DEL GRUPO
+  </div>`;
+
+  for (let i = 1; i <= total; i++) {
+    const esOrganizador = i === 1;
+    html += `
+    <div style="background:#f8f9fa;border-radius:10px;padding:12px;
+                margin-bottom:8px;border:1px solid #e0e0e0">
+      <div style="font-size:12px;font-weight:600;color:#0a9e88;
+                  margin-bottom:8px">
+        ${esOrganizador ? '👤 Viajero 1 — Tú (organizador)' : `👤 Viajero ${i}`}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <input id="ac-nombre-${i}" placeholder="Nombre"
+          value="${esOrganizador ? organizadorNombre.split(' ')[0] || '' : ''}"
+          ${esOrganizador ? 'readonly style="background:#e8f5f3;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"' : 'style="padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"'}>
+        <input id="ac-apellido-${i}" placeholder="Apellido(s)"
+          value="${esOrganizador ? organizadorNombre.split(' ').slice(1).join(' ') || '' : ''}"
+          ${esOrganizador ? 'readonly style="background:#e8f5f3;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"' : 'style="padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:14px"'}>
+      </div>
+      <input id="ac-email-${i}" placeholder="Email (opcional)"
+        type="email"
+        style="width:100%;margin-top:6px;padding:8px;border:1.5px solid #ddd;
+               border-radius:8px;font-size:14px;box-sizing:border-box">
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+document.getElementById('r-nombre')?.addEventListener('input', function() {
+  if (document.getElementById('acompanantes-fields')?.children.length) {
+    const v = this.value;
+    const n = document.getElementById('ac-nombre-1');
+    const a = document.getElementById('ac-apellido-1');
+    if (n) n.value = v.split(' ')[0] || '';
+    if (a) a.value = v.split(' ').slice(1).join(' ') || '';
+  }
+});
 
 function copiarLinkGrupo(btn) {
   const url = 'https://zipolitealdesnudo.com/?grupo=' + window._grupoCodigo;
