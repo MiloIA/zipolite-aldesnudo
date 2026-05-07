@@ -485,7 +485,7 @@ function mostrarBannerGrupo(grupo) {
   setTimeout(() => banner.remove(), 4000);
 }
 
-function openPay(id) {
+async function openPay(id) {
   curPkg = pkgs.find(p=>String(p.id)===String(id)) || pkgs[0];
   if (!curPkg) return;
   _reservando = false;
@@ -588,6 +588,43 @@ function openPay(id) {
     }
   }
 
+  // Galería de fotos del paquete
+  const { data: fotos } = await sb.from('galeria')
+    .select('*')
+    .eq('paquete_id', curPkg.id)
+    .order('orden')
+    .order('created_at');
+  const fotoDiv = document.getElementById('s1-galeria');
+  if (fotoDiv) {
+    if (fotos && fotos.length > 0) {
+      const categorias = ['Todas', ...new Set(fotos.map(f => f.categoria || 'General'))];
+      fotoDiv.innerHTML = `
+        <div class="pkg-galeria-header">
+          <div class="pkg-galeria-title">📸 Fotos del viaje</div>
+          <div class="pkg-galeria-filtros">
+            ${categorias.map((cat, i) => `
+              <button class="galeria-filtro ${i===0?'active':''}"
+                onclick="filtrarGaleria('${cat}', this)"
+                data-categoria="${cat}">${cat}</button>
+            `).join('')}
+          </div>
+        </div>
+        <div class="pkg-galeria-grid" id="galeria-grid-${curPkg.id}">
+          ${fotos.map(f => `
+            <div class="pkg-galeria-item" data-categoria="${f.categoria || 'General'}">
+              <img src="${f.url}" alt="${f.descripcion || ''}"
+                onclick="abrirLightbox('${f.url}', '${(f.descripcion||'').replace(/'/g,"\\'")}' )"
+                loading="lazy">
+            </div>
+          `).join('')}
+        </div>
+      `;
+      fotoDiv.style.display = 'block';
+    } else {
+      fotoDiv.style.display = 'none';
+    }
+  }
+
   // Personalizer prep — injected into step-1, shown later via avanzarDesdeDetalles
   const _isCustomizable = curPkg.tipo === 'secondary' || (curPkg.nombre||'').toLowerCase().includes('nuevo');
   if (_isCustomizable) generarPersonalizador();
@@ -612,6 +649,33 @@ function closePay() {
   _reservando = false;
   const _cbtn = document.getElementById('confirm-btn');
   if (_cbtn) { _cbtn.disabled = false; _cbtn.textContent = 'Confirmar reserva'; }
+}
+
+function filtrarGaleria(categoria, btn) {
+  btn.closest('.pkg-galeria-filtros').querySelectorAll('.galeria-filtro')
+    .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.pkg-galeria-item').forEach(item => {
+    item.style.display = (categoria === 'Todas' || item.dataset.categoria === categoria) ? 'block' : 'none';
+  });
+}
+
+function abrirLightbox(url, descripcion) {
+  const lb = document.getElementById('foto-lightbox');
+  if (lb) {
+    lb.querySelector('img').src = url;
+    lb.querySelector('.lb-desc').textContent = descripcion;
+    lb.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function cerrarLightbox() {
+  const lb = document.getElementById('foto-lightbox');
+  if (lb) {
+    lb.style.display = 'none';
+    document.body.style.overflow = '';
+  }
 }
 
 async function confirmarReserva() {

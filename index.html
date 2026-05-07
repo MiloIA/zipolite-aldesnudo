@@ -503,6 +503,7 @@
       <div id="s1-fechas" style="font-size:0.82rem;color:var(--ocean);font-weight:600;margin-bottom:14px;display:none;">📅 <span id="s1-fechas-text"></span></div>
       <div id="s1-highlights" style="background:#f0feff;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:none;"></div>
       <div id="s1-itinerario" style="display:none;margin-bottom:1rem;"></div>
+      <div id="s1-galeria" style="display:none;margin-bottom:1.5rem;"></div>
       <ul id="s1-incluye" style="list-style:none;margin-bottom:16px;padding:0;"></ul>
       <div id="s1-nota" style="background:#f0feff;border-left:3px solid var(--ocean);padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.83rem;color:#2a6a7a;margin-bottom:18px;display:none;"></div>
       <button id="btn-quiero-paquete" class="pay-btn" onclick="avanzarDesdeDetalles()">Quiero este paquete →</button>
@@ -1041,6 +1042,11 @@
   <div id="blog-drawer-content" style="overflow-y:auto;height:100%;background:#ffffff">
     <div id="blog-drawer-loading" style="text-align:center;padding:40px">⏳</div>
   </div>
+</div>
+<div id="foto-lightbox" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;flex-direction:column;" onclick="cerrarLightbox()">
+  <button onclick="cerrarLightbox()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:white;font-size:2rem;cursor:pointer;">✕</button>
+  <img src="" style="max-width:90%;max-height:80vh;border-radius:8px;object-fit:contain;" onclick="event.stopPropagation()">
+  <div class="lb-desc" style="color:white;margin-top:1rem;font-size:0.9rem;opacity:0.8;"></div>
 </div>
 </body>
 </html>
