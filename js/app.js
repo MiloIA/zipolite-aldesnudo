@@ -1203,6 +1203,19 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('contextmenu', e => {
+    if (e.target.tagName === 'IMG') {
+      e.preventDefault();
+      return false;
+    }
+  });
+  document.addEventListener('dragstart', e => {
+    if (e.target.tagName === 'IMG') {
+      e.preventDefault();
+      return false;
+    }
+  });
+
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('admin') === 'true') {
     window.history.replaceState({}, document.title, window.location.pathname);
