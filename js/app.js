@@ -567,8 +567,21 @@ function openPay(id) {
     if (!Array.isArray(itinerario)) itinerario = null;
     console.log('itinerario parsed:', itinerario);
     if (itinerario && itinerario.length) {
-      s1itin.innerHTML = '<strong style="font-size:0.9rem;color:var(--ocean);">Itinerario</strong>' +
-        itinerario.map(dia => `<div style="display:flex;gap:8px;padding:4px 0;font-size:0.85rem;"><span style="color:var(--ocean);font-weight:700;">${dia.emoji || ''} ${dia.dia || ''}</span><span><strong>${dia.titulo || ''}</strong>${dia.descripcion ? ' — ' + dia.descripcion : ''}</span></div>`).join('');
+      const itHTML = `
+        <div class="itinerario-timeline">
+          <div class="itinerario-title">📅 Tu itinerario día a día</div>
+          ${itinerario.map(dia => `
+            <div class="itinerario-item">
+              <div class="itinerario-dot">${dia.emoji}</div>
+              <div class="itinerario-content">
+                <div class="itinerario-dia">${dia.dia}</div>
+                <div class="itinerario-titulo">${dia.titulo}</div>
+                <div class="itinerario-desc">${dia.descripcion}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+      s1itin.innerHTML = itHTML;
       s1itin.style.display = 'block';
     } else {
       s1itin.style.display = 'none';
