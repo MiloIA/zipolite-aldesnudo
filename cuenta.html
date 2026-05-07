@@ -145,6 +145,64 @@ footer a{color:var(--teal);text-decoration:none;}
     </div>
   </div>
 
+  <!-- MI GRUPO -->
+  <div class="section-card" id="sec-grupo">
+    <h2>👥 Mi Grupo</h2>
+
+    <!-- Estado: sin grupo -->
+    <div id="grupo-sin-codigo">
+      <p style="color:#666;margin-bottom:12px">
+        ¿Tienes un código de grupo? Ingrésalo para ver
+        quiénes van y el estatus de pago de cada uno.
+      </p>
+      <div style="display:flex;gap:8px">
+        <input id="grupo-input" type="text"
+          placeholder="Ej: ZIP-A3F9K2"
+          style="flex:1;padding:10px 14px;border:1.5px solid #ddd;
+                 border-radius:10px;font-size:15px;text-transform:uppercase">
+        <button onclick="unirseGrupo()"
+          style="background:var(--ocean);color:#fff;border:none;
+                 padding:10px 20px;border-radius:10px;
+                 font-weight:600;cursor:pointer">
+          Ver grupo
+        </button>
+      </div>
+      <p id="grupo-error" style="color:#e53;font-size:13px;
+         margin-top:6px;display:none"></p>
+    </div>
+
+    <!-- Estado: grupo cargado -->
+    <div id="grupo-panel" style="display:none">
+      <div style="display:flex;justify-content:space-between;
+                  align-items:center;margin-bottom:16px">
+        <div>
+          <h3 id="grupo-nombre" style="margin:0;font-size:17px"></h3>
+          <p id="grupo-codigo-label" style="margin:4px 0 0;
+             color:#888;font-size:13px"></p>
+        </div>
+        <button onclick="salirGrupo()"
+          style="background:none;border:1px solid #ddd;
+                 padding:6px 12px;border-radius:8px;
+                 font-size:13px;cursor:pointer;color:#666">
+          Cambiar código
+        </button>
+      </div>
+
+      <!-- Barra de progreso -->
+      <div style="background:#f0f0f0;border-radius:99px;
+                  height:10px;margin-bottom:8px;overflow:hidden">
+        <div id="grupo-barra" style="height:100%;
+             background:linear-gradient(90deg,#0a9e88,#38d4b8);
+             border-radius:99px;transition:width 0.5s"></div>
+      </div>
+      <p id="grupo-progreso" style="font-size:13px;color:#666;
+         margin-bottom:16px"></p>
+
+      <!-- Lista de miembros -->
+      <div id="grupo-miembros"></div>
+    </div>
+  </div>
+
   <!-- CAMBIAR CONTRASEÑA -->
   <div class="section-card" id="sec-password">
     <h2>🔑 Cambiar Contraseña</h2>
@@ -306,6 +364,76 @@ document.addEventListener('click', function(e) {
     btn.setAttribute('aria-expanded', false);
   }
 });
+
+// ---- MI GRUPO ----
+async function unirseGrupo() {
+  const codigo = document.getElementById('grupo-input').value.trim().toUpperCase();
+  if (!codigo) return;
+  const btn = document.querySelector('#sec-grupo button');
+  btn.textContent = 'Cargando...';
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/api/grupo-status?codigo=${codigo}`);
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('grupo-error').textContent = data.error || 'Código no encontrado';
+      document.getElementById('grupo-error').style.display = 'block';
+    } else {
+      localStorage.setItem('grupoActivo', codigo);
+      renderGrupo(data);
+    }
+  } catch(e) {
+    document.getElementById('grupo-error').textContent = 'Error de conexión';
+    document.getElementById('grupo-error').style.display = 'block';
+  }
+  btn.textContent = 'Ver grupo';
+  btn.disabled = false;
+}
+
+function renderGrupo(data) {
+  document.getElementById('grupo-sin-codigo').style.display = 'none';
+  document.getElementById('grupo-panel').style.display = 'block';
+  document.getElementById('grupo-nombre').textContent = '✈️ ' + data.grupo.paquete_nombre;
+  document.getElementById('grupo-codigo-label').textContent = 'Código: ' + data.grupo.codigo;
+
+  const { total_miembros, pagados, anticipo_solo, pendientes } = data.resumen;
+  const pct = total_miembros ? Math.round((pagados / total_miembros) * 100) : 0;
+  document.getElementById('grupo-barra').style.width = pct + '%';
+  document.getElementById('grupo-progreso').textContent =
+    `${pagados} de ${total_miembros} han pagado completo · ${pendientes} pendientes`;
+
+  const badgeEstado = (e) => ({
+    'pagado':   '<span style="background:#d4f7ef;color:#0a7a65;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600">✅ Pagado</span>',
+    'anticipo': '<span style="background:#fff3cd;color:#856404;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600">⏳ Anticipo</span>',
+    'pendiente':'<span style="background:#f8d7da;color:#721c24;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600">❌ Pendiente</span>'
+  }[e] || '');
+
+  document.getElementById('grupo-miembros').innerHTML = data.miembros.map(m => `
+    <div style="display:flex;justify-content:space-between;align-items:center;
+                padding:12px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <span style="font-weight:600">${m.nombre}</span>
+        ${m.es_organizador ? '<span style="font-size:11px;color:#0a9e88;margin-left:6px">organizador</span>' : ''}
+        <div style="font-size:12px;color:#888;margin-top:2px">${m.personas} persona${m.personas>1?'s':''}</div>
+      </div>
+      ${badgeEstado(m.estado)}
+    </div>
+  `).join('');
+}
+
+function salirGrupo() {
+  localStorage.removeItem('grupoActivo');
+  document.getElementById('grupo-sin-codigo').style.display = 'block';
+  document.getElementById('grupo-panel').style.display = 'none';
+  document.getElementById('grupo-input').value = '';
+  document.getElementById('grupo-error').style.display = 'none';
+}
+
+const codigoGuardado = localStorage.getItem('grupoActivo');
+if (codigoGuardado) {
+  document.getElementById('grupo-input').value = codigoGuardado;
+  unirseGrupo();
+}
 </script>
 
 <script>
