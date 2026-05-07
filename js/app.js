@@ -560,12 +560,15 @@ function openPay(id) {
   // Itinerario
   const s1itin = document.getElementById('s1-itinerario');
   if (s1itin) {
-    const itinerario = typeof curPkg.itinerario === 'string'
-      ? JSON.parse(curPkg.itinerario)
-      : curPkg.itinerario;
-    if (Array.isArray(itinerario) && itinerario.length) {
+    let itinerario = curPkg.itinerario;
+    if (typeof itinerario === 'string') {
+      try { itinerario = JSON.parse(itinerario); } catch(e) { itinerario = null; }
+    }
+    if (!Array.isArray(itinerario)) itinerario = null;
+    console.log('itinerario parsed:', itinerario);
+    if (itinerario && itinerario.length) {
       s1itin.innerHTML = '<strong style="font-size:0.9rem;color:var(--ocean);">Itinerario</strong>' +
-        itinerario.map((d,i) => `<div style="display:flex;gap:8px;padding:4px 0;font-size:0.85rem;"><span style="color:var(--ocean);font-weight:700;">Día ${i+1}</span><span>${d}</span></div>`).join('');
+        itinerario.map(dia => `<div style="display:flex;gap:8px;padding:4px 0;font-size:0.85rem;"><span style="color:var(--ocean);font-weight:700;">${dia.emoji || ''} ${dia.dia || ''}</span><span><strong>${dia.titulo || ''}</strong>${dia.descripcion ? ' — ' + dia.descripcion : ''}</span></div>`).join('');
       s1itin.style.display = 'block';
     } else {
       s1itin.style.display = 'none';
