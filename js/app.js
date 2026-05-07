@@ -360,8 +360,7 @@ async function crearGrupo() {
   const personasEsperadas = parseInt(document.getElementById('m-personas')?.value || 1);
 
   const btn = document.getElementById('btn-crear-grupo');
-  btn.textContent = 'Creando grupo...';
-  btn.disabled = true;
+  if (btn) { btn.textContent = 'Creando grupo...'; btn.disabled = true; }
 
   const res = await fetch('/api/crear-grupo', {
     method: 'POST',
@@ -382,17 +381,18 @@ async function crearGrupo() {
 
   const data = await res.json();
   if (!data.ok) {
-    btn.textContent = '🔗 Crear grupo y compartir link';
-    btn.disabled = false;
+    if (btn) { btn.textContent = '🔗 Crear grupo y compartir link'; btn.disabled = false; }
     return;
   }
 
   window._grupoId = data.grupo_id;
   window._grupoCodigo = data.codigo;
+  console.log('codigo grupo:', data.codigo);
   const codigoDisplay = document.getElementById('grupo-codigo-display');
   if (codigoDisplay) codigoDisplay.textContent = data.codigo;
+  const grupoOpt = document.getElementById('grupo-option');
   const grupoUrl = `https://zipolitealdesnudo.com/?grupo=${data.codigo}`;
-  document.getElementById('grupo-option').innerHTML = `
+  if (grupoOpt) grupoOpt.innerHTML = `
     <div style="font-weight:700;color:#0d1b3e;margin-bottom:0.5rem;">✅ Grupo creado</div>
     <div style="background:white;border:1px solid #e0e0e0;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
       <div style="font-size:0.8rem;color:#666;margin-bottom:0.25rem;">Código de grupo</div>
@@ -408,6 +408,7 @@ async function crearGrupo() {
       💬 Compartir por WhatsApp
     </a>
   `;
+  return data.codigo;
 }
 
 function setPagoTipo(tipo) {
@@ -415,24 +416,65 @@ function setPagoTipo(tipo) {
   document.getElementById('btn-pago-grupal').classList.toggle('active', tipo === 'grupal');
   const grupoSection = document.getElementById('grupo-link-section');
   if (tipo === 'grupal') {
+    grupoSection.innerHTML = `
+      <div style="margin-bottom:0.75rem;">
+        <div style="font-weight:700;color:#0d1b3e;margin-bottom:0.5rem;">👥 Cómo funciona el pago grupal:</div>
+        <ol style="margin:0;padding-left:1.25rem;font-size:0.85rem;color:#444;line-height:1.8;">
+          <li>Se generará un código único para tu grupo</li>
+          <li>Compártelo con tus acompañantes</li>
+          <li>Cada quien entra con el código, se registra y realiza su pago</li>
+          <li>Todos quedan vinculados al mismo grupo</li>
+        </ol>
+      </div>
+      <div id="grupo-codigo-area" style="display:none;">
+        <div style="font-size:0.85rem;color:#0d1b3e;margin-bottom:0.5rem;font-weight:600;">Tu código de grupo:</div>
+        <div id="grupo-codigo-display" style="font-size:1.3rem;font-weight:800;color:#1a9fa0;margin-bottom:0.75rem;letter-spacing:0.15em;"></div>
+        <div style="display:flex;gap:0.5rem;">
+          <button onclick="copiarLinkGrupo(this)" style="flex:1;padding:0.5rem;background:#1a9fa0;color:white;border:none;border-radius:6px;font-weight:600;font-size:0.8rem;cursor:pointer;">📋 Copiar link</button>
+          <button onclick="compartirWhatsAppGrupo()" style="flex:1;padding:0.5rem;background:#25D366;color:white;border:none;border-radius:6px;font-weight:600;font-size:0.8rem;cursor:pointer;">💬 WhatsApp</button>
+        </div>
+      </div>
+      <button id="btn-generar-codigo" onclick="generarCodigoGrupo()" style="width:100%;padding:0.6rem;background:#1a9fa0;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-top:0.5rem;">
+        🔗 Generar código de grupo
+      </button>
+    `;
     grupoSection.style.display = 'block';
-    if (!window._grupoId) crearGrupo();
   } else {
     grupoSection.style.display = 'none';
+    const selectPersonas = document.getElementById('m-personas');
+    if (selectPersonas) {
+      selectPersonas.value = '1';
+      selectPersonas.dispatchEvent(new Event('change'));
+    }
   }
 }
 
-function copiarLinkGrupo() {
+function copiarLinkGrupo(btn) {
   const url = 'https://zipolitealdesnudo.com/?grupo=' + window._grupoCodigo;
   navigator.clipboard.writeText(url).then(() => {
-    event.target.textContent = '✅ Copiado';
-    setTimeout(() => event.target.textContent = '📋 Copiar link', 2000);
+    btn.textContent = '✅ ¡Link copiado!';
+    setTimeout(() => btn.textContent = '📋 Copiar link', 2500);
   });
 }
 
 function compartirWhatsAppGrupo() {
   const url = 'https://zipolitealdesnudo.com/?grupo=' + window._grupoCodigo;
   window.open('https://wa.me/?text=' + encodeURIComponent('¡Únete a nuestro viaje! 🌊🏳️‍🌈 Reserva tu lugar aquí: ' + url), '_blank');
+}
+
+async function generarCodigoGrupo() {
+  const btnGen = document.getElementById('btn-generar-codigo');
+  if (btnGen) { btnGen.textContent = 'Generando...'; btnGen.disabled = true; }
+  await crearGrupo();
+  const codigo = window._grupoCodigo;
+  if (!codigo) return;
+  if (btnGen) btnGen.style.display = 'none';
+  const area = document.getElementById('grupo-codigo-area');
+  if (area) {
+    const display = document.getElementById('grupo-codigo-display');
+    if (display) display.textContent = codigo;
+    area.style.display = 'block';
+  }
 }
 
 function mostrarBannerGrupo(grupo) {
@@ -518,10 +560,12 @@ function openPay(id) {
   // Itinerario
   const s1itin = document.getElementById('s1-itinerario');
   if (s1itin) {
-    const itin = curPkg.itinerario;
-    if (Array.isArray(itin) && itin.length) {
+    const itinerario = typeof curPkg.itinerario === 'string'
+      ? JSON.parse(curPkg.itinerario)
+      : curPkg.itinerario;
+    if (Array.isArray(itinerario) && itinerario.length) {
       s1itin.innerHTML = '<strong style="font-size:0.9rem;color:var(--ocean);">Itinerario</strong>' +
-        itin.map((d,i) => `<div style="display:flex;gap:8px;padding:4px 0;font-size:0.85rem;"><span style="color:var(--ocean);font-weight:700;">Día ${i+1}</span><span>${d}</span></div>`).join('');
+        itinerario.map((d,i) => `<div style="display:flex;gap:8px;padding:4px 0;font-size:0.85rem;"><span style="color:var(--ocean);font-weight:700;">Día ${i+1}</span><span>${d}</span></div>`).join('');
       s1itin.style.display = 'block';
     } else {
       s1itin.style.display = 'none';
