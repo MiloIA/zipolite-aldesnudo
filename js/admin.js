@@ -616,6 +616,8 @@ function editPkg(id) {
   document.getElementById('pf-fecha-fin').value=p.fecha_fin||'';
   document.getElementById('pf-foto-url').value=p.foto_url||'';
   document.getElementById('pf-foto-preview').innerHTML=p.foto_url?`<img src="${p.foto_url}" style="max-height:120px;border-radius:8px;margin-top:8px;object-fit:cover;">`:''
+  const itSection = document.getElementById('itinerario-editor-section');
+  if (itSection) itSection.style.display = 'none';
   document.getElementById('pkg-form').style.display='block';
   document.getElementById('pkg-form').scrollIntoView({behavior:'smooth'});
 }
@@ -672,6 +674,145 @@ async function uploadPkgPhoto(input) {
   const {data: {publicUrl}} = sb.storage.from('galeria').getPublicUrl(path);
   document.getElementById('pf-foto-url').value = publicUrl;
   document.getElementById('pf-foto-preview').innerHTML = `<img src="${publicUrl}" style="max-height:120px;border-radius:8px;margin-top:8px;object-fit:cover;">`;
+}
+
+// ITINERARIO EDITOR
+function toggleItinerarioEditor() {
+  const section = document.getElementById('itinerario-editor-section');
+  if (!section) return;
+  if (section.style.display !== 'none') {
+    section.style.display = 'none';
+  } else {
+    section.style.display = 'block';
+    const pkgId = document.getElementById('pf-id').value;
+    if (pkgId) loadItinerarioDias(pkgId);
+    else document.getElementById('itinerario-dias-container').innerHTML =
+      '<div style="color:#e53935;font-size:0.85rem;">Primero guarda el paquete para poder agregar días.</div>';
+  }
+}
+
+async function loadItinerarioDias(pkgId) {
+  const container = document.getElementById('itinerario-dias-container');
+  if (!container) return;
+  container.innerHTML = '<div style="color:#aaa;font-size:0.85rem;">Cargando...</div>';
+  const { data, error } = await sb.from('itinerario_dias').select('*').eq('paquete_id', pkgId).order('orden');
+  if (error) { container.innerHTML = '<div style="color:#e53935;">Error: ' + error.message + '</div>'; return; }
+  renderItinerarioDias(data || [], pkgId);
+}
+
+function renderItinerarioDias(dias, pkgId) {
+  const container = document.getElementById('itinerario-dias-container');
+  if (!container) return;
+  if (!dias.length) {
+    container.innerHTML = '<div style="color:#aaa;font-size:0.85rem;padding:0.5rem 0;">No hay días aún. Agrega el primero.</div>';
+    return;
+  }
+  container.innerHTML = dias.map(d => diaCardHTML(d, pkgId)).join('');
+}
+
+function diaCardHTML(d, pkgId) {
+  const fotoHtml = d.foto_url
+    ? `<img src="${d.foto_url}" style="max-height:80px;border-radius:6px;margin-bottom:6px;object-fit:cover;display:block;">`
+    : '';
+  const tituloEsc = (d.titulo || '').replace(/"/g, '&quot;');
+  return `
+    <div class="dia-card" id="dia-card-${d.id}" style="border:1px solid #e0e0e0;border-radius:10px;padding:1rem;margin-bottom:0.75rem;background:white;">
+      <div style="display:grid;grid-template-columns:60px 80px 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <label style="font-size:0.7rem;font-weight:700;color:#888;display:block;margin-bottom:3px;">EMOJI</label>
+          <input type="text" id="dia-emoji-${d.id}" value="${d.emoji || ''}" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:1.1rem;text-align:center;">
+        </div>
+        <div>
+          <label style="font-size:0.7rem;font-weight:700;color:#888;display:block;margin-bottom:3px;">DÍA</label>
+          <input type="text" id="dia-label-${d.id}" value="${d.fecha_label || d.dia || ''}" placeholder="Día 1" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:0.8rem;">
+        </div>
+        <div>
+          <label style="font-size:0.7rem;font-weight:700;color:#888;display:block;margin-bottom:3px;">TÍTULO</label>
+          <input type="text" id="dia-titulo-${d.id}" value="${tituloEsc}" placeholder="Título del día" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;">
+        </div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem;font-weight:700;color:#888;display:block;margin-bottom:3px;">DESCRIPCIÓN</label>
+        <textarea id="dia-desc-${d.id}" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;resize:vertical;min-height:60px;">${d.descripcion || ''}</textarea>
+      </div>
+      <div style="margin-bottom:10px;">
+        ${fotoHtml}
+        <label style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#0097A7;color:white;border-radius:6px;cursor:pointer;font-size:0.78rem;font-weight:600;">
+          📷 ${d.foto_url ? 'Cambiar foto' : 'Subir foto'}
+          <input type="file" accept="image/*" style="display:none" onchange="uploadDiaFoto(this,'${d.id}')">
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="dia-save-${d.id}" onclick="guardarDia('${d.id}','${pkgId}')" style="flex:1;padding:8px;background:#1a9fa0;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.85rem;">💾 Guardar día</button>
+        <button onclick="eliminarDia('${d.id}')" style="padding:8px 14px;background:#e53935;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.85rem;">🗑️</button>
+      </div>
+    </div>`;
+}
+
+async function guardarDia(diaId, pkgId) {
+  const label = document.getElementById(`dia-label-${diaId}`)?.value || '';
+  const emoji = document.getElementById(`dia-emoji-${diaId}`)?.value || '';
+  const titulo = document.getElementById(`dia-titulo-${diaId}`)?.value || '';
+  const descripcion = document.getElementById(`dia-desc-${diaId}`)?.value || '';
+  const { error } = await sb.from('itinerario_dias').upsert({
+    id: diaId,
+    paquete_id: pkgId,
+    fecha_label: label,
+    dia: label,
+    emoji,
+    titulo,
+    descripcion,
+  });
+  const btn = document.getElementById(`dia-save-${diaId}`);
+  if (error) { alert('Error al guardar: ' + error.message); return; }
+  if (btn) { btn.textContent = '✅ Guardado'; setTimeout(() => btn.textContent = '💾 Guardar día', 2000); }
+}
+
+async function eliminarDia(diaId) {
+  if (!confirm('¿Eliminar este día del itinerario?')) return;
+  const { error } = await sb.from('itinerario_dias').delete().eq('id', diaId);
+  if (error) { alert('Error: ' + error.message); return; }
+  document.getElementById(`dia-card-${diaId}`)?.remove();
+}
+
+async function agregarDia(pkgId) {
+  if (!pkgId) { alert('Primero guarda el paquete.'); return; }
+  const orden = document.querySelectorAll('.dia-card').length;
+  const { data, error } = await sb.from('itinerario_dias').insert({
+    paquete_id: pkgId,
+    fecha_label: '',
+    dia: '',
+    emoji: '📍',
+    titulo: '',
+    descripcion: '',
+    orden,
+  }).select().single();
+  if (error) { alert('Error: ' + error.message); return; }
+  const container = document.getElementById('itinerario-dias-container');
+  if (!container) return;
+  const emptyMsg = container.querySelector('div:not(.dia-card)');
+  if (emptyMsg) emptyMsg.remove();
+  container.insertAdjacentHTML('beforeend', diaCardHTML(data, pkgId));
+}
+
+async function uploadDiaFoto(input, diaId) {
+  const file = input.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop();
+  const path = `itinerario/${diaId}_${Date.now()}.${ext}`;
+  const { error } = await sb.storage.from('galeria').upload(path, file, { upsert: true });
+  if (error) { alert('Error al subir foto: ' + error.message); return; }
+  const { data: { publicUrl } } = sb.storage.from('galeria').getPublicUrl(path);
+  await sb.from('itinerario_dias').update({ foto_url: publicUrl }).eq('id', diaId);
+  const card = document.getElementById(`dia-card-${diaId}`);
+  if (!card) return;
+  const existing = card.querySelector('img');
+  if (existing) { existing.src = publicUrl; }
+  else {
+    const uploadLabel = card.querySelector('label[style*="inline-flex"]');
+    if (uploadLabel) uploadLabel.insertAdjacentHTML('beforebegin',
+      `<img src="${publicUrl}" style="max-height:80px;border-radius:6px;margin-bottom:6px;object-fit:cover;display:block;">`);
+  }
 }
 
 // GALLERY

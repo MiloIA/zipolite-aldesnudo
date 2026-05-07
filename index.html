@@ -652,6 +652,18 @@
           <div class="af"><label>Badge (opcional)</label><input type="text" id="pf-badge" placeholder="⭐ Más popular"></div>
           <div class="af" style="grid-column:1/-1"><label>Foto del paquete</label><div style="display:flex;gap:8px;align-items:center;"><input type="text" id="pf-foto-url" placeholder="URL o sube imagen" style="flex:1;"><label style="padding:9px 14px;background:var(--ocean);color:white;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;" for="pf-foto-input">📷 Subir</label><input type="file" id="pf-foto-input" accept="image/*" style="display:none" onchange="uploadPkgPhoto(this)"></div><div id="pf-foto-preview" style="margin-top:8px;"></div></div>
         </div>
+        <div style="margin-top:1rem;">
+          <button onclick="toggleItinerarioEditor()" style="padding:9px 18px;background:#f0fdf9;border:1.5px solid #1a9fa0;border-radius:8px;color:#1a9fa0;font-weight:700;cursor:pointer;font-size:0.85rem;width:100%;">📅 Editar itinerario</button>
+          <div id="itinerario-editor-section" style="display:none;margin-top:1rem;padding:1rem;border:1px solid #e0e0e0;border-radius:10px;background:#fafafa;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <strong style="font-size:0.95rem;color:#0d1b3e;">📅 Días del itinerario</strong>
+              <button onclick="agregarDia(document.getElementById('pf-id').value)" style="padding:7px 14px;background:#1a9fa0;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.82rem;">➕ Agregar día</button>
+            </div>
+            <div id="itinerario-dias-container">
+              <div style="color:#aaa;font-size:0.85rem;">Selecciona un paquete existente para ver su itinerario.</div>
+            </div>
+          </div>
+        </div>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
           <button class="save-btn" onclick="savePkg()">💾 Guardar paquete</button>
           <button onclick="hidePkgForm()" style="padding:10px 18px;background:#eee;border:none;border-radius:10px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;">Cancelar</button>
