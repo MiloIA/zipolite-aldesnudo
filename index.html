@@ -554,26 +554,52 @@
           <option value="24">Financiamiento 24 meses</option>
         </select>
       </div>
-      <div id="grupo-pago-section" style="margin-bottom:1rem;">
-        <div style="font-size:0.8rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">¿CÓMO QUIEREN PAGAR?</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
-          <button id="btn-pago-individual" class="pago-tipo-btn active" onclick="setPagoTipo('individual')">
-            <span>💳</span>
-            <span>Pago individual</span>
-            <span>Pago solo mi lugar</span>
+      <div id="grupo-pago-section" style="margin:16px 0">
+        <button type="button" id="btn-toggle-grupo"
+          onclick="toggleGrupoOpcional()"
+          style="width:100%;background:none;border:1.5px dashed #0a9e88;
+                 color:#0a9e88;padding:10px;border-radius:10px;
+                 font-size:14px;cursor:pointer;font-weight:600">
+          👥 ¿Viajan en grupo? Genera un código para vincularlos
+        </button>
+        <div id="grupo-opcional-panel" style="display:none;
+          margin-top:12px;background:#f0fdfb;border-radius:10px;
+          padding:14px;border:1px solid #b2ebe0">
+          <p style="font-size:13px;color:#444;margin:0 0 10px">
+            Genera un código y compártelo con tus amigos.
+            Cada quien reserva y paga su propio lugar.
+            Tu admin los verá vinculados como grupo.
+          </p>
+          <div id="grupo-codigo-area" style="display:none;
+            text-align:center;margin-bottom:10px">
+            <span style="font-size:20px;font-weight:700;
+              letter-spacing:3px;color:#0a9e88"
+              id="grupo-codigo-display"></span>
+            <p style="font-size:12px;color:#666;margin:4px 0 0">
+              Comparte este código con tus acompañantes
+            </p>
+          </div>
+          <button type="button" id="btn-generar-codigo"
+            onclick="generarCodigoGrupo()"
+            style="width:100%;background:#0a9e88;color:#fff;
+                   border:none;padding:10px;border-radius:8px;
+                   font-size:14px;cursor:pointer;font-weight:600">
+            🔗 Generar código de grupo
           </button>
-          <button id="btn-pago-grupal" class="pago-tipo-btn" onclick="setPagoTipo('grupal')">
-            <span>👥</span>
-            <span>Pago grupal</span>
-            <span>Cada quien paga</span>
-          </button>
-        </div>
-        <div id="grupo-link-section" style="display:none;padding:0.75rem;background:#f0fdf9;border-radius:8px;border:1px solid #1a9fa0;">
-          <div style="font-size:0.85rem;color:#0d1b3e;margin-bottom:0.5rem;font-weight:600;">Comparte este link con tu grupo:</div>
-          <div id="grupo-codigo-display" style="font-size:1.1rem;font-weight:800;color:#1a9fa0;margin-bottom:0.75rem;letter-spacing:0.1em;"></div>
-          <div style="display:flex;gap:0.5rem;">
-            <button onclick="copiarLinkGrupo(this)" style="flex:1;padding:0.5rem;background:#1a9fa0;color:white;border:none;border-radius:6px;font-weight:600;font-size:0.8rem;cursor:pointer;">📋 Copiar link</button>
-            <button onclick="compartirWhatsAppGrupo()" style="flex:1;padding:0.5rem;background:#25D366;color:white;border:none;border-radius:6px;font-weight:600;font-size:0.8rem;cursor:pointer;">💬 WhatsApp</button>
+          <div id="grupo-share-btns" style="display:none;
+            gap:8px;margin-top:8px">
+            <button type="button" onclick="copiarLinkGrupo(this)"
+              style="flex:1;background:#fff;border:1px solid #ddd;
+                     padding:8px;border-radius:8px;font-size:13px;
+                     cursor:pointer">
+              📋 Copiar link
+            </button>
+            <button type="button" onclick="compartirWhatsAppGrupo()"
+              style="flex:1;background:#25d366;color:#fff;border:none;
+                     padding:8px;border-radius:8px;font-size:13px;
+                     cursor:pointer">
+              💬 WhatsApp
+            </button>
           </div>
         </div>
       </div>
