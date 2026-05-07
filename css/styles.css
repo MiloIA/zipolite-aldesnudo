@@ -443,5 +443,10 @@ section{padding:56px 18px;}
 .galeria-filtro{padding:0.3rem 0.75rem;border:1px solid #e0e0e0;border-radius:20px;background:white;cursor:pointer;font-size:0.8rem;transition:all 0.2s;}
 .galeria-filtro.active{background:#1a9fa0;color:white;border-color:#1a9fa0;}
 .pkg-galeria-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:1rem;}
-.pkg-galeria-item img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;transition:opacity 0.2s;}
+.pkg-galeria-item{position:relative;overflow:hidden;border-radius:8px;}
+.pkg-galeria-item::after{content:'zipolitealdesnudo.com';position:absolute;bottom:4px;right:6px;color:rgba(255,255,255,0.7);font-size:0.6rem;font-family:sans-serif;text-shadow:0 1px 2px rgba(0,0,0,0.8);pointer-events:none;}
+.pkg-galeria-item img{width:100%;aspect-ratio:1;object-fit:cover;cursor:pointer;transition:opacity 0.2s;display:block;}
 .pkg-galeria-item img:hover{opacity:0.85;}
+.galeria-ver-mas{aspect-ratio:1;background:#0d1b3e;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;cursor:pointer;font-size:0.85rem;text-align:center;transition:background 0.2s;}
+.galeria-ver-mas:hover{background:#1a3a6e;}
+.galeria-ver-mas strong{font-size:1.1rem;}
