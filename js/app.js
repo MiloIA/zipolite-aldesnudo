@@ -285,25 +285,6 @@ function generarPersonalizador() {
   el.innerHTML = `
     <h3 style="font-family:'Fraunces',serif;font-size:1.35rem;font-weight:800;color:var(--dark);margin-bottom:16px;">¿Cómo quieres vivir tu Año Nuevo?</h3>
     <div class="pkg-option-group">
-      <label class="pkg-option-title">🏕️ Alojamiento</label>
-      <div class="pkg-option-items">
-        <label class="pkg-option-item">
-          <input type="radio" name="alojamiento" value="camping" checked>
-          <span>🏕️ Camping — incluido en el paquete</span>
-          <strong>$0 extra</strong>
-        </label>
-        <label class="pkg-option-item">
-          <input type="radio" name="alojamiento" value="habitacion">
-          <span>🛏️ Habitación privada</span>
-          <strong>ver precios →</strong>
-        </label>
-      </div>
-    </div>
-    <div id="habitacion-options" style="display:none">
-      <label class="pkg-option-title">¿Cuántos van en la habitación?</label>
-      <div class="pkg-option-items" id="habitacion-personas"></div>
-    </div>
-    <div class="pkg-option-group">
       <label class="pkg-option-title">🌊 Tours opcionales</label>
       <label class="pkg-option-item">
         <input type="checkbox" id="tour-carrizalillo" value="800">
@@ -317,25 +298,6 @@ function generarPersonalizador() {
     </div>
     <button onclick="confirmarPersonalizacion()" class="pay-btn">Continuar →</button>
   `;
-  document.querySelectorAll('input[name="alojamiento"]').forEach(r => {
-    r.addEventListener('change', () => {
-      const habOpts = document.getElementById('habitacion-options');
-      if (r.value === 'habitacion' && r.checked) {
-        habOpts.style.display = 'block';
-        document.getElementById('habitacion-personas').innerHTML = [1,2,3,4].map(n =>
-          `<label class="pkg-option-item">
-            <input type="radio" name="habitacion-personas" value="${n}" ${n===2?'checked':''}>
-            <span>${n} persona${n>1?'s':''}</span>
-            <strong>+$${HABITACION_PRECIOS[n].toLocaleString('es-MX')}/persona</strong>
-          </label>`
-        ).join('');
-        document.querySelectorAll('input[name="habitacion-personas"]').forEach(r2 => r2.addEventListener('change', calcStep0));
-      } else {
-        habOpts.style.display = 'none';
-      }
-      calcStep0();
-    });
-  });
   document.getElementById('tour-carrizalillo').addEventListener('change', calcStep0);
 }
 
@@ -351,119 +313,6 @@ function avanzarDesdeDetalles() {
   }
 }
 
-async function crearGrupo() {
-  const { data: { session } } = await sb.auth.getSession();
-  const alojamiento = window._paso0Alojamiento || 'camping';
-  const personasHab = window._paso0PersonasHab || 1;
-  const tourIncluido = window._paso0Tour || false;
-  const precioPersona = curPkg.precio;
-  const personasEsperadas = parseInt(document.getElementById('m-personas')?.value || 1);
-
-  const btn = document.getElementById('btn-crear-grupo');
-  if (btn) { btn.textContent = 'Creando grupo...'; btn.disabled = true; }
-
-  const res = await fetch('/api/crear-grupo', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      paquete_id: curPkg.id,
-      paquete_nombre: curPkg.nombre,
-      organizador_id: session?.user?.id || null,
-      organizador_nombre: session?.user?.user_metadata?.full_name || '',
-      organizador_email: session?.user?.email || '',
-      personas_esperadas: personasEsperadas,
-      alojamiento,
-      personas_habitacion: personasHab,
-      tour_incluido: tourIncluido,
-      precio_por_persona: precioPersona
-    })
-  });
-
-  const data = await res.json();
-  if (!data.ok) {
-    if (btn) { btn.textContent = '🔗 Crear grupo y compartir link'; btn.disabled = false; }
-    return;
-  }
-
-  window._grupoId = data.grupo_id;
-  window._grupoCodigo = data.codigo;
-  console.log('codigo grupo:', data.codigo);
-  const codigoDisplay = document.getElementById('grupo-codigo-display');
-  if (codigoDisplay) codigoDisplay.textContent = data.codigo;
-  const grupoOpt = document.getElementById('grupo-option');
-  const grupoUrl = `https://zipolitealdesnudo.com/?grupo=${data.codigo}`;
-  if (grupoOpt) grupoOpt.innerHTML = `
-    <div style="font-weight:700;color:#0d1b3e;margin-bottom:0.5rem;">✅ Grupo creado</div>
-    <div style="background:white;border:1px solid #e0e0e0;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
-      <div style="font-size:0.8rem;color:#666;margin-bottom:0.25rem;">Código de grupo</div>
-      <div style="font-size:1.3rem;font-weight:800;color:#1a9fa0;letter-spacing:0.1em;">${data.codigo}</div>
-    </div>
-    <button onclick="navigator.clipboard.writeText('${grupoUrl}').then(()=>this.textContent='✅ ¡Copiado!')"
-      style="width:100%;padding:0.6rem;background:#1a9fa0;border:none;border-radius:8px;color:white;font-weight:700;cursor:pointer;margin-bottom:0.5rem;">
-      📋 Copiar link del grupo
-    </button>
-    <a href="https://wa.me/?text=${encodeURIComponent('¡Únete a nuestro viaje de Año Nuevo en Zipolite! 🌊🏳️‍🌈 Reserva tu lugar aquí: ' + grupoUrl)}"
-      target="_blank"
-      style="display:block;text-align:center;padding:0.6rem;background:#25D366;border-radius:8px;color:white;font-weight:700;text-decoration:none;">
-      💬 Compartir por WhatsApp
-    </a>
-  `;
-  return data.codigo;
-}
-
-function toggleGrupoOpcional() {
-  const panel = document.getElementById('grupo-opcional-panel');
-  const btn = document.getElementById('btn-toggle-grupo');
-  const abierto = panel.style.display !== 'none';
-  panel.style.display = abierto ? 'none' : 'block';
-  btn.style.background = abierto ? 'none' : '#e6faf7';
-  if (abierto) {
-    window._grupoId = null;
-    window._grupoCodigo = null;
-    document.getElementById('grupo-codigo-display').textContent = '';
-    document.getElementById('grupo-codigo-area').style.display = 'none';
-    document.getElementById('btn-generar-codigo').style.display = 'block';
-    document.getElementById('grupo-share-btns').style.display = 'none';
-  }
-}
-
-function copiarLinkGrupo(btn) {
-  const url = 'https://zipolitealdesnudo.com/?grupo=' + window._grupoCodigo;
-  navigator.clipboard.writeText(url).then(() => {
-    btn.textContent = '✅ ¡Link copiado!';
-    setTimeout(() => btn.textContent = '📋 Copiar link', 2500);
-  });
-}
-
-function compartirWhatsAppGrupo() {
-  const url = 'https://zipolitealdesnudo.com/?grupo=' + window._grupoCodigo;
-  window.open('https://wa.me/?text=' + encodeURIComponent('¡Únete a nuestro viaje! 🌊🏳️‍🌈 Reserva tu lugar aquí: ' + url), '_blank');
-}
-
-async function generarCodigoGrupo() {
-  const btnGen = document.getElementById('btn-generar-codigo');
-  if (btnGen) { btnGen.textContent = 'Generando...'; btnGen.disabled = true; }
-  await crearGrupo();
-  const codigo = window._grupoCodigo;
-  if (!codigo) return;
-  if (btnGen) btnGen.style.display = 'none';
-  const area = document.getElementById('grupo-codigo-area');
-  if (area) {
-    const display = document.getElementById('grupo-codigo-display');
-    if (display) display.textContent = codigo;
-    area.style.display = 'block';
-  }
-  const shareBtns = document.getElementById('grupo-share-btns');
-  if (shareBtns) shareBtns.style.display = 'flex';
-}
-
-function mostrarBannerGrupo(grupo) {
-  const banner = document.createElement('div');
-  banner.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#0d1b3e;color:white;padding:0.75rem 1.5rem;border-radius:12px;z-index:9999;font-weight:600;font-size:0.9rem;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
-  banner.innerHTML = `👥 Te uniste al grupo <strong>${grupo.codigo}</strong> — ${grupo.paquete_nombre}`;
-  document.body.appendChild(banner);
-  setTimeout(() => banner.remove(), 4000);
-}
 
 async function openPay(id) {
   curPkg = pkgs.find(p=>String(p.id)===String(id)) || pkgs[0];
@@ -732,7 +581,7 @@ async function confirmarReserva() {
     anticipo,
     fecha_inicio: curPkg.fecha_inicio || null,
     fecha_fin: curPkg.fecha_fin || null,
-    grupo_id: window._grupoId || null,
+    grupo_id: null,
     estado: 'pendiente'
   }]).select().single();
   if (error) { errEl.textContent = 'Error al guardar reserva: ' + error.message; errEl.style.display = 'block'; resetBtn(); return; }
@@ -1210,19 +1059,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const _slugParam = new URLSearchParams(window.location.search).get('paquete');
   if (_slugParam) { pendingSlug = _slugParam; } else { window.scrollTo(0, 0); }
 
-  const grupoParam = new URLSearchParams(window.location.search).get('grupo');
-  if (grupoParam) {
-    (async () => {
-      const { data: grupo } = await sb.from('grupos').select('*').eq('codigo', grupoParam).single();
-      if (grupo) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        window._grupoId = grupo.id;
-        window._grupoData = grupo;
-        mostrarBannerGrupo(grupo);
-        setTimeout(() => openPay(grupo.paquete_id), 500);
-      }
-    })();
-  }
   if (typeof Stripe !== 'undefined') stripeClient = Stripe('pk_live_51TTtl8GZiSqY5s2qtJhc06lhXuoCUBFFRNN8kZa7XJtnwpwjaHWnkkXolOEYk5XywllFXXQeD6sAbAIehdTCdt4M00EtP6jfWW');
   loadAll();
   checkFirstTimeSetup();
