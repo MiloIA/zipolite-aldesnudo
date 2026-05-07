@@ -117,7 +117,7 @@ async function loadAdminPkgs() {
 
 async function loadAdminData() {
   await loadAdminPkgs();
-  const {data:gd}=await sb.from('galeria').select('*').order('orden').order('created_at');
+  const {data:gd}=await sb.from('galeria').select('*').is('paquete_id',null).order('orden').order('created_at');
   renderAdmGallery(gd||[]);
   const {data:bd}=await sb.from('blog').select('*').order('created_at',{ascending:false});
   renderAdmBlog(bd||[]);
@@ -618,6 +618,8 @@ function editPkg(id) {
   document.getElementById('pf-foto-preview').innerHTML=p.foto_url?`<img src="${p.foto_url}" style="max-height:120px;border-radius:8px;margin-top:8px;object-fit:cover;">`:''
   const itSection = document.getElementById('itinerario-editor-section');
   if (itSection) itSection.style.display = 'none';
+  const galSection = document.getElementById('galeria-paquete-section');
+  if (galSection) galSection.style.display = 'none';
   document.getElementById('pkg-form').style.display='block';
   document.getElementById('pkg-form').scrollIntoView({behavior:'smooth'});
 }
@@ -711,9 +713,6 @@ function renderItinerarioDias(dias, pkgId) {
 }
 
 function diaCardHTML(d, pkgId) {
-  const fotoHtml = d.foto_url
-    ? `<img src="${d.foto_url}" style="max-height:80px;border-radius:6px;margin-bottom:6px;object-fit:cover;display:block;">`
-    : '';
   const tituloEsc = (d.titulo || '').replace(/"/g, '&quot;');
   return `
     <div class="dia-card" id="dia-card-${d.id}" style="border:1px solid #e0e0e0;border-radius:10px;padding:1rem;margin-bottom:0.75rem;background:white;">
@@ -734,13 +733,6 @@ function diaCardHTML(d, pkgId) {
       <div style="margin-bottom:8px;">
         <label style="font-size:0.7rem;font-weight:700;color:#888;display:block;margin-bottom:3px;">DESCRIPCIÓN</label>
         <textarea id="dia-desc-${d.id}" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;resize:vertical;min-height:60px;">${d.descripcion || ''}</textarea>
-      </div>
-      <div style="margin-bottom:10px;">
-        ${fotoHtml}
-        <label style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#0097A7;color:white;border-radius:6px;cursor:pointer;font-size:0.78rem;font-weight:600;">
-          📷 ${d.foto_url ? 'Cambiar foto' : 'Subir foto'}
-          <input type="file" accept="image/*" style="display:none" onchange="uploadDiaFoto(this,'${d.id}')">
-        </label>
       </div>
       <div style="display:flex;gap:8px;">
         <button id="dia-save-${d.id}" onclick="guardarDia('${d.id}','${pkgId}')" style="flex:1;padding:8px;background:#1a9fa0;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.85rem;">💾 Guardar día</button>
@@ -795,24 +787,68 @@ async function agregarDia(pkgId) {
   container.insertAdjacentHTML('beforeend', diaCardHTML(data, pkgId));
 }
 
-async function uploadDiaFoto(input, diaId) {
-  const file = input.files[0];
-  if (!file) return;
-  const ext = file.name.split('.').pop();
-  const path = `itinerario/${diaId}_${Date.now()}.${ext}`;
-  const { error } = await sb.storage.from('galeria').upload(path, file, { upsert: true });
-  if (error) { alert('Error al subir foto: ' + error.message); return; }
-  const { data: { publicUrl } } = sb.storage.from('galeria').getPublicUrl(path);
-  await sb.from('itinerario_dias').update({ foto_url: publicUrl }).eq('id', diaId);
-  const card = document.getElementById(`dia-card-${diaId}`);
-  if (!card) return;
-  const existing = card.querySelector('img');
-  if (existing) { existing.src = publicUrl; }
-  else {
-    const uploadLabel = card.querySelector('label[style*="inline-flex"]');
-    if (uploadLabel) uploadLabel.insertAdjacentHTML('beforebegin',
-      `<img src="${publicUrl}" style="max-height:80px;border-radius:6px;margin-bottom:6px;object-fit:cover;display:block;">`);
+// GALERÍA POR PAQUETE
+function toggleGaleriaPaquete() {
+  const section = document.getElementById('galeria-paquete-section');
+  if (!section) return;
+  if (section.style.display !== 'none') {
+    section.style.display = 'none';
+  } else {
+    section.style.display = 'block';
+    const pkgId = document.getElementById('pf-id').value;
+    if (pkgId) loadGaleriaPaquete(pkgId);
+    else document.getElementById('galeria-paquete-grid').innerHTML =
+      '<div style="color:#e53935;font-size:0.82rem;grid-column:1/-1;">Primero guarda el paquete.</div>';
   }
+}
+
+async function loadGaleriaPaquete(pkgId) {
+  const grid = document.getElementById('galeria-paquete-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="color:#aaa;font-size:0.82rem;grid-column:1/-1;">Cargando...</div>';
+  const { data, error } = await sb.from('galeria').select('*').eq('paquete_id', pkgId).order('created_at');
+  if (error) { grid.innerHTML = '<div style="color:#e53935;grid-column:1/-1;">Error: ' + error.message + '</div>'; return; }
+  renderGaleriaPaquete(data || []);
+}
+
+function renderGaleriaPaquete(fotos) {
+  const grid = document.getElementById('galeria-paquete-grid');
+  if (!grid) return;
+  if (!fotos.length) {
+    grid.innerHTML = '<div style="color:#aaa;font-size:0.82rem;grid-column:1/-1;">Sin fotos aún.</div>';
+    return;
+  }
+  grid.innerHTML = fotos.map(f => `
+    <div style="position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:#f0f0f0;">
+      <img src="${f.url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+      ${f.categoria ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:white;font-size:0.6rem;padding:2px 4px;text-align:center;">${f.categoria}</div>` : ''}
+      <button onclick="delFotoPaquete('${f.id}','${f.url}')" style="position:absolute;top:3px;right:3px;background:rgba(229,57,53,0.85);color:white;border:none;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:0.75rem;line-height:1;">🗑️</button>
+    </div>`).join('');
+}
+
+async function uploadFotosPaquete(input, pkgId) {
+  if (!pkgId) { alert('Primero guarda el paquete.'); return; }
+  const categoria = document.getElementById('pkg-gal-categoria')?.value || 'general';
+  const files = Array.from(input.files);
+  for (const file of files) {
+    const ext = file.name.split('.').pop();
+    const path = `paquetes/${pkgId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await sb.storage.from('galeria').upload(path, file, { contentType: file.type });
+    if (upErr) { alert('Error al subir: ' + upErr.message); continue; }
+    const { data: { publicUrl } } = sb.storage.from('galeria').getPublicUrl(path);
+    await sb.from('galeria').insert([{ url: publicUrl, descripcion: file.name, orden: 0, paquete_id: pkgId, categoria }]);
+  }
+  input.value = '';
+  await loadGaleriaPaquete(pkgId);
+}
+
+async function delFotoPaquete(id, url) {
+  if (!confirm('¿Eliminar esta foto?')) return;
+  const parts = url.split('/storage/v1/object/public/galeria/');
+  if (parts[1]) await sb.storage.from('galeria').remove([parts[1]]);
+  const { error } = await sb.from('galeria').delete().eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  await loadGaleriaPaquete(document.getElementById('pf-id').value);
 }
 
 // GALLERY
@@ -824,9 +860,9 @@ async function uploadPhotos(input) {
     const { error: upErr } = await sb.storage.from('galeria').upload(path, file, { contentType: file.type });
     if (upErr) { alert('Error al subir imagen: ' + upErr.message); continue; }
     const { data: { publicUrl } } = sb.storage.from('galeria').getPublicUrl(path);
-    await sb.from('galeria').insert([{ url: publicUrl, descripcion: file.name, orden: 0 }]);
+    await sb.from('galeria').insert([{ url: publicUrl, descripcion: file.name, orden: 0, paquete_id: null }]);
     await loadGallery();
-    const { data } = await sb.from('galeria').select('*').order('orden').order('created_at');
+    const { data } = await sb.from('galeria').select('*').is('paquete_id',null).order('orden').order('created_at');
     renderAdmGallery(data || []);
   }
   input.value = '';
@@ -840,7 +876,7 @@ async function delPhoto(id) {
   }
   const { error } = await sb.from('galeria').delete().eq('id', id);
   if (error) { alert('Error al eliminar: ' + error.message); return; }
-  const { data } = await sb.from('galeria').select('*').order('orden').order('created_at');
+  const { data } = await sb.from('galeria').select('*').is('paquete_id',null).order('orden').order('created_at');
   renderAdmGallery(data || []);
   loadGallery();
 }
