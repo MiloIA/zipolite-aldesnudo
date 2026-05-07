@@ -398,6 +398,28 @@ function renderGrupos(grupos, reservaciones) {
       <td style="padding:8px 10px;font-size:0.82rem;text-align:center;">${estado} <span style="color:#888;">(${confirmados} conf.)</span></td>
       <td style="padding:8px 10px;font-size:0.82rem;">${g.alojamiento||'—'}</td>
       <td style="padding:8px 10px;font-size:0.82rem;min-width:180px;">${detalles}</td>
+      <td style="white-space:nowrap">
+        <button onclick="confirmarGrupo('${g.id}')"
+          style="background:#1a9fa0;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin:2px"
+          title="Confirmar todas las reservas del grupo">
+          ✅ Confirmar
+        </button>
+        <button onclick="contratoGrupo('${g.id}')"
+          style="background:#6366f1;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin:2px"
+          title="Generar contrato para todos">
+          📄 Contrato
+        </button>
+        <button onclick="viajerosGrupo('${g.id}','${g.codigo}')"
+          style="background:#0ea5e9;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin:2px"
+          title="Ver ficha de viajeros">
+          👤 Viajeros
+        </button>
+        <button onclick="eliminarGrupo('${g.id}','${g.codigo}')"
+          style="background:#ef4444;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin:2px"
+          title="Eliminar grupo">
+          🗑️
+        </button>
+      </td>
     </tr>`;
   }).join('');
   el.innerHTML = `<div style="margin-bottom:12px;padding:12px;background:#f0fdf9;border-radius:8px;border:1px solid #1a9fa0;">
@@ -406,6 +428,7 @@ function renderGrupos(grupos, reservaciones) {
       <thead><tr>
         <th ${thS}>Código</th><th ${thS}>Paquete</th><th ${thS}>Organizador</th>
         <th ${thS}>Personas</th><th ${thS}>Alojamiento</th><th ${thS}>Miembros</th>
+        <th ${thS}>Acciones</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table></div>
@@ -1811,4 +1834,92 @@ function showToast(msg) {
   t.style.opacity = '1';
   clearTimeout(t._tid);
   t._tid = setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+
+async function confirmarGrupo(grupoId) {
+  const miembros = (window._admReservaciones||[]).filter(r => r.grupo_id === grupoId);
+  if (!miembros.length) { alert('Este grupo no tiene reservaciones vinculadas.'); return; }
+  if (!confirm(`¿Confirmar ${miembros.length} reservación(es) de este grupo?`)) return;
+  const ids = miembros.map(r => r.id);
+  const { error } = await sb.from('reservaciones')
+    .update({ estado: 'confirmado' })
+    .in('id', ids);
+  if (error) { alert('Error: ' + error.message); return; }
+  alert(`✅ ${ids.length} reservación(es) confirmadas.`);
+  loadReservaciones();
+}
+
+async function contratoGrupo(grupoId) {
+  const miembros = (window._admReservaciones||[]).filter(r => r.grupo_id === grupoId);
+  if (!miembros.length) { alert('Sin reservaciones vinculadas.'); return; }
+  const confirmados = miembros.filter(r => r.estado === 'confirmado' || r.estado === 'confirmada');
+  if (!confirmados.length) {
+    alert('Primero confirma las reservaciones del grupo.');
+    return;
+  }
+  if (!confirm(`¿Generar contrato para ${confirmados.length} reservación(es) confirmada(s)?`)) return;
+  let errores = 0;
+  for (const r of confirmados) {
+    try {
+      const res = await fetch('/api/generar-contrato', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reservacionId: r.id })
+      });
+      if (!res.ok) errores++;
+    } catch(e) { errores++; }
+  }
+  if (errores) alert(`⚠️ ${errores} error(es) al generar contratos.`);
+  else alert(`📄 Contratos generados para ${confirmados.length} reservación(es).`);
+  loadReservaciones();
+}
+
+async function viajerosGrupo(grupoId, codigo) {
+  const miembros = (window._admReservaciones||[]).filter(r => r.grupo_id === grupoId);
+  if (!miembros.length) { alert('Sin reservaciones vinculadas.'); return; }
+  const { data: viajeros, error } = await sb
+    .from('viajeros')
+    .select('*')
+    .in('reservacion_id', miembros.map(r => r.id));
+  if (error) { alert('Error cargando viajeros.'); return; }
+  if (!viajeros || !viajeros.length) {
+    alert('Aún no hay fichas de viajeros registradas en este grupo.');
+    return;
+  }
+  const html = viajeros.map(v => `
+    <div style="border:1px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:8px">
+      <strong>${v.nombre} ${v.ap_paterno||''} ${v.ap_materno||''}</strong>
+      ${v.es_titular ? '<span style="background:#d4f7ef;color:#0a7a65;padding:2px 8px;border-radius:99px;font-size:11px;margin-left:6px">titular</span>' : ''}
+      <div style="font-size:13px;color:#666;margin-top:4px">
+        📧 ${v.correo||'—'} · 📱 ${v.whatsapp||'—'}<br>
+        🎂 ${v.fecha_nacimiento||'—'} · 🌍 ${v.nacionalidad||'—'}<br>
+        ${v.alergias ? '⚠️ '+v.alergias : ''}
+      </div>
+    </div>
+  `).join('');
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:24px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0">👤 Viajeros — Grupo ${codigo}</h3>
+        <button onclick="this.closest('[style*=fixed]').remove()"
+          style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
+      </div>
+      ${html}
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+async function eliminarGrupo(grupoId, codigo) {
+  const miembros = (window._admReservaciones||[]).filter(r => r.grupo_id === grupoId);
+  const msg = miembros.length
+    ? `⚠️ El grupo ${codigo} tiene ${miembros.length} reservación(es) vinculada(s).\n\nSolo se eliminará el grupo, las reservaciones se conservan.\n\n¿Continuar?`
+    : `¿Eliminar el grupo ${codigo}?`;
+  if (!confirm(msg)) return;
+  const { error } = await sb.from('grupos').delete().eq('id', grupoId);
+  if (error) { alert('Error: ' + error.message); return; }
+  alert(`🗑️ Grupo ${codigo} eliminado.`);
+  loadGrupos();
 }
