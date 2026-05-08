@@ -42,11 +42,18 @@ export default async function handler(req, res) {
     const devData     = devRes.status === 200 ? await devRes.json()     : {};
     const countryData = countryRes.status === 200 ? await countryRes.json() : {};
 
-    const tsArray = Array.isArray(tsData.data) ? tsData.data
-      : Array.isArray(tsData) ? tsData : [];
+    const tsArray = tsData?.data?.groups?.all
+      || tsData?.data?.timeseries
+      || (Array.isArray(tsData.data) ? tsData.data : [])
+      || [];
 
-    const pageviews = tsArray.reduce((s, d) => s + (d.pageviews || 0), 0);
-    const visitors  = tsArray.reduce((s, d) => s + (d.visitors  || 0), 0);
+    const pageviews = tsArray.reduce((s, d) =>
+      s + (d.pageviews || d.total || d.count || 0), 0);
+    const visitors = tsArray.reduce((s, d) =>
+      s + (d.visitors || d.unique || d.total || 0), 0);
+
+    console.log('tsArray length:', tsArray.length);
+    console.log('first item:', JSON.stringify(tsArray[0]));
 
     const pages = (pagesData.data || []).map(p => ({
       path: p.path || p.page || '/',
