@@ -1968,11 +1968,12 @@ async function loadAnalytics() {
           <div style="display:flex;justify-content:space-between;
             padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px">
             <span>${p.path}</span>
-            <span style="color:#0a9e88;font-weight:600">${p.views.toLocaleString('es-MX')}</span>
+            <span style="color:#0a9e88;font-weight:600">
+              ${p.views.toLocaleString('es-MX')}
+            </span>
           </div>`).join('');
     } else {
-      document.getElementById('an-top-pages').innerHTML =
-        '<p style="color:#aaa;font-size:13px">Sin datos aún</p>';
+      document.getElementById('an-top-pages').closest('.section-card').style.display = 'none';
     }
     if (data.devices?.length) {
       document.getElementById('an-devices').innerHTML =
@@ -1988,8 +1989,7 @@ async function loadAnalytics() {
             </div>
           </div>`).join('');
     } else {
-      document.getElementById('an-devices').innerHTML =
-        '<p style="color:#aaa;font-size:13px">Sin datos aún</p>';
+      document.getElementById('an-devices').closest('.section-card').style.display = 'none';
     }
     if (data.countries?.length) {
       document.getElementById('an-countries').innerHTML =
@@ -2000,8 +2000,7 @@ async function loadAnalytics() {
             <span style="color:#0a9e88;font-weight:600">${c.visitors.toLocaleString('es-MX')}</span>
           </div>`).join('');
     } else {
-      document.getElementById('an-countries').innerHTML =
-        '<p style="color:#aaa;font-size:13px">Sin datos aún</p>';
+      document.getElementById('an-countries').closest('.section-card').style.display = 'none';
     }
   } catch(e) {
     document.getElementById('an-top-pages').innerHTML =
