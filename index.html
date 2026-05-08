@@ -30,6 +30,7 @@
 <script src="https://js.stripe.com/v3/"></script>
 <link rel="stylesheet" href="/css/styles.css">
 <link rel="manifest" href="/manifest.json">
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 <div class="rainbow-bar"></div>
@@ -595,6 +596,7 @@
     <button class="admin-nav-btn" data-tab="comisiones" onclick="switchAdminTab('comisiones')">💳 Comisiones</button>
     <button class="admin-nav-btn" data-tab="configuracion" onclick="switchAdminTab('configuracion')">⚙️ Config</button>
     <button class="admin-nav-btn" data-tab="auditoria" onclick="switchAdminTab('auditoria')">🔍 Auditoría</button>
+    <button class="admin-nav-btn" data-tab="analytics" onclick="switchAdminTab('analytics')">📊 Analytics</button>
   </div>
   <div class="admin-content">
 
@@ -950,6 +952,50 @@
       <div id="auditoria-resultados"></div>
       <div id="qa-area" style="display:none;margin-top:28px;padding-top:20px;border-top:2px solid #e8f4f5;">
         <div id="qa-resultados"></div>
+      </div>
+    </div>
+    </div>
+
+    <div class="admin-section" id="admin-section-analytics">
+    <div class="adm-sec">
+      <h2 style="margin:0 0 20px">📊 Analytics del sitio</h2>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px">
+        <div class="section-card" style="text-align:center;padding:20px">
+          <div style="font-size:28px;font-weight:700;color:#0a9e88" id="an-pageviews">—</div>
+          <div style="font-size:13px;color:#666;margin-top:4px">Páginas vistas</div>
+          <div style="font-size:11px;color:#aaa">últimos 30 días</div>
+        </div>
+        <div class="section-card" style="text-align:center;padding:20px">
+          <div style="font-size:28px;font-weight:700;color:#0a9e88" id="an-visitors">—</div>
+          <div style="font-size:13px;color:#666;margin-top:4px">Visitantes únicos</div>
+          <div style="font-size:11px;color:#aaa">últimos 30 días</div>
+        </div>
+        <div class="section-card" style="text-align:center;padding:20px">
+          <div style="font-size:28px;font-weight:700;color:#0a9e88" id="an-conversion">—</div>
+          <div style="font-size:13px;color:#666;margin-top:4px">Tasa conversión</div>
+          <div style="font-size:11px;color:#aaa">reservas / visitantes</div>
+        </div>
+        <div class="section-card" style="text-align:center;padding:20px">
+          <div style="font-size:28px;font-weight:700;color:#0a9e88" id="an-reservas">—</div>
+          <div style="font-size:13px;color:#666;margin-top:4px">Reservas totales</div>
+          <div style="font-size:11px;color:#aaa">en Supabase</div>
+        </div>
+      </div>
+
+      <div class="section-card" style="margin-bottom:16px">
+        <h3 style="margin:0 0 12px;font-size:15px">📄 Páginas más vistas</h3>
+        <div id="an-top-pages">Cargando...</div>
+      </div>
+
+      <div class="section-card" style="margin-bottom:16px">
+        <h3 style="margin:0 0 12px;font-size:15px">📱 Dispositivos</h3>
+        <div id="an-devices">Cargando...</div>
+      </div>
+
+      <div class="section-card">
+        <h3 style="margin:0 0 12px;font-size:15px">🌎 Países</h3>
+        <div id="an-countries">Cargando...</div>
       </div>
     </div>
     </div>

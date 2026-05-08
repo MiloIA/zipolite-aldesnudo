@@ -58,6 +58,7 @@ function switchAdminTab(tabId) {
   if (tabId === 'cotizaciones') loadCotizaciones();
   if (tabId === 'finanzas') loadFinanzas();
   if (tabId === 'comisiones') loadComisiones();
+  if (tabId === 'analytics') loadAnalytics();
 }
 
 function openAdmin() {
@@ -1922,4 +1923,90 @@ async function eliminarGrupo(grupoId, codigo) {
   if (error) { alert('Error: ' + error.message); return; }
   alert(`🗑️ Grupo ${codigo} eliminado.`);
   loadGrupos();
+}
+
+// ---- ANALYTICS ----
+async function loadAnalytics() {
+  // 1. Reservas propias de Supabase (últimos 30 días)
+  const { data: reservas } = await sb
+    .from('reservaciones')
+    .select('id, created_at, estado')
+    .gte('created_at', new Date(Date.now() - 30*24*60*60*1000).toISOString());
+
+  const totalReservas = reservas?.length || 0;
+  document.getElementById('an-reservas').textContent = totalReservas;
+
+  // 2. Datos de Vercel Analytics vía endpoint propio
+  try {
+    const res = await fetch('/api/analytics');
+    const data = await res.json();
+
+    if (data.pageviews) {
+      document.getElementById('an-pageviews').textContent =
+        data.pageviews.toLocaleString('es-MX');
+    }
+    if (data.visitors) {
+      document.getElementById('an-visitors').textContent =
+        data.visitors.toLocaleString('es-MX');
+      const conv = totalReservas > 0 && data.visitors > 0
+        ? ((totalReservas / data.visitors) * 100).toFixed(1) + '%'
+        : '—';
+      document.getElementById('an-conversion').textContent = conv;
+    }
+    if (data.message) {
+      document.getElementById('an-pageviews').textContent = '⚠️';
+      document.getElementById('an-visitors').textContent = '⚠️';
+      document.getElementById('an-top-pages').innerHTML =
+        `<p style="color:#888;font-size:13px">${data.message}</p>`;
+      document.getElementById('an-devices').innerHTML = '';
+      document.getElementById('an-countries').innerHTML = '';
+      return;
+    }
+    if (data.pages?.length) {
+      document.getElementById('an-top-pages').innerHTML =
+        data.pages.map(p => `
+          <div style="display:flex;justify-content:space-between;
+            padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px">
+            <span>${p.path}</span>
+            <span style="color:#0a9e88;font-weight:600">${p.views.toLocaleString('es-MX')}</span>
+          </div>`).join('');
+    } else {
+      document.getElementById('an-top-pages').innerHTML =
+        '<p style="color:#aaa;font-size:13px">Sin datos aún</p>';
+    }
+    if (data.devices?.length) {
+      document.getElementById('an-devices').innerHTML =
+        data.devices.map(d => `
+          <div style="display:flex;justify-content:space-between;align-items:center;
+            padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px">
+            <span>${d.type === 'mobile' ? '📱' : d.type === 'desktop' ? '🖥️' : '📟'} ${d.type}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:80px;height:6px;background:#f0f0f0;border-radius:99px">
+                <div style="width:${d.pct}%;height:100%;background:#0a9e88;border-radius:99px"></div>
+              </div>
+              <span style="color:#666">${d.pct}%</span>
+            </div>
+          </div>`).join('');
+    } else {
+      document.getElementById('an-devices').innerHTML =
+        '<p style="color:#aaa;font-size:13px">Sin datos aún</p>';
+    }
+    if (data.countries?.length) {
+      document.getElementById('an-countries').innerHTML =
+        data.countries.map(c => `
+          <div style="display:flex;justify-content:space-between;
+            padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px">
+            <span>${c.flag} ${c.name}</span>
+            <span style="color:#0a9e88;font-weight:600">${c.visitors.toLocaleString('es-MX')}</span>
+          </div>`).join('');
+    } else {
+      document.getElementById('an-countries').innerHTML =
+        '<p style="color:#aaa;font-size:13px">Sin datos aún</p>';
+    }
+  } catch(e) {
+    document.getElementById('an-top-pages').innerHTML =
+      '<p style="color:#e53935;font-size:13px">Error cargando analytics</p>';
+    document.getElementById('an-devices').innerHTML = '';
+    document.getElementById('an-countries').innerHTML = '';
+  }
 }
