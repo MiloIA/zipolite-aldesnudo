@@ -42,6 +42,10 @@ export default async function handler(req, res) {
     const devData     = devRes.status === 200 ? await devRes.json()     : {};
     const countryData = countryRes.status === 200 ? await countryRes.json() : {};
 
+    console.log('pagesData raw:', JSON.stringify(pagesData).slice(0,500));
+    console.log('devData raw:', JSON.stringify(devData).slice(0,500));
+    console.log('countryData raw:', JSON.stringify(countryData).slice(0,500));
+
     const tsArray = tsData?.data?.groups?.all
       || tsData?.data?.timeseries
       || (Array.isArray(tsData.data) ? tsData.data : [])
