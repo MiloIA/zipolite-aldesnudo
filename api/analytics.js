@@ -4,12 +4,13 @@ export default async function handler(req, res) {
   }
 
   const token = process.env.VERCEL_ACCESS_TOKEN;
+  const projectId = process.env.VERCEL_PROJECT_ID;
 
-  if (!token) {
+  if (!token || !projectId) {
     return res.status(200).json({
       pageviews: 0,
       visitors: 0,
-      message: 'Configura VERCEL_ACCESS_TOKEN en variables de entorno'
+      message: 'Configura VERCEL_ACCESS_TOKEN y VERCEL_PROJECT_ID en variables de entorno'
     });
   }
 
@@ -17,6 +18,7 @@ export default async function handler(req, res) {
     const end = new Date();
     const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const params = new URLSearchParams({
+      projectId: process.env.VERCEL_PROJECT_ID,
       from: start.toISOString().split('T')[0],
       to: end.toISOString().split('T')[0],
       interval: '1d',
