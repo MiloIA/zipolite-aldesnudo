@@ -992,7 +992,7 @@ async function aiNota(){
 }
 
 async function loadConfig() {
-  const { data } = await sb.from('configuracion').select('*').limit(1).single();
+  const { data } = await sb.from('configuracion').select('*').limit(1).maybeSingle();
   if (data) {
     if (data.openai_api_key) { oaiKey = data.openai_api_key; document.getElementById('cfg-openai').value = data.openai_api_key; localStorage.setItem('oai_key', data.openai_api_key); }
     if (data.whatsapp_agencia) { document.getElementById('cfg-wa').value = data.whatsapp_agencia; localStorage.setItem('cfg_wa', data.whatsapp_agencia); }
