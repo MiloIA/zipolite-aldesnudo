@@ -8,42 +8,48 @@ export default async function handler(req, res) {
 
   if (!token || !projectId) {
     return res.status(200).json({
-      pageviews: 0,
-      visitors: 0,
-      message: 'Configura VERCEL_ACCESS_TOKEN y VERCEL_PROJECT_ID en variables de entorno'
+      pageviews: 0, visitors: 0,
+      message: 'Configura VERCEL_ACCESS_TOKEN y VERCEL_PROJECT_ID'
     });
   }
 
   try {
     const end = new Date();
     const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const params = new URLSearchParams({
-      projectId: process.env.VERCEL_PROJECT_ID,
-      from: start.toISOString().split('T')[0],
-      to: end.toISOString().split('T')[0],
-      interval: '1d',
-    });
+    const from = start.toISOString().split('T')[0];
+    const to = end.toISOString().split('T')[0];
+
+    const base = `https://vercel.com/api/web-analytics`;
+    const headers = { Authorization: `Bearer ${token}` };
+    const q = `projectId=${projectId}&from=${from}&to=${to}&interval=1d&environment=production`;
 
     const [tsRes, pagesRes, devRes, countryRes] = await Promise.all([
-      fetch(`https://vercel.com/api/web-analytics/timeseries?${params}`,
-        { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`https://vercel.com/api/web-analytics/pages?${params}&limit=5`,
-        { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`https://vercel.com/api/web-analytics/devices?${params}`,
-        { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`https://vercel.com/api/web-analytics/countries?${params}&limit=5`,
-        { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${base}/timeseries?${q}`, { headers }),
+      fetch(`${base}/pages?${q}&limit=5`, { headers }),
+      fetch(`${base}/devices?${q}`, { headers }),
+      fetch(`${base}/countries?${q}&limit=5`, { headers }),
     ]);
 
-    const [tsData, pagesData, devData, countryData] = await Promise.all([
-      tsRes.json(), pagesRes.json(), devRes.json(), countryRes.json()
-    ]);
+    console.log('ts status:', tsRes.status);
+    console.log('pages status:', pagesRes.status);
+    console.log('devices status:', devRes.status);
+    console.log('countries status:', countryRes.status);
 
-    const pageviews = (tsData.data || []).reduce((s, d) => s + (d.pageviews || 0), 0);
-    const visitors  = (tsData.data || []).reduce((s, d) => s + (d.visitors  || 0), 0);
+    const tsData = await tsRes.json();
+    console.log('tsData:', JSON.stringify(tsData).slice(0, 500));
+
+    const pagesData   = tsRes.status === 200 ? await pagesRes.json()   : {};
+    const devData     = devRes.status === 200 ? await devRes.json()     : {};
+    const countryData = countryRes.status === 200 ? await countryRes.json() : {};
+
+    const tsArray = Array.isArray(tsData.data) ? tsData.data
+      : Array.isArray(tsData) ? tsData : [];
+
+    const pageviews = tsArray.reduce((s, d) => s + (d.pageviews || 0), 0);
+    const visitors  = tsArray.reduce((s, d) => s + (d.visitors  || 0), 0);
 
     const pages = (pagesData.data || []).map(p => ({
-      path: p.path || p.page || p.url || '/',
+      path: p.path || p.page || '/',
       views: p.pageviews || p.views || 0,
     }));
 
@@ -61,11 +67,12 @@ export default async function handler(req, res) {
     }));
 
     return res.status(200).json({ pageviews, visitors, pages, devices, countries });
+
   } catch (e) {
+    console.log('Error:', e.message);
     return res.status(200).json({
-      pageviews: 0,
-      visitors: 0,
-      message: 'Error conectando con Vercel Analytics: ' + e.message
+      pageviews: 0, visitors: 0,
+      message: 'Error: ' + e.message
     });
   }
 }
