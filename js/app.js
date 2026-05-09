@@ -819,7 +819,10 @@ function backToStep1() {
   document.getElementById('reg-msg').style.display = 'none';
 }
 async function signInGoogle() {
-  const returnUrl = window.location.href;
+  let returnUrl = window.location.origin + '/';
+  if (curPkg) {
+    returnUrl = window.location.origin + '/?paquete=' + slugify(curPkg.nombre);
+  }
   localStorage.setItem('authReturnUrl', returnUrl);
 
   const { error } = await sb.auth.signInWithOAuth({
