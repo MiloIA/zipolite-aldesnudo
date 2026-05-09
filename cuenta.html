@@ -253,6 +253,12 @@ sb.auth.onAuthStateChange((event, session) => {
     intro.textContent = '📧 Enlace de restablecimiento detectado. Establece tu nueva contraseña.';
     intro.style.display = 'block';
   } else if (event === 'SIGNED_IN' && !currentUser) {
+    const returnUrl = localStorage.getItem('authReturnUrl');
+    if (returnUrl && !returnUrl.includes('cuenta.html')) {
+      localStorage.removeItem('authReturnUrl');
+      window.location.href = returnUrl;
+      return;
+    }
     currentUser = session.user;
     renderUser(session.user);
     loadReservaciones(session.user.email);
@@ -268,6 +274,12 @@ sb.auth.onAuthStateChange((event, session) => {
     return;
   }
   if (!currentUser) {
+    const returnUrl = localStorage.getItem('authReturnUrl');
+    if (returnUrl && !returnUrl.includes('cuenta.html')) {
+      localStorage.removeItem('authReturnUrl');
+      window.location.href = returnUrl;
+      return;
+    }
     currentUser = session.user;
     renderUser(session.user);
     loadReservaciones(session.user.email);

@@ -819,8 +819,16 @@ function backToStep1() {
   document.getElementById('reg-msg').style.display = 'none';
 }
 async function signInGoogle() {
-  const {error} = await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://www.zipolitealdesnudo.com/cuenta.html'}});
-  if (error) showRegMsg('Error: '+error.message, true);
+  const returnUrl = window.location.href;
+  localStorage.setItem('authReturnUrl', returnUrl);
+
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: 'https://www.zipolitealdesnudo.com/cuenta.html'
+    }
+  });
+  if (error) showRegMsg('Error: ' + error.message, true);
 }
 async function checkEmail() {
   const email = document.getElementById('reg-email').value.trim();
