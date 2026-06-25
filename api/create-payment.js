@@ -27,21 +27,30 @@ export default async function handler(req, res) {
 
   const token = Buffer.from(`${process.env.CLIP_API_KEY}:${process.env.CLIP_SECRET_KEY}`).toString('base64');
 
+  const baseUrl = 'https://zipolitealdesnudo.com';
+
   const payload = {
     amount: monto,
-    currency: 'MXN',
-    description: paquete_nombre || 'Reservación Zipolite al Desnudo',
-    order_id: reservacion_id,
-    redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://zipolitealdesnudo.com'}/pago-confirmado.html?reservacion_id=${reservacion_id}`,
-    customer: { name: nombre, email },
+    purchase_description: paquete_nombre || 'Reservación Zipolite al Desnudo',
+    redirection_url: {
+      success: `${baseUrl}/pago-confirmado.html?reservacion_id=${reservacion_id}&status=paid`,
+      error:   `${baseUrl}/pago-confirmado.html?reservacion_id=${reservacion_id}&status=error`,
+      default: `${baseUrl}/pago-confirmado.html?reservacion_id=${reservacion_id}&status=pending`,
+    },
+    webhook_url: `${baseUrl}/api/clip-webhook`,
+    metadata: {
+      external_reference: reservacion_id,
+      nombre: nombre || '',
+      email:  email  || '',
+    },
   };
 
   const clipRes = await fetch('https://api-gw.payclip.com/checkout', {
     method: 'POST',
     headers: {
       'Authorization': `Basic ${token}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      'Content-Type':  'application/json',
+      'Accept':        'application/json',
     },
     body: JSON.stringify(payload),
   });
@@ -53,5 +62,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Error al crear pago en Clip', detail: clipData });
   }
 
-  return res.status(200).json({ checkout_url: clipData.checkout_url || clipData.payment_url });
+  return res.status(200).json({ checkout_url: clipData.payment_request_url });
 }

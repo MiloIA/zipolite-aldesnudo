@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmación de pago — Zipolite al Desnudo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { --red:#E8312A; --dark:#1A3A4A; --sand:#FFFBF2; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--sand); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
+    .card { background:#fff; border-radius:16px; padding:2.5rem; max-width:480px; width:100%; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,0.08); }
+    .icon { font-size:3.5rem; margin-bottom:1rem; }
+    h1 { font-family:'Fraunces',serif; font-size:1.6rem; color:var(--dark); margin-bottom:0.5rem; }
+    .subtitle { color:#666; font-size:0.9rem; line-height:1.6; margin-bottom:1.5rem; }
+    .reservacion-id { background:#f5f5f5; border-radius:8px; padding:0.75rem 1rem; font-family:monospace; font-size:0.85rem; color:var(--dark); margin-bottom:1.5rem; }
+    .btn { display:inline-block; background:var(--dark); color:#fff; padding:0.85rem 2rem; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.9rem; margin-top:0.5rem; }
+    .btn-wa { background:#25D366; margin-left:0.5rem; }
+    .loading { color:#999; font-size:0.9rem; margin-top:1rem; }
+    .error-card h1 { color:var(--red); }
+    .pending-card h1 { color:#F5831F; }
+  </style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="loading">Verificando tu pago...</div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
+  const SUPABASE_ANON_KEY = document.currentScript.dataset.key || '';
+
+  const params = new URLSearchParams(window.location.search);
+  const reservacionId = params.get('reservacion_id');
+  const status = params.get('status');
+  const card = document.getElementById('card');
+
+  const SUPABASE_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function init() {
+    if (!reservacionId) {
+      renderError('No se encontró tu reservación. Contacta por WhatsApp.');
+      return;
+    }
+
+    const { data: reserva } = await sb
+      .from('reservaciones')
+      .select('id, nombre, paquete_nombre, anticipo')
+      .eq('id', reservacionId)
+      .maybeSingle();
+
+    if (status === 'paid') {
+      renderSuccess(reserva);
+    } else if (status === 'error') {
+      renderError('Hubo un problema con tu pago. Intenta de nuevo o contáctanos.');
+    } else {
+      renderPending(reserva);
+    }
+  }
+
+  function renderSuccess(reserva) {
+    const shortId = reserva ? reserva.id.substring(0,8).toUpperCase() : '—';
+    const nombre = reserva ? reserva.nombre : '';
+    const paquete = reserva ? reserva.paquete_nombre : '';
+    card.innerHTML = `
+      <div class="icon">🌊</div>
+      <h1>¡Pago recibido, ${nombre}!</h1>
+      <p class="subtitle">Tu anticipo para <strong>${paquete}</strong> fue procesado exitosamente. En breve recibirás un correo de confirmación.</p>
+      <div class="reservacion-id">Reservación # ${shortId}</div>
+      <a href="/" class="btn">Ver mis paquetes</a>
+      <a href="https://wa.me/529582199953" class="btn btn-wa">WhatsApp</a>
+    `;
+  }
+
+  function renderError(msg) {
+    card.className = 'card error-card';
+    card.innerHTML = `
+      <div class="icon">❌</div>
+      <h1>Algo salió mal</h1>
+      <p class="subtitle">${msg}</p>
+      <a href="https://wa.me/529582199953" class="btn btn-wa">Contactar por WhatsApp</a>
+    `;
+  }
+
+  function renderPending(reserva) {
+    const shortId = reserva ? reserva.id.substring(0,8).toUpperCase() : '—';
+    card.className = 'card pending-card';
+    card.innerHTML = `
+      <div class="icon">⏳</div>
+      <h1>Pago en proceso</h1>
+      <p class="subtitle">Tu pago está siendo verificado. Te notificaremos en cuanto se confirme.</p>
+      <div class="reservacion-id">Reservación # ${shortId}</div>
+      <a href="https://wa.me/529582199953" class="btn btn-wa">Confirmar por WhatsApp</a>
+    `;
+  }
+
+  init();
+</script>
+</body>
+</html>
