@@ -6,7 +6,6 @@
 <title>Completa tu pago — Zipolite al Desnudo</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://js.stripe.com/v3/"></script>
 <style>
 :root{--red:#E8312A;--orange:#F5831F;--yellow:#FFCA28;--green:#4CAF50;--teal:#00BCD4;--purple:#9C27B0;--ocean:#0097A7;--sand:#FFFBF2;--sky:#E0F7FA;--light:#F0FEFF;--dark:#1A3A4A;--white:#FFFFFF;}
 *{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
@@ -429,54 +428,20 @@ async function handleCardPayment() {
       body: JSON.stringify({
         monto: reserva.anticipo,
         paquete_id: reserva.paquete_id,
-        reservacion_id: reserva.id
+        reservacion_id: reserva.id,
+        paquete_nombre: reserva.paquete_nombre || '',
+        nombre: reserva.nombre || '',
+        email: reserva.email || ''
       })
     });
     const data = await res.json();
-    if (!res.ok || !data.clientSecret) throw new Error(data.error || 'No se pudo iniciar el pago');
-    clientSecret = data.clientSecret;
+    if (!res.ok || !data.checkout_url) throw new Error(data.error || 'No se pudo iniciar el pago');
+    window.location.href = data.checkout_url;
   } catch (err) {
     showCardError(btn, errorEl, err.message);
     return;
   }
 
-  // 2. Confirm card payment with Stripe
-  const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
-    payment_method: { card: cardElement }
-  });
-
-  if (error) {
-    showCardError(btn, errorEl, error.message);
-    return;
-  }
-
-  if (paymentIntent.status === 'succeeded') {
-    // 3. Update reservation status in Supabase
-    await sb
-      .from('reservaciones')
-      .update({ estado: 'confirmado', stripe_payment_id: paymentIntent.id })
-      .eq('id', reserva.id);
-
-    // 4. Send confirmation email/notification
-    console.log('Llamando send-confirmation...');
-    fetch('/api/send-confirmation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        reservacion_id: reserva.id,
-        paquete_nombre: reserva.paquete,
-        metodo_pago: reserva.metodo,
-        total: reserva.total,
-        anticipo: reserva.anticipo,
-        bank_name: localStorage.getItem('bank_name') || '',
-        bank_clabe: localStorage.getItem('bank_clabe') || '',
-      }),
-    }).then(async r => { const data = await r.json(); console.log('Respuesta:', data); })
-      .catch(e => console.error('send-confirmation:', e));
-
-    sessionStorage.removeItem('reservacion_pendiente');
-    showSuccess();
-  }
 }
 
 function showCardError(btn, errorEl, msg) {
