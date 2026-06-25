@@ -1,4 +1,3 @@
-import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -18,30 +17,41 @@ export default async function handler(req, res) {
   }
 
   const { data: paquete } = await supabase
-    .from('paquetes')
-    .select('precio')
-    .eq('id', paquete_id)
-    .single();
+    .from('paquetes').select('precio').eq('id', paquete_id).single();
 
   if (!paquete) return res.status(404).json({ error: 'Paquete no encontrado' });
-
-  if (monto < paquete.precio * 0.1) {
+  if (monto < paquete.precio * 0.1)
     return res.status(400).json({ error: 'Monto inválido' });
-  }
-
-  if (!reservacion_id) {
+  if (!reservacion_id)
     return res.status(400).json({ error: 'Falta reservacion_id' });
+
+  const token = Buffer.from(`${process.env.CLIP_API_KEY}:${process.env.CLIP_SECRET_KEY}`).toString('base64');
+
+  const payload = {
+    amount: monto,
+    currency: 'MXN',
+    description: paquete_nombre || 'Reservación Zipolite al Desnudo',
+    order_id: reservacion_id,
+    redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://zipolitealdesnudo.com'}/pago-confirmado.html?reservacion_id=${reservacion_id}`,
+    customer: { name: nombre, email },
+  };
+
+  const clipRes = await fetch('https://api-gw.payclip.com/checkout', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const clipData = await clipRes.json();
+
+  if (!clipRes.ok) {
+    console.error('Clip error:', clipData);
+    return res.status(500).json({ error: 'Error al crear pago en Clip', detail: clipData });
   }
 
-  try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(monto * 100),
-      currency: 'mxn',
-      metadata: { paquete_nombre: paquete_nombre || '', nombre: nombre || '', reservacion_id },
-    });
-    return res.status(200).json({ clientSecret: paymentIntent.client_secret });
-  } catch (e) {
-    return res.status(500).json({ error: e.message });
-  }
+  return res.status(200).json({ checkout_url: clipData.checkout_url || clipData.payment_url });
 }
