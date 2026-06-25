@@ -204,14 +204,14 @@ async function loadBlog() {
 // SQL tabla descuentos (añadir columnas si ya existe):
 // alter table descuentos add column usos_maximos integer default null;
 // alter table descuentos add column usos_actuales integer default 0;
-const STRIPE_RATES = {
-  card: {rate:3.6,  flat:3, months:0},
-  '3':  {rate:8.6,  flat:3, months:3},
-  '6':  {rate:11.1, flat:3, months:6},
-  '9':  {rate:13.6, flat:3, months:9},
-  '12': {rate:16.1, flat:3, months:12},
-  '18': {rate:21.1, flat:3, months:18},
-  '24': {rate:25.1, flat:3, months:24},
+const CLIP_RATES = {
+  card: { rate: 4.18,  flat: 0, months: 0  },
+  '3':  { rate: 9.48,  flat: 0, months: 3  },
+  '6':  { rate: 12.96, flat: 0, months: 6  },
+  '9':  { rate: 17.02, flat: 0, months: 9  },
+  '12': { rate: 18.99, flat: 0, months: 12 },
+  '18': { rate: 26.53, flat: 0, months: 18 },
+  '24': { rate: 35.69, flat: 0, months: 24 },
 };
 const HABITACION_PRECIOS = {
   1: 6400,
@@ -742,7 +742,7 @@ function calcCotizador() {
       lastTotal = montoAnticipo;
     } else {
       bankEl.style.display = 'none';
-      const cfg = STRIPE_RATES[metodo];
+      const cfg = CLIP_RATES[metodo];
       const anticipoGross = grossUp(montoAnticipo, cfg.rate, cfg.flat);
       if (cfg.months === 0) {
         rows += `<div class="cot-row"><span>Comisión bancaria (anticipo)</span><strong>+${fmt(anticipoGross - montoAnticipo)}</strong></div>`;
@@ -763,13 +763,13 @@ function calcCotizador() {
       rows += `<div class="cot-row"><span>Comisión</span><strong style="color:#2e7d32;">Sin comisión ✓</strong></div>`;
     } else {
       bankEl.style.display = 'none';
-      const cfg = STRIPE_RATES[metodo];
+      const cfg = CLIP_RATES[metodo];
       finalTotal = grossUp(base, cfg.rate, cfg.flat);
       if (cfg.months === 0) {
         rows += `<div class="cot-row"><span>Comisión bancaria</span><strong>+${fmt(finalTotal - base)}</strong></div>`;
       } else {
         rows += `<div class="cot-row"><span>Costo de financiamiento</span><strong>+${fmt(finalTotal - base)}</strong></div>`;
-        rows += `<div class="cot-row"><span>Mensualidad</span><strong>${fmt(finalTotal / STRIPE_RATES[metodo].months)} × ${STRIPE_RATES[metodo].months} meses</strong></div>`;
+        rows += `<div class="cot-row"><span>Mensualidad</span><strong>${fmt(finalTotal / CLIP_RATES[metodo].months)} × ${CLIP_RATES[metodo].months} meses</strong></div>`;
       }
     }
     rows += `<div class="cot-row highlight"><span>Total a pagar</span><strong>${fmt(finalTotal)}</strong></div>`;
@@ -790,9 +790,9 @@ function goWhatsApp() {
   if (metodo === 'transfer') {
     payDesc = `Transferencia/Depósito — Total: ${fmt(base)}`;
   } else if (metodo === 'card') {
-    payDesc = `Contado con tarjeta — Total: ${fmt(grossUp(base, STRIPE_RATES.card.rate, STRIPE_RATES.card.flat))}`;
+    payDesc = `Contado con tarjeta — Total: ${fmt(grossUp(base, CLIP_RATES.card.rate, CLIP_RATES.card.flat))}`;
   } else {
-    const cfg = STRIPE_RATES[metodo];
+    const cfg = CLIP_RATES[metodo];
     const total = grossUp(base, cfg.rate, cfg.flat);
     payDesc = `Financiamiento ${cfg.months} meses — ${fmt(total/cfg.months)}/mes — Total: ${fmt(total)}`;
   }
