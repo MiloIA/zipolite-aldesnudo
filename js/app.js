@@ -1330,12 +1330,6 @@ async function submitCotizacion(e) {
     return;
   }
 
-  fetch('/api/notify-cotizacion', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  }).catch(() => {});
-
   document.getElementById('form-cotizacion').reset();
   document.getElementById('cot-otra-wrap').style.display = 'none';
   document.getElementById('cot-otra-ciudad').required = false;
