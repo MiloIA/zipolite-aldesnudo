@@ -828,7 +828,7 @@ async function signInGoogle() {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://www.zipolitealdesnudo.com/cuenta.html'
+      redirectTo: window.location.origin + '/cuenta.html'
     }
   });
   if (error) showRegMsg('Error: ' + error.message, true);
