@@ -11,7 +11,6 @@ export default async function handler(req, res) {
   }
 
   const { monto, paquete_id, paquete_nombre, nombre, email, reservacion_id } = req.body || {};
-  console.log('Body received:', { monto, paquete_id, reservacion_id });
 
   if (!monto || !paquete_id) {
     return res.status(400).json({ error: 'Faltan datos' });
@@ -19,7 +18,6 @@ export default async function handler(req, res) {
 
   const { data: paquete, error: pkgError } = await supabase
     .from('paquetes').select('precio').eq('id', paquete_id).single();
-  console.log('Paquete result:', { paquete, pkgError });
 
   if (!paquete) return res.status(404).json({ error: 'Paquete no encontrado' });
   if (monto < paquete.precio * 0.1)
@@ -27,11 +25,7 @@ export default async function handler(req, res) {
   if (!reservacion_id)
     return res.status(400).json({ error: 'Falta reservacion_id' });
 
-  console.log('CLIP_API_KEY starts with:', process.env.CLIP_API_KEY?.substring(0, 8));
-  console.log('CLIP_SECRET_KEY starts with:', process.env.CLIP_SECRET_KEY?.substring(0, 8));
-
   const token = Buffer.from(`${process.env.CLIP_API_KEY}:${process.env.CLIP_SECRET_KEY}`).toString('base64');
-  console.log('Basic token starts with:', token.substring(0, 20));
 
   const baseUrl = 'https://zipolitealdesnudo.com';
 
@@ -51,8 +45,6 @@ export default async function handler(req, res) {
     },
   };
 
-  console.log('Clip payload:', JSON.stringify(payload));
-
   const clipRes = await fetch('https://api-gw.payclip.com/checkout', {
     method: 'POST',
     headers: {
@@ -64,8 +56,6 @@ export default async function handler(req, res) {
   });
 
   const clipData = await clipRes.json();
-  console.log('Clip response status:', clipRes.status);
-  console.log('Clip response:', JSON.stringify(clipData));
 
   if (!clipRes.ok) {
     console.error('Clip error:', clipData);
