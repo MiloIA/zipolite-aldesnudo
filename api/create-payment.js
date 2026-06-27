@@ -25,6 +25,8 @@ export default async function handler(req, res) {
   if (!reservacion_id)
     return res.status(400).json({ error: 'Falta reservacion_id' });
 
+  console.log('CLIP_API_KEY starts with:', process.env.CLIP_API_KEY?.substring(0, 8));
+
   const token = Buffer.from(`${process.env.CLIP_API_KEY}:${process.env.CLIP_SECRET_KEY}`).toString('base64');
 
   const baseUrl = 'https://zipolitealdesnudo.com';
