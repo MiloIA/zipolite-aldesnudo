@@ -322,7 +322,7 @@ function renderFlow() {
   if (metodo === 'transfer' || metodo === 'transferencia') {
     renderTransfer();
   } else {
-    renderCard();
+    handleCardPayment();
   }
 }
 
@@ -385,31 +385,6 @@ function copyClabe() {
   });
 }
 
-// ── Card / financing flow ─────────────────────────────
-function renderCard() {
-  stripe = Stripe('pk_live_51TTtl8GZiSqY5s2qtJhc06lhXuoCUBFFRNN8kZa7XJtnwpwjaHWnkkXolOEYk5XywllFXXQeD6sAbAIehdTCdt4M00EtP6jfWW');
-  const elements = stripe.elements();
-
-  cardElement = elements.create('card', {
-    style: {
-      base: {
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
-        fontSize: '16px',
-        color: '#1A3A4A',
-        '::placeholder': { color: '#aac4cc' }
-      },
-      invalid: { color: '#E8312A' }
-    }
-  });
-  cardElement.mount('#stripe-card-element');
-
-  const antiLabel = reserva.anticipo
-    ? '$' + Number(reserva.anticipo).toLocaleString('es-MX') + ' MXN'
-    : '—';
-  document.getElementById('btn-pay-amount').textContent = antiLabel;
-
-  document.getElementById('flow-card').style.display = 'block';
-}
 
 async function handleCardPayment() {
   const btn = document.getElementById('btn-pay');
