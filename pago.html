@@ -65,11 +65,11 @@ nav{background:var(--white);padding:14px 40px;display:flex;align-items:center;ju
 .btn-pay:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 30px rgba(232,49,42,0.4);}
 .btn-pay:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
 
-/* ── Stripe element ── */
-#stripe-card-element{border:1.5px solid #dde8ea;border-radius:10px;padding:13px 14px;background:var(--sand);transition:border-color 0.2s;}
-#stripe-card-element.StripeElement--focus{border-color:var(--ocean);background:white;}
-#stripe-card-element.StripeElement--invalid{border-color:var(--red);background:#fff5f5;}
-#stripe-error{color:var(--red);font-size:0.85rem;margin-top:10px;display:none;}
+/* ── Card element ── */
+#card-element{border:1.5px solid #dde8ea;border-radius:10px;padding:13px 14px;background:var(--sand);transition:border-color 0.2s;}
+#card-element.StripeElement--focus{border-color:var(--ocean);background:white;}
+#card-element.StripeElement--invalid{border-color:var(--red);background:#fff5f5;}
+#pay-error{color:var(--red);font-size:0.85rem;margin-top:10px;display:none;}
 .stripe-label{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7a9aaa;margin-bottom:8px;display:block;}
 
 /* ── Success screen ── */
@@ -218,13 +218,13 @@ footer a{color:var(--teal);text-decoration:none;}
   <div id="flow-card" style="display:none;">
     <div class="pay-card">
       <h2>Pago con tarjeta</h2>
-      <label class="stripe-label" for="stripe-card-element">Datos de tarjeta</label>
-      <div id="stripe-card-element"></div>
-      <p id="stripe-error"></p>
+      <label class="stripe-label" for="card-element">Datos de tarjeta</label>
+      <div id="card-element"></div>
+      <p id="pay-error"></p>
       <button class="btn-pay" id="btn-pay" onclick="handleCardPayment()">
         💳 Pagar <span id="btn-pay-amount">—</span>
       </button>
-      <p class="trust-bar">🔒 Pago seguro con Stripe <span class="sep">|</span> Visa · Mastercard · Amex <span class="sep">|</span> 🛡️ Tus datos están protegidos con encriptación SSL</p>
+      <p class="trust-bar">🔒 Pago seguro con Clip <span class="sep">|</span> Visa · Mastercard · Amex <span class="sep">|</span> 🛡️ Tus datos están protegidos con encriptación SSL</p>
     </div>
   </div>
 
@@ -255,7 +255,6 @@ const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
 let reserva = null;
-let stripe = null;
 let cardElement = null;
 
 // ── Init ──────────────────────────────────────────────
@@ -388,7 +387,7 @@ function copyClabe() {
 
 async function handleCardPayment() {
   const btn = document.getElementById('btn-pay');
-  const errorEl = document.getElementById('stripe-error');
+  const errorEl = document.getElementById('pay-error');
   errorEl.style.display = 'none';
 
   btn.disabled = true;
