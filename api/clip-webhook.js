@@ -13,24 +13,24 @@ export default async function handler(req, res) {
   const event = req.body;
   console.log('Clip webhook received:', JSON.stringify(event));
 
-  const status  = event?.resource_status;
-  const refId   = event?.me_reference_id;
-  const clipId  = event?.payment_request_id || event?.transaction_id;
-  const amount  = event?.amount;
+  const eventType = event?.event_type;
+  const refId     = event?.payment_detail?.merch_inv_id;
+  const clipId    = event?.payment_detail?.order_id;
+  const amount    = event?.payment_detail?.amount;
 
   if (!refId) {
-    console.error('Clip webhook: no me_reference_id found', event);
+    console.error('Clip webhook: no merch_inv_id found', event);
     return res.status(200).json({ received: true });
   }
 
-  if (status === 'COMPLETED') {
+  if (eventType === 'REQUEST_COMPLETED') {
     const { error } = await supabase
       .from('reservaciones')
       .update({
         status: 'confirmada',
         metodo_pago: 'card',
         clip_payment_id: clipId,
-        anticipo_pagado: amount,
+        anticipo_pagado: parseFloat(amount),
         updated_at: new Date().toISOString(),
       })
       .eq('id', refId);
