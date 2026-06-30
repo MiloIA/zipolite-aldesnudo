@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     },
   };
 
-  const clipRes = await fetch('https://api-gw.payclip.com/checkout', {
+  const clipRes = await fetch('https://api.payclip.com/v2/checkout', {
     method: 'POST',
     headers: {
       'Authorization': `Basic ${token}`,
