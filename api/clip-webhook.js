@@ -13,17 +13,17 @@ export default async function handler(req, res) {
   const event = req.body;
   console.log('Clip webhook received:', JSON.stringify(event));
 
-  const status   = event?.resource_status || event?.payment_status || event?.status;
-  const refId    = event?.metadata?.external_reference || event?.external_reference;
-  const clipId   = event?.payment_request_id || event?.payment_id || event?.id;
-  const amount   = event?.amount;
+  const status  = event?.resource_status;
+  const refId   = event?.me_reference_id;
+  const clipId  = event?.payment_request_id || event?.transaction_id;
+  const amount  = event?.amount;
 
   if (!refId) {
-    console.error('Clip webhook: no external_reference found', event);
+    console.error('Clip webhook: no me_reference_id found', event);
     return res.status(200).json({ received: true });
   }
 
-  if (status === 'COMPLETED' || status === 'PAID' || status === 'paid' || status === 'APPROVED') {
+  if (status === 'COMPLETED') {
     const { error } = await supabase
       .from('reservaciones')
       .update({
