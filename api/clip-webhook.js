@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     const { error } = await supabase
       .from('reservaciones')
       .update({
-        status: 'confirmada',
+        estado: 'confirmada',
         metodo_pago: 'card',
         clip_payment_id: clipId,
         anticipo_pagado: parseFloat(amount),
