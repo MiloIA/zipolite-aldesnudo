@@ -634,7 +634,7 @@ function mostrarStep3(res, info) {
   const metodoLabel = metodosLabel[info.metodo] || info.metodo;
   let html = `<h3 style="color:#2e7d32;font-family:'Fraunces',serif;font-size:1.4rem;margin-bottom:6px;">✅ ¡Lugar apartado!</h3>
     <p style="font-size:0.82rem;color:#888;margin-bottom:16px;">Tu número de reserva: <strong style="font-size:1rem;color:var(--dark);font-family:monospace;">${shortId}</strong></p>
-    <button onclick="window.location.href='pago.html?reservacion=${res.id}'" style="display:block;width:100%;background:#E8312A;color:#fff;padding:1rem;border-radius:8px;border:none;font-weight:700;font-size:1rem;text-align:center;margin-bottom:1rem;cursor:pointer;">💳 Completar pago →</button>
+      <button id="btn-completar-pago" data-id="${res.id}" style="display:block;width:100%;background:#E8312A;color:#fff;padding:1rem;border-radius:8px;border:none;font-weight:700;font-size:1rem;text-align:center;margin-bottom:1rem;cursor:pointer;">💳 Completar pago →</button>
     <div style="background:#e8f5e9;border-radius:12px;padding:16px;margin-bottom:16px;">
       <p style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">🔐 Tu cuenta</p>
       <p style="font-size:0.83rem;color:#555;margin-bottom:12px;">${info.email}</p>
