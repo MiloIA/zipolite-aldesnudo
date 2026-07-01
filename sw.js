@@ -1,4 +1,4 @@
-const CACHE = 'zipolite-v3';
+const CACHE = 'zipolite-v4';
 const URLS  = ['/index.html', '/cuenta.html', '/pago.html', '/viajeros.html', '/pago-confirmado.html'];
 
 self.addEventListener('install', e => {
