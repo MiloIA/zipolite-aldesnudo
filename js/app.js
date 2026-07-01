@@ -1,7 +1,6 @@
 const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
 const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
-let stripeClient;
 
 // Admin password stored in Vercel env — fetched via meta tag injected at build time
 // For static HTML we use a hash comparison approach
@@ -1070,7 +1069,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const _slugParam = new URLSearchParams(window.location.search).get('paquete');
   if (_slugParam) { pendingSlug = _slugParam; } else { window.scrollTo(0, 0); }
 
-  if (typeof Stripe !== 'undefined') stripeClient = Stripe('pk_live_51TTtl8GZiSqY5s2qtJhc06lhXuoCUBFFRNN8kZa7XJtnwpwjaHWnkkXolOEYk5XywllFXXQeD6sAbAIehdTCdt4M00EtP6jfWW');
   loadAll();
   checkFirstTimeSetup();
   if (sessionStorage.getItem('adminToken')) {
