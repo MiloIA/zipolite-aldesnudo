@@ -14,7 +14,10 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
+  const url = e.request.url;
+  if (url.includes('/_vercel/') || url.includes('vercel-insights') || url.includes('analytics')) {
+    return;
+  }
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request))
   );
