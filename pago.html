@@ -216,15 +216,18 @@ footer a{color:var(--teal);text-decoration:none;}
 
   <!-- Card / financing flow -->
   <div id="flow-card" style="display:none;">
-    <div class="pay-card">
-      <h2>Pago con tarjeta</h2>
-      <label class="stripe-label" for="card-element">Datos de tarjeta</label>
-      <div id="card-element"></div>
-      <p id="pay-error"></p>
-      <button class="btn-pay" id="btn-pay" onclick="handleCardPayment()">
-        💳 Pagar <span id="btn-pay-amount">—</span>
+    <div style="text-align:center; padding: 1.5rem 0;">
+      <p style="font-size:0.95rem; color:#555; margin-bottom:1.5rem; line-height:1.6;">
+        Serás redirigido a <strong>Clip</strong> para completar tu pago de forma segura.<br>
+        <span style="font-size:0.82rem; color:#888;">Tu reservación ya está apartada.</span>
+      </p>
+      <button onclick="handleCardPayment()" id="clip-pay-btn"
+        style="background:#E8312A; color:#fff; border:none; padding:1rem 2.5rem; border-radius:8px; font-size:1rem; font-weight:700; cursor:pointer; width:100%; max-width:320px; display:block; margin:0 auto;">
+        🔒 Pagar con Clip
       </button>
-      <p class="trust-bar">🔒 Pago seguro con Clip <span class="sep">|</span> Visa · Mastercard · Amex <span class="sep">|</span> 🛡️ Tus datos están protegidos con encriptación SSL</p>
+      <p style="font-size:0.72rem; color:#aaa; margin-top:1rem;">
+        Pago 100% seguro · Todas las tarjetas · MSI disponible
+      </p>
     </div>
   </div>
 
@@ -321,7 +324,7 @@ function renderFlow() {
   if (metodo === 'transfer' || metodo === 'transferencia') {
     renderTransfer();
   } else {
-    handleCardPayment();
+    document.getElementById('flow-card').style.display = 'block';
   }
 }
 
@@ -386,12 +389,8 @@ function copyClabe() {
 
 
 async function handleCardPayment() {
-  const btn = document.getElementById('btn-pay');
-  const errorEl = document.getElementById('pay-error');
-  errorEl.style.display = 'none';
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Procesando...';
+  const btn = document.getElementById('clip-pay-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Redirigiendo a Clip...'; }
 
   // 1. Create payment intent via backend
   let clientSecret;
