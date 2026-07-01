@@ -1,5 +1,5 @@
-const CACHE = 'zipolite-v1';
-const URLS  = ['/index.html', '/cuenta.html', '/pago.html', '/viajeros.html'];
+const CACHE = 'zipolite-v3';
+const URLS  = ['/index.html', '/cuenta.html', '/pago.html', '/viajeros.html', '/pago-confirmado.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(URLS)));
