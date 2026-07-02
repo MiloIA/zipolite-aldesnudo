@@ -601,7 +601,8 @@ async function confirmarReserva() {
       fecha_fin: curPkg.fecha_fin || '',
     }),
   }).catch(e => console.error('send-confirmation:', e));
-  await crearCuentaAuth(nombre, email, whatsapp);
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) crearCuentaAuth(nombre, email, whatsapp);
   mostrarStep3(data, {nombre, email, p, metodo, cuanto, anticipo});
 }
 
