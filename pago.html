@@ -261,18 +261,26 @@ let reserva = null;
 let cardElement = null;
 
 // ── Init ──────────────────────────────────────────────
-(function init() {
-  const raw = sessionStorage.getItem('reservacion_pendiente');
-  if (!raw) {
-    window.location.href = 'index.html';
-    return;
-  }
+(async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const urlReservacionId = params.get('reservacion');
 
-  try {
-    reserva = JSON.parse(raw);
-  } catch (e) {
-    window.location.href = 'index.html';
-    return;
+  let raw = sessionStorage.getItem('reservacion_pendiente');
+
+  if (!raw && urlReservacionId) {
+    const { data, error } = await supabase
+      .from('reservaciones')
+      .select('*')
+      .eq('id', urlReservacionId)
+      .single();
+    if (error || !data) { window.location.href = 'index.html'; return; }
+    reserva = data;
+    reserva.metodo = data.metodo_pago;
+    reserva.anticipo = data.anticipo;
+  } else if (raw) {
+    try { reserva = JSON.parse(raw); } catch { window.location.href = 'index.html'; return; }
+  } else {
+    window.location.href = 'index.html'; return;
   }
 
   populateSummary();
