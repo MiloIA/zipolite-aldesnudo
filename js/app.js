@@ -664,7 +664,11 @@ function mostrarStep3(res, info) {
   const waMsg = encodeURIComponent(`Hola, acabo de hacer una reserva. Paquete: ${curPkg.nombre}, Personas: ${info.p}, No. reserva: ${shortId}, Nombre: ${info.nombre}, Pago: ${metodoLabel}, Total: ${fmt(lastTotal)}, Pago hoy: ${fmt(info.anticipo)}`);
   html += `<button id="btn-whatsapp-step3" class="pay-btn" style="margin-top:18px;background:linear-gradient(135deg,#25D366,#128C7E);" onclick="window.open('https://wa.me/${waNum}?text=${waMsg}','_blank')">💬 Avisar por WhatsApp</button>`;
   document.getElementById('modal-step-3').innerHTML = html;
-  document.getElementById('btn-completar-pago').addEventListener('click', function() { window.location.href = 'pago.html?reservacion=' + this.dataset.id; });
+  const btnPago = document.getElementById('btn-completar-pago');
+  if (btnPago) btnPago.addEventListener('click', function(e) {
+    e.stopPropagation();
+    window.location.href = 'pago.html?reservacion=' + this.dataset.id;
+  });
   if (info.metodo !== 'transfer') document.getElementById('btn-whatsapp-step3').style.display = 'none';
   document.getElementById('modal-step-2').style.display = 'none';
   document.getElementById('modal-step-3').style.display = 'block';
