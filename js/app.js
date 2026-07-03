@@ -604,7 +604,7 @@ async function confirmarReserva() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) crearCuentaAuth(nombre, email, whatsapp);
   if (metodo === 'transfer' || metodo === 'transferencia') {
-    mostrarStep3(data, {nombre, email, p:personas, metodo, cuanto, anticipo});
+    mostrarStep3(data, {nombre, email, p, metodo, cuanto, anticipo});
   } else {
     // Tarjeta o financiamiento — llamar Clip directo
     try {
