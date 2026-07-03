@@ -603,7 +603,31 @@ async function confirmarReserva() {
   }).catch(e => console.error('send-confirmation:', e));
   const { data: { session } } = await sb.auth.getSession();
   if (!session) crearCuentaAuth(nombre, email, whatsapp);
-  mostrarStep3(data, {nombre, email, p, metodo, cuanto, anticipo});
+  if (metodo === 'transfer' || metodo === 'transferencia') {
+    mostrarStep3(data, {nombre, email, p:personas, metodo, cuanto, anticipo});
+  } else {
+    // Tarjeta o financiamiento — llamar Clip directo
+    try {
+      const clipRes = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          monto: anticipo,
+          paquete_id: curPkg.id,
+          paquete_nombre: curPkg.nombre,
+          nombre,
+          email,
+          reservacion_id: data.id
+        })
+      });
+      const clipData = await clipRes.json();
+      if (!clipRes.ok || !clipData.checkout_url) throw new Error(clipData.error || 'Error Clip');
+      window.location.href = clipData.checkout_url;
+    } catch(err) {
+      document.getElementById('reserva-error').textContent = 'Error al iniciar pago: ' + err.message;
+      resetBtn();
+    }
+  }
 }
 
 async function crearCuentaAuth(nombre, email, whatsapp) {
