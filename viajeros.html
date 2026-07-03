@@ -639,17 +639,39 @@ async function submitTravelers() {
     return;
   }
 
-  try {
-    const contractRes = await fetch('/api/generate-contract', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reservacion_id: reserva.id }),
-    });
-    const contractData = await contractRes.json();
-    console.log('CONTRACT RESULT:', contractData);
-  } catch (e) {
-    console.error('generate-contract:', e);
-  }
+    try {
+      const contractRes = await fetch('/api/generate-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reservacion_id: reserva.id })
+      });
+      const contractData = await contractRes.json();
+      console.log('CONTRACT RESULT:', contractData);
+
+      // Send confirmation email with contract PDF
+      if (contractData.url) {
+        await fetch('/api/confirm-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reservacion_id: reserva.id,
+            paquete_nombre: reserva.paquete_nombre,
+            nombre: reserva.nombre,
+            email: reserva.email,
+            whatsapp: reserva.whatsapp,
+            personas: reserva.personas,
+            metodo_pago: reserva.metodo_pago,
+            total: reserva.total,
+            anticipo: reserva.anticipo,
+            fecha_inicio: reserva.fecha_inicio,
+            fecha_fin: reserva.fecha_fin,
+            contrato_url: contractData.url
+          })
+        }).catch(e => console.error('confirm-payment:', e));
+      }
+    } catch (e) {
+      console.error('generate-contract:', e);
+    }
 
   sessionStorage.setItem('reservacion_pendiente', JSON.stringify({
     id: reserva.id,
