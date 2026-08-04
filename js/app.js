@@ -584,7 +584,7 @@ async function confirmarReserva() {
     estado: 'pendiente'
   }]).select().single();
   if (error) { errEl.textContent = 'Error al guardar reserva: ' + error.message; errEl.style.display = 'block'; resetBtn(); return; }
-  fetch('/api/send-confirmation', {
+  if (metodo === 'transfer' || metodo === 'transferencia') fetch('/api/send-confirmation', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
