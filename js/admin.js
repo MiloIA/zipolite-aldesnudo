@@ -1,3 +1,7 @@
+const ADMIN_SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
+const ADMIN_SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
+const adminSB = window.supabase.createClient(ADMIN_SB_URL, ADMIN_SB_KEY);
+
 // ---- ADMIN AUTH ----
 function openAdminLogin() {
   document.getElementById('admin-login').classList.add('open');
@@ -2016,7 +2020,7 @@ async function crmCargar() {
   const temp = document.getElementById('crm-filtro-temp')?.value || '';
   const buscar = document.getElementById('crm-buscar')?.value?.toLowerCase() || '';
 
-  let query = window.supabase.from('contactos').select(`
+  let query = adminSB.from('contactos').select(`
     id, nombre, email, whatsapp, telegram_chat_id,
     origen, estado_crm, temperatura, proxima_accion,
     notas, created_at, updated_at
@@ -2086,7 +2090,7 @@ async function crmAbrirModal(contacto) {
 
   nombre.textContent = contacto.nombre || 'Sin nombre';
 
-  const { data: interacciones } = await window.supabase
+  const { data: interacciones } = await adminSB
     .from('interacciones')
     .select('*')
     .eq('contacto_id', contacto.id)
@@ -2147,7 +2151,7 @@ async function crmGuardarContacto(id) {
   const temp = document.getElementById('crm-edit-temp')?.value;
   const notas = document.getElementById('crm-edit-notas')?.value;
 
-  await window.supabase.from('contactos').update({
+  await adminSB.from('contactos').update({
     estado_crm: estado,
     temperatura: temp,
     notas
