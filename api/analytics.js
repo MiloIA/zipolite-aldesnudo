@@ -3,13 +3,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const token = process.env.VERCEL_ACCESS_TOKEN;
+  const token = process.env.VERCEL_ACCESS_TOKEN_2;
   const projectId = process.env.VERCEL_PROJECT_ID;
 
   if (!token || !projectId) {
     return res.status(200).json({
       pageviews: 0, visitors: 0,
-      message: 'Configura VERCEL_ACCESS_TOKEN y VERCEL_PROJECT_ID'
+      message: 'Configura VERCEL_ACCESS_TOKEN_2 y VERCEL_PROJECT_ID'
     });
   }
 
