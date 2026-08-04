@@ -1,12 +1,4 @@
-const adminSB = (() => {
-  if (window._adminSB) return window._adminSB;
-  const url = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
-  const key = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
-  window._adminSB = window.supabase.createClient(url, key, {
-    auth: { storageKey: 'admin-crm-session', autoRefreshToken: false, persistSession: false }
-  });
-  return window._adminSB;
-})();
+const adminSB = window.sb || sb;
 
 // ---- ADMIN AUTH ----
 function openAdminLogin() {

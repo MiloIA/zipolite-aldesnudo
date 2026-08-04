@@ -1,6 +1,7 @@
 const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
 const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
+window.sb = sb;
 
 // Admin password stored in Vercel env — fetched via meta tag injected at build time
 // For static HTML we use a hash comparison approach
