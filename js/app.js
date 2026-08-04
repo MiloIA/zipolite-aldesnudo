@@ -1107,7 +1107,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       try {
-        const res = await fetch('/api/admin-verify', {
+        const res = await fetch('/api/admin-auth?action=verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),

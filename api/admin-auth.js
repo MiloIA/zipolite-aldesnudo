@@ -19,9 +19,7 @@ const supabase = createClient(
 
 const TOKEN_TTL = 8 * 60 * 60 * 1000; // 8 h
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
-
+async function handleLogin(req, res) {
   // Obtener IP
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
 
@@ -66,4 +64,39 @@ export default async function handler(req, res) {
   await supabase.from('admin_sessions').insert({ token, expires_at });
 
   return res.status(200).json({ success: true, token });
+}
+
+async function handleVerify(req, res) {
+  const { token } = req.body;
+
+  if (!token || typeof token !== 'string' || token.length !== 64 || !/^[a-f0-9]+$/.test(token)) {
+    return res.status(400).json({ valid: false, error: 'Token inválido' });
+  }
+
+  const now = new Date().toISOString();
+
+  // Purge expired tokens
+  await supabase.from('admin_sessions').delete().lt('expires_at', now);
+
+  const { data } = await supabase
+    .from('admin_sessions')
+    .select('expires_at')
+    .eq('token', token)
+    .single();
+
+  if (data && data.expires_at > now) {
+    return res.status(200).json({ valid: true });
+  }
+  return res.status(200).json({ valid: false });
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  const action = new URL(req.url, 'http://localhost').searchParams.get('action') || req.body?.action;
+
+  if (action === 'login') return handleLogin(req, res);
+  if (action === 'verify') return handleVerify(req, res);
+
+  return res.status(400).json({ error: 'Acción inválida. Usa ?action=login o ?action=verify' });
 }

@@ -13,7 +13,7 @@ async function checkAdminPwd() {
   const pwd = document.getElementById('admin-pwd').value;
   if (!pwd) return;
   try {
-    const res = await fetch('/api/admin-login', {
+    const res = await fetch('/api/admin-auth?action=login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: pwd })
@@ -1659,7 +1659,7 @@ async function runQA() {
   // ── FASE 1: Verificación estática ──────────────────────────────────────
 
   const endpoints = [
-    '/api/admin-verify',
+    '/api/admin-auth?action=verify',
     '/api/send-notification',
     '/api/generate-contract',
     '/api/confirm-payment',
