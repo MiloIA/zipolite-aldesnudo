@@ -32,6 +32,18 @@ REGLAS:
 - Si pide hablar con un asesor o tienes dudas que no puedes resolver, di: "Voy a conectarte con un asesor ahora mismo 🙌" y termina con ESCALAR_ASESOR
 - Nunca inventes precios ni fechas que no estén en este prompt`;
 
+  if (!process.env.ANTHROPIC_API_KEY) {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: '¡Hola! Soy Mateo 🌊 Tu asesor de viajes LGBT+ a Zipolite.  Visita zipolitealdesnudo.com para ver nuestros paquetes.'
+      })
+    });
+    return res.status(200).end();
+  }
+
   try {
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
