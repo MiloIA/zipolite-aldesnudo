@@ -611,6 +611,7 @@
     <button class="admin-nav-btn" data-tab="comisiones" onclick="switchAdminTab('comisiones')">💳 Comisiones</button>
     <button class="admin-nav-btn" data-tab="configuracion" onclick="switchAdminTab('configuracion')">⚙️ Config</button>
     <button class="admin-nav-btn" data-tab="auditoria" onclick="switchAdminTab('auditoria')">🔍 Auditoría</button>
+    <button class="admin-nav-btn" data-tab="crm" onclick="switchAdminTab('crm')">🎯 CRM</button>
     <button class="admin-nav-btn" data-tab="analytics" onclick="switchAdminTab('analytics')">📊 Analytics</button>
   </div>
   <div class="admin-content">
@@ -1014,6 +1015,74 @@
       </div>
     </div>
     </div>
+
+<div id="admin-section-crm" class="admin-section" style="display:none">
+  <div class="admin-section-header">
+    <h2>🎯 CRM — Pipeline de leads</h2>
+  </div>
+
+  <!-- Filtros -->
+  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+    <select id="crm-filtro-estado" onchange="crmCargar()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border)">
+      <option value="">Todos los estados</option>
+      <option value="lead">Lead</option>
+      <option value="contactado">Contactado</option>
+      <option value="cotizacion">Cotización</option>
+      <option value="seguimiento">Seguimiento</option>
+      <option value="reservado">Reservado</option>
+      <option value="perdido">Perdido</option>
+    </select>
+    <select id="crm-filtro-temp" onchange="crmCargar()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border)">
+      <option value="">Todas las temperaturas</option>
+      <option value="frio">🧊 Frío</option>
+      <option value="tibio">🔥 Tibio</option>
+      <option value="caliente">♨️ Caliente</option>
+    </select>
+    <input id="crm-buscar" type="text" placeholder="Buscar nombre, email, WhatsApp..."
+      oninput="crmCargar()"
+      style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);min-width:250px">
+    <button onclick="crmCargar()" class="btn-primary" style="padding:8px 16px">🔄 Actualizar</button>
+  </div>
+
+  <!-- Kanban -->
+  <div id="crm-kanban" style="display:flex;gap:16px;overflow-x:auto;padding-bottom:16px">
+    <div class="crm-col" data-estado="lead">
+      <div class="crm-col-header">📋 Leads <span class="crm-count" id="crm-count-lead">0</span></div>
+      <div class="crm-col-body" id="crm-col-lead"></div>
+    </div>
+    <div class="crm-col" data-estado="contactado">
+      <div class="crm-col-header">💬 Contactados <span class="crm-count" id="crm-count-contactado">0</span></div>
+      <div class="crm-col-body" id="crm-col-contactado"></div>
+    </div>
+    <div class="crm-col" data-estado="cotizacion">
+      <div class="crm-col-header">📝 Cotización <span class="crm-count" id="crm-count-cotizacion">0</span></div>
+      <div class="crm-col-body" id="crm-col-cotizacion"></div>
+    </div>
+    <div class="crm-col" data-estado="seguimiento">
+      <div class="crm-col-header">🔔 Seguimiento <span class="crm-count" id="crm-count-seguimiento">0</span></div>
+      <div class="crm-col-body" id="crm-col-seguimiento"></div>
+    </div>
+    <div class="crm-col" data-estado="reservado">
+      <div class="crm-col-header">✅ Reservados <span class="crm-count" id="crm-count-reservado">0</span></div>
+      <div class="crm-col-body" id="crm-col-reservado"></div>
+    </div>
+    <div class="crm-col" data-estado="perdido">
+      <div class="crm-col-header">❌ Perdidos <span class="crm-count" id="crm-count-perdido">0</span></div>
+      <div class="crm-col-body" id="crm-col-perdido"></div>
+    </div>
+  </div>
+
+  <!-- Modal detalle contacto -->
+  <div id="crm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 id="crm-modal-nombre" style="margin:0"></h3>
+        <button onclick="crmCerrarModal()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
+      </div>
+      <div id="crm-modal-body"></div>
+    </div>
+  </div>
+</div>
 
   </div>
 </div>

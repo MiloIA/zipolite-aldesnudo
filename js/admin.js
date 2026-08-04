@@ -2009,3 +2009,191 @@ async function loadAnalytics() {
     document.getElementById('an-countries').innerHTML = '';
   }
 }
+
+// ===================== CRM =====================
+async function crmCargar() {
+  const estado = document.getElementById('crm-filtro-estado')?.value || '';
+  const temp = document.getElementById('crm-filtro-temp')?.value || '';
+  const buscar = document.getElementById('crm-buscar')?.value?.toLowerCase() || '';
+
+  let query = window.supabase.from('contactos').select(`
+    id, nombre, email, whatsapp, telegram_chat_id,
+    origen, estado_crm, temperatura, proxima_accion,
+    notas, created_at, updated_at
+  `).order('updated_at', { ascending: false });
+
+  if (estado) query = query.eq('estado_crm', estado);
+  if (temp) query = query.eq('temperatura', temp);
+
+  const { data: contactos } = await query;
+  if (!contactos) return;
+
+  let filtrados = contactos;
+  if (buscar) {
+    filtrados = contactos.filter(c =>
+      c.nombre?.toLowerCase().includes(buscar) ||
+      c.email?.toLowerCase().includes(buscar) ||
+      c.whatsapp?.includes(buscar)
+    );
+  }
+
+  const cols = ['lead','contactado','cotizacion','seguimiento','reservado','perdido'];
+  cols.forEach(e => {
+    const col = document.getElementById(`crm-col-${e}`);
+    const count = document.getElementById(`crm-count-${e}`);
+    if (col) col.innerHTML = '';
+    if (count) count.textContent = '0';
+  });
+
+  const tempIcon = { frio: '🧊', tibio: '🔥', caliente: '♨️' };
+  const origenIcon = { telegram: '✈️', instagram: '📸', google: '🔍', sitio: '🌐', referido: '👥', whatsapp: '💬' };
+
+  filtrados.forEach(c => {
+    const col = document.getElementById(`crm-col-${c.estado_crm}`);
+    const count = document.getElementById(`crm-count-${c.estado_crm}`);
+    if (!col) return;
+
+    const dias = Math.floor((Date.now() - new Date(c.updated_at)) / 86400000);
+    const card = document.createElement('div');
+    card.className = 'crm-card';
+    card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;transition:transform 0.1s';
+    card.onmouseover = () => card.style.transform = 'translateY(-2px)';
+    card.onmouseout = () => card.style.transform = '';
+    card.onclick = () => crmAbrirModal(c);
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <strong style="font-size:14px">${c.nombre || 'Sin nombre'}</strong>
+        <span style="font-size:16px">${tempIcon[c.temperatura] || '❓'}</span>
+      </div>
+      ${c.email ? `<div style="font-size:12px;color:var(--text-muted)">${c.email}</div>` : ''}
+      ${c.whatsapp ? `<div style="font-size:12px;color:var(--text-muted)">📱 ${c.whatsapp}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text-muted)">
+        <span>${origenIcon[c.origen] || '❓'} ${c.origen}</span>
+        <span>${dias === 0 ? 'Hoy' : `Hace ${dias}d`}</span>
+      </div>
+    `;
+
+    col.appendChild(card);
+    if (count) count.textContent = String(parseInt(count.textContent || '0') + 1);
+  });
+}
+
+async function crmAbrirModal(contacto) {
+  const modal = document.getElementById('crm-modal');
+  const nombre = document.getElementById('crm-modal-nombre');
+  const body = document.getElementById('crm-modal-body');
+  if (!modal || !nombre || !body) return;
+
+  nombre.textContent = contacto.nombre || 'Sin nombre';
+
+  const { data: interacciones } = await window.supabase
+    .from('interacciones')
+    .select('*')
+    .eq('contacto_id', contacto.id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  const tipoIcon = { mensaje_entrante: '💬', mensaje_saliente: '🤖', llamada: '📞', reserva: '✅', pago: '💳', nota: '📝' };
+
+  body.innerHTML = `
+    <div style="display:grid;gap:8px;margin-bottom:16px;font-size:14px">
+      ${contacto.email ? `<div>📧 ${contacto.email}</div>` : ''}
+      ${contacto.whatsapp ? `<div>📱 <a href="https://wa.me/52${contacto.whatsapp}" target="_blank">${contacto.whatsapp}</a></div>` : ''}
+      ${contacto.telegram_chat_id ? `<div>✈️ Telegram ID: ${contacto.telegram_chat_id}</div>` : ''}
+      <div>🌡️ Temperatura: <strong>${contacto.temperatura}</strong></div>
+      <div>📍 Origen: ${contacto.origen}</div>
+      <div>📅 Creado: ${new Date(contacto.created_at).toLocaleDateString('es-MX')}</div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="crm-edit-estado" style="padding:6px;border-radius:6px;border:1px solid var(--border);font-size:13px">
+        ${['lead','contactado','cotizacion','seguimiento','reservado','perdido'].map(e =>
+          `<option value="${e}" ${contacto.estado_crm===e?'selected':''}>${e}</option>`
+        ).join('')}
+      </select>
+      <select id="crm-edit-temp" style="padding:6px;border-radius:6px;border:1px solid var(--border);font-size:13px">
+        ${['frio','tibio','caliente'].map(t =>
+          `<option value="${t}" ${contacto.temperatura===t?'selected':''}>${t}</option>`
+        ).join('')}
+      </select>
+      <button onclick="crmGuardarContacto('${contacto.id}')"
+        style="padding:6px 12px;background:var(--primary);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px">
+        💾 Guardar
+      </button>
+    </div>
+
+    <textarea id="crm-edit-notas" placeholder="Notas..."
+      style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);min-height:80px;font-size:13px;margin-bottom:16px;box-sizing:border-box">${contacto.notas || ''}</textarea>
+
+    <h4 style="margin:0 0 10px">Historial de interacciones</h4>
+    <div style="display:grid;gap:8px">
+      ${interacciones?.length ? interacciones.map(i => `
+        <div style="font-size:12px;padding:8px;background:var(--bg-secondary);border-radius:8px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span>${tipoIcon[i.tipo] || '•'} <strong>${i.tipo}</strong></span>
+            <span style="color:var(--text-muted)">${new Date(i.created_at).toLocaleString('es-MX')}</span>
+          </div>
+          <div style="color:var(--text-muted)">${i.resumen || ''}</div>
+        </div>
+      `).join('') : '<div style="color:var(--text-muted);font-size:13px">Sin interacciones registradas</div>'}
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+}
+
+async function crmGuardarContacto(id) {
+  const estado = document.getElementById('crm-edit-estado')?.value;
+  const temp = document.getElementById('crm-edit-temp')?.value;
+  const notas = document.getElementById('crm-edit-notas')?.value;
+
+  await window.supabase.from('contactos').update({
+    estado_crm: estado,
+    temperatura: temp,
+    notas
+  }).eq('id', id);
+
+  crmCerrarModal();
+  crmCargar();
+}
+
+function crmCerrarModal() {
+  const modal = document.getElementById('crm-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+// Estilos CRM
+const crmStyles = document.createElement('style');
+crmStyles.textContent = `
+  .crm-col {
+    min-width: 200px;
+    flex: 1;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .crm-col-header {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .crm-count {
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+`;
+document.head.appendChild(crmStyles);
+
+// Cargar CRM al activar la tab
+const _switchAdminTabOriginal = switchAdminTab;
+window.switchAdminTab = function(tab) {
+  _switchAdminTabOriginal(tab);
+  if (tab === 'crm') crmCargar();
+};
+// ===================== FIN CRM =====================
