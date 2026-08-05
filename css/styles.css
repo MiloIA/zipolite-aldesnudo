@@ -451,18 +451,3 @@ section{padding:56px 18px;}
 .galeria-ver-mas:hover{background:#1a3a6e;}
 .galeria-ver-mas strong{font-size:1.1rem;}
 
-#crm-modal {
-  display: none;
-}
-#crm-modal.open {
-  display: flex !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background: rgba(0,0,0,0.85) !important;
-  z-index: 99999 !important;
-  align-items: center !important;
-  justify-content: center !important;
-}

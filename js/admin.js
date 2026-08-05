@@ -2072,12 +2072,14 @@ async function crmCargar() {
 }
 
 async function crmAbrirModal(contacto) {
-  const modal = document.getElementById('crm-modal');
-  const nombre = document.getElementById('crm-modal-nombre');
-  const body = document.getElementById('crm-modal-body');
-  if (!modal || !nombre || !body) return;
-
-  nombre.textContent = contacto.nombre || 'Sin nombre';
+  let overlay = document.getElementById('crm-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'crm-overlay';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = '';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999999;display:flex;align-items:center;justify-content:center';
 
   const { data: interacciones } = await adminSB
     .from('interacciones')
@@ -2088,8 +2090,14 @@ async function crmAbrirModal(contacto) {
 
   const tipoIcon = { mensaje_entrante: '💬', mensaje_saliente: '🤖', llamada: '📞', reserva: '✅', pago: '💳', nota: '📝' };
 
-  body.innerHTML = `
-    <div style="display:grid;gap:8px;margin-bottom:16px;font-size:14px">
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:16px;padding:24px;width:90%;max-width:500px;max-height:80vh;overflow-y:auto;position:relative';
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;font-size:18px">${contacto.nombre || 'Sin nombre'}</h3>
+      <button id="crm-close-btn" style="background:none;border:none;font-size:22px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:14px;display:grid;gap:6px;margin-bottom:16px">
       ${contacto.email ? `<div>📧 ${contacto.email}</div>` : ''}
       ${contacto.whatsapp ? `<div>📱 <a href="https://wa.me/52${contacto.whatsapp}" target="_blank">${contacto.whatsapp}</a></div>` : ''}
       ${contacto.telegram_chat_id ? `<div>✈️ Telegram ID: ${contacto.telegram_chat_id}</div>` : ''}
@@ -2097,42 +2105,42 @@ async function crmAbrirModal(contacto) {
       <div>📍 Origen: ${contacto.origen}</div>
       <div>📅 Creado: ${new Date(contacto.created_at).toLocaleDateString('es-MX')}</div>
     </div>
-
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      <select id="crm-edit-estado" style="padding:6px;border-radius:6px;border:1px solid var(--border);font-size:13px">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <select id="crm-edit-estado" style="padding:6px;border-radius:6px;border:1px solid #ccc;font-size:13px">
         ${['lead','contactado','cotizacion','seguimiento','reservado','perdido'].map(e =>
           `<option value="${e}" ${contacto.estado_crm===e?'selected':''}>${e}</option>`
         ).join('')}
       </select>
-      <select id="crm-edit-temp" style="padding:6px;border-radius:6px;border:1px solid var(--border);font-size:13px">
+      <select id="crm-edit-temp" style="padding:6px;border-radius:6px;border:1px solid #ccc;font-size:13px">
         ${['frio','tibio','caliente'].map(t =>
           `<option value="${t}" ${contacto.temperatura===t?'selected':''}>${t}</option>`
         ).join('')}
       </select>
-      <button onclick="crmGuardarContacto('${contacto.id}')"
-        style="padding:6px 12px;background:var(--primary);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px">
-        💾 Guardar
-      </button>
+      <button onclick="crmGuardarContacto('${contacto.id}')" style="padding:6px 12px;background:#0d9488;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px">💾 Guardar</button>
     </div>
-
-    <textarea id="crm-edit-notas" placeholder="Notas..."
-      style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);min-height:80px;font-size:13px;margin-bottom:16px;box-sizing:border-box">${contacto.notas || ''}</textarea>
-
-    <h4 style="margin:0 0 10px">Historial de interacciones</h4>
+    <textarea id="crm-edit-notas" placeholder="Notas..." style="width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;min-height:80px;font-size:13px;margin-bottom:16px;box-sizing:border-box">${contacto.notas || ''}</textarea>
+    <h4 style="margin:0 0 10px;font-size:14px">Historial de interacciones</h4>
     <div style="display:grid;gap:8px">
       ${interacciones?.length ? interacciones.map(i => `
-        <div style="font-size:12px;padding:8px;background:var(--bg-secondary);border-radius:8px">
+        <div style="font-size:12px;padding:8px;background:#f5f5f5;border-radius:8px">
           <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span>${tipoIcon[i.tipo] || '•'} <strong>${i.tipo}</strong></span>
-            <span style="color:var(--text-muted)">${new Date(i.created_at).toLocaleString('es-MX')}</span>
+            <span>${tipoIcon[i.tipo]||'•'} <strong>${i.tipo}</strong></span>
+            <span style="color:#666">${new Date(i.created_at).toLocaleString('es-MX')}</span>
           </div>
-          <div style="color:var(--text-muted)">${i.resumen || ''}</div>
+          <div style="color:#555">${i.resumen||''}</div>
         </div>
-      `).join('') : '<div style="color:var(--text-muted);font-size:13px">Sin interacciones registradas</div>'}
+      `).join('') : '<div style="color:#999;font-size:13px">Sin interacciones</div>'}
     </div>
   `;
 
-  modal.classList.add('open');
+  overlay.appendChild(box);
+  document.getElementById('crm-close-btn').onclick = crmCerrarModal;
+  overlay.onclick = (e) => { if (e.target === overlay) crmCerrarModal(); };
+}
+
+function crmCerrarModal() {
+  const overlay = document.getElementById('crm-overlay');
+  if (overlay) overlay.remove();
 }
 
 async function crmGuardarContacto(id) {
@@ -2152,12 +2160,6 @@ async function crmGuardarContacto(id) {
 
   crmCerrarModal();
   crmCargar();
-}
-
-function crmCerrarModal() {
-  const modal = document.getElementById('crm-modal');
-  if (!modal) return;
-  modal.classList.remove('open');
 }
 
 // Estilos CRM
