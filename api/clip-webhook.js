@@ -111,5 +111,34 @@ export default async function handler(req, res) {
     console.log(`Reservación ${refId} confirmada via Clip webhook`);
   }
 
+  // Upsert en CRM
+  try {
+    const { data: existente } = await supabase
+      .from('contactos')
+      .select('id')
+      .eq('email', reserva.email)
+      .maybeSingle();
+
+    if (existente) {
+      await supabase
+        .from('contactos')
+        .update({ estado_crm: 'reservado', temperatura: 'caliente' })
+        .eq('id', existente.id);
+    } else {
+      await supabase
+        .from('contactos')
+        .insert({
+          email: reserva.email,
+          nombre: reserva.nombre,
+          whatsapp: reserva.whatsapp,
+          origen: 'sitio',
+          estado_crm: 'reservado',
+          temperatura: 'caliente'
+        });
+    }
+  } catch (crmErr) {
+    console.error('CRM upsert error:', crmErr);
+  }
+
   return res.status(200).json({ received: true });
 }
