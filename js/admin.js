@@ -2016,28 +2016,20 @@ async function loadAnalytics() {
 async function crmCargar() {
   const estado = document.getElementById('crm-filtro-estado')?.value || '';
   const temp = document.getElementById('crm-filtro-temp')?.value || '';
-  const buscar = document.getElementById('crm-buscar')?.value?.toLowerCase() || '';
+  const buscar = document.getElementById('crm-buscar')?.value || '';
 
-  let query = adminSB.from('contactos').select(`
-    id, nombre, email, whatsapp, telegram_chat_id,
-    origen, estado_crm, temperatura, proxima_accion,
-    notas, created_at, updated_at
-  `).order('updated_at', { ascending: false });
+  const params = new URLSearchParams();
+  if (estado) params.set('estado', estado);
+  if (temp) params.set('temperatura', temp);
+  if (buscar) params.set('buscar', buscar);
 
-  if (estado) query = query.eq('estado_crm', estado);
-  if (temp) query = query.eq('temperatura', temp);
+  const token = localStorage.getItem('adminToken');
+  const res = await fetch(`/api/crm-contactos?${params}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
 
-  const { data: contactos } = await query;
-  if (!contactos) return;
-
-  let filtrados = contactos;
-  if (buscar) {
-    filtrados = contactos.filter(c =>
-      c.nombre?.toLowerCase().includes(buscar) ||
-      c.email?.toLowerCase().includes(buscar) ||
-      c.whatsapp?.includes(buscar)
-    );
-  }
+  if (!res.ok) { console.error('CRM error', res.status); return; }
+  const { contactos } = await res.json();
 
   const cols = ['lead','contactado','cotizacion','seguimiento','reservado','perdido'];
   cols.forEach(e => {
@@ -2050,7 +2042,7 @@ async function crmCargar() {
   const tempIcon = { frio: '🧊', tibio: '🔥', caliente: '♨️' };
   const origenIcon = { telegram: '✈️', instagram: '📸', google: '🔍', sitio: '🌐', referido: '👥', whatsapp: '💬' };
 
-  filtrados.forEach(c => {
+  (contactos || []).forEach(c => {
     const col = document.getElementById(`crm-col-${c.estado_crm}`);
     const count = document.getElementById(`crm-count-${c.estado_crm}`);
     if (!col) return;
@@ -2074,7 +2066,6 @@ async function crmCargar() {
         <span>${dias === 0 ? 'Hoy' : `Hace ${dias}d`}</span>
       </div>
     `;
-
     col.appendChild(card);
     if (count) count.textContent = String(parseInt(count.textContent || '0') + 1);
   });
@@ -2148,12 +2139,16 @@ async function crmGuardarContacto(id) {
   const estado = document.getElementById('crm-edit-estado')?.value;
   const temp = document.getElementById('crm-edit-temp')?.value;
   const notas = document.getElementById('crm-edit-notas')?.value;
+  const token = localStorage.getItem('adminToken');
 
-  await adminSB.from('contactos').update({
-    estado_crm: estado,
-    temperatura: temp,
-    notas
-  }).eq('id', id);
+  await fetch('/api/crm-contactos', {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ id, estado_crm: estado, temperatura: temp, notas })
+  });
 
   crmCerrarModal();
   crmCargar();
