@@ -451,3 +451,37 @@ section{padding:56px 18px;}
 .galeria-ver-mas:hover{background:#1a3a6e;}
 .galeria-ver-mas strong{font-size:1.1rem;}
 
+
+#admin-section-crm { padding: 16px; }
+
+#crm-kanban {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.crm-col {
+  min-width: 0;
+  background: var(--bg-secondary, #f5f7fa);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.crm-col-header {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.crm-count {
+  background: #0d9488;
+  color: white;
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 11px;
+}

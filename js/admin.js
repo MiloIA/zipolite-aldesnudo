@@ -2162,34 +2162,6 @@ async function crmGuardarContacto(id) {
   crmCargar();
 }
 
-// Estilos CRM
-const crmStyles = document.createElement('style');
-crmStyles.textContent = `
-  .crm-col {
-    min-width: 200px;
-    flex: 1;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    padding: 12px;
-  }
-  .crm-col-header {
-    font-weight: 600;
-    font-size: 13px;
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .crm-count {
-    background: var(--primary);
-    color: white;
-    border-radius: 20px;
-    padding: 2px 8px;
-    font-size: 11px;
-  }
-`;
-document.head.appendChild(crmStyles);
-
 // Cargar CRM al activar la tab
 const _switchAdminTabOriginal = switchAdminTab;
 window.switchAdminTab = function(tab) {
