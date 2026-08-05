@@ -2023,7 +2023,7 @@ async function crmCargar() {
   if (temp) params.set('temperatura', temp);
   if (buscar) params.set('buscar', buscar);
 
-  const token = localStorage.getItem('adminToken');
+  const token = sessionStorage.getItem('adminToken');
   const res = await fetch(`/api/crm-contactos?${params}`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -2139,7 +2139,7 @@ async function crmGuardarContacto(id) {
   const estado = document.getElementById('crm-edit-estado')?.value;
   const temp = document.getElementById('crm-edit-temp')?.value;
   const notas = document.getElementById('crm-edit-notas')?.value;
-  const token = localStorage.getItem('adminToken');
+  const token = sessionStorage.getItem('adminToken');
 
   await fetch('/api/crm-contactos', {
     method: 'PATCH',
