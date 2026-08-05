@@ -43,10 +43,11 @@ const RESPUESTAS = {
 
 📅 ITINERARIO
 30 dic — Llegada a Zipolite. Día libre 🌊
-31 dic — Tour Mazunte + Punta Cometa 🌅 → Cena grupal → Bar en playa · show drag · fuegos artificiales · Año Nuevo 🎆
+31 dic — Tour Mazunte + Punta Cometa 🌅 → Cena grupal en Restaurante 3 de Diciembre* → Bar en playa · show drag · fuegos artificiales · Año Nuevo 🎆
 1 ene — Día libre 🏖️
 2 ene — Opcional: Carrizalillo + Bioluminiscencia Laguna Manialtepec ✨ (+$1,000 por persona)
 3 ene — Regreso CDMX (cita 5:30pm)
+*La cena es a costo del viajero — nosotros organizamos la reserva del restaurante para que disfruten sin contratiempos 🍕
 
 🛏️ ¿QUIERES MÁS COMODIDAD?
 Hotel rústico · Cama matrimonial · Baño privado · Ventilador
@@ -372,7 +373,7 @@ PAQUETES:
    - 29 dic 2026 al 3 ene 2027 · 5 días / 4 noches
    - Salida CDMX 29 dic 10pm (cita 9:30pm)
    - Regreso 3 ene 6pm
-   - Itinerario: 30 dic día libre · 31 dic Mazunte + Punta Cometa + cena grupal + Año Nuevo en bar con show drag · 1 ene día libre · 2 ene tour opcional · 3 ene regreso
+   - Itinerario: 30 dic día libre · 31 dic Mazunte + Punta Cometa + cena grupal en Restaurante 3 de Diciembre (costo por cuenta del viajero, nosotros solo organizamos la logística) + Año Nuevo en bar con show drag · 1 ene día libre · 2 ene tour opcional · 3 ene regreso
    - Incluye: transporte en autobús SCT, camping 5 hectáreas, alberca, duchas, seguridad, tienda y colchón en préstamo, Day Pass último día
    - Habitaciones disponibles (solo 5): 1 persona $10,750 · 2 personas $7,750 c/u · anticipo habitación $3,000
    - Tour opcional 2 ene: Carrizalillo + Bioluminiscencia Manialtepec · $1,000 extra
