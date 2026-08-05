@@ -200,6 +200,37 @@ export default async function handler(req, res) {
       return res.status(500).json({ ok: false, error: err.message || 'Error enviando email al cliente' });
     }
 
+    // Upsert en CRM
+    try {
+      const crmData = {
+        email: email,
+        nombre: nombre,
+        origen: 'sitio',
+        estado_crm: 'reservado',
+        temperatura: 'caliente'
+      };
+      if (whatsapp) crmData.whatsapp = whatsapp;
+
+      const { data: existente } = await supabase
+        .from('contactos')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (existente) {
+        await supabase
+          .from('contactos')
+          .update({ estado_crm: 'reservado', temperatura: 'caliente' })
+          .eq('id', existente.id);
+      } else {
+        await supabase
+          .from('contactos')
+          .insert(crmData);
+      }
+    } catch (crmErr) {
+      console.error('CRM upsert error:', crmErr);
+    }
+
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
