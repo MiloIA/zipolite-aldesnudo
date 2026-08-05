@@ -195,6 +195,33 @@ export default async function handler(req, res) {
         body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: tgText, parse_mode: 'HTML' }),
       }).catch(e => console.error('telegram:', e)),
     ]);
+    // Upsert en CRM
+    try {
+      const { data: existente } = await supabase
+        .from('contactos')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (existente) {
+        await supabase
+          .from('contactos')
+          .update({ estado_crm: 'reservado', temperatura: 'caliente' })
+          .eq('id', existente.id);
+      } else {
+        await supabase
+          .from('contactos')
+          .insert({
+            email, nombre, whatsapp,
+            origen: 'sitio',
+            estado_crm: 'reservado',
+            temperatura: 'caliente'
+          });
+      }
+    } catch (crmErr) {
+      console.error('CRM upsert error:', crmErr);
+    }
+
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
