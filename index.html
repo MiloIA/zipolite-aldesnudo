@@ -1072,16 +1072,6 @@
     </div>
   </div>
 
-  <!-- Modal detalle contacto -->
-  <div id="crm-modal" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center">
-    <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <h3 id="crm-modal-nombre" style="margin:0"></h3>
-        <button onclick="crmCerrarModal()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
-      </div>
-      <div id="crm-modal-body"></div>
-    </div>
-  </div>
 </div>
 
   </div>
@@ -1161,6 +1151,16 @@
   <div style="position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:0.25rem;">
     <div class="lb-desc" style="color:white;font-size:0.9rem;opacity:0.8;"></div>
     <div class="lb-counter" style="color:white;font-size:0.8rem;opacity:0.5;"></div>
+  </div>
+</div>
+<!-- Modal detalle contacto CRM -->
+<div id="crm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 id="crm-modal-nombre" style="margin:0"></h3>
+      <button onclick="crmCerrarModal()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div id="crm-modal-body"></div>
   </div>
 </div>
 </body>
