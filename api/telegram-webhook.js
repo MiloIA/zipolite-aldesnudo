@@ -203,7 +203,7 @@ REGLAS ESTRICTAS:
 4. NUNCA pidas email a menos que el usuario lo ofrezca voluntariamente
 5. Si el usuario da su nombre, úsalo en todas las respuestas siguientes
 6. Siempre termina con una llamada a acción clara hacia reservar o agendar llamada
-7. Si el usuario quiere agendar una llamada o que lo llamen, responde brevemente y termina con AGENDAR_LLAMADA
+7. Si el usuario quiere agendar una llamada o que lo llamen, responde ÚNICAMENTE con la palabra AGENDAR_LLAMADA sin ningún texto adicional antes ni después
 8. Si no puedes resolver algo o el usuario pide hablar con alguien, termina con ESCALAR_ASESOR
 9. Crea urgencia real cuando aplique: "Solo quedan 5 habitaciones" / "Los lugares se están llenando"
 10. NUNCA inventes información que no esté en este prompt
@@ -498,6 +498,15 @@ export default async function handler(req, res) {
         { text: '📅 Llamada hoy', callback_data: 'llamada_hoy' },
         { text: '📅 Llamada mañana', callback_data: 'llamada_manana' }
       ]);
+    }
+
+    if (agendar && reply.trim() === '') {
+      await sendMessage(token, chatId,
+        `📞 *Agendemos tu llamada*\n\n¿Cuándo prefieres que te llamemos?`,
+        [[{ text: '📅 Hoy', callback_data: 'llamada_hoy' }, { text: '📅 Mañana', callback_data: 'llamada_manana' }],
+         [{ text: '⬅️ Menú principal', callback_data: 'menu' }]]
+      );
+      return res.status(200).end();
     }
 
     await sendMessage(token, chatId, reply, botonesDefault);
