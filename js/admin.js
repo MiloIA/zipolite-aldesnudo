@@ -2132,7 +2132,7 @@ async function crmAbrirModal(contacto) {
     </div>
   `;
 
-  modal.style.display = 'flex';
+  modal.classList.add('open');
 }
 
 async function crmGuardarContacto(id) {
@@ -2156,7 +2156,7 @@ async function crmGuardarContacto(id) {
 
 function crmCerrarModal() {
   const modal = document.getElementById('crm-modal');
-  if (modal) modal.style.display = 'none';
+  if (modal) modal.classList.remove('open');
 }
 
 // Estilos CRM

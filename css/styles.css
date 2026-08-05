@@ -450,3 +450,6 @@ section{padding:56px 18px;}
 .galeria-ver-mas{aspect-ratio:1;background:#0d1b3e;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;cursor:pointer;font-size:0.85rem;text-align:center;transition:background 0.2s;}
 .galeria-ver-mas:hover{background:#1a3a6e;}
 .galeria-ver-mas strong{font-size:1.1rem;}
+
+#crm-modal { display: none; }
+#crm-modal.open { display: flex !important; }
