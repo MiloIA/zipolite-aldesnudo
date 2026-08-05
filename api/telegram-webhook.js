@@ -257,6 +257,7 @@ Elige tu paquete, llena tus datos y aparta con $1,500 por persona (camping) o $3
 Tu lugar queda confirmado desde el primer pago. ✅`,
     buttons: [
       [{ text: '🙋 Tengo dudas antes de reservar', callback_data: 'asesor' }],
+      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
     ]
   },
@@ -272,6 +273,7 @@ Aparta con $1,500 por persona y el resto lo pagas antes del viaje.
 Tu lugar queda confirmado desde el primer pago. ✅`,
     buttons: [
       [{ text: '🙋 Tengo dudas antes de reservar', callback_data: 'asesor' }],
+      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
     ]
   },
@@ -281,7 +283,21 @@ Tu lugar queda confirmado desde el primer pago. ✅`,
 
 En breve alguien se comunicará contigo por este mismo chat.`,
     buttons: [
+      [{ text: '📞 Agendar llamada', callback_data: 'agendar_dia' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
+    ]
+  },
+
+  agendar_llamada: {
+    text: `📞 Con gusto agendamos una llamada contigo.\n\n¿A qué número te llamamos?`,
+    buttons: [[{ text: '⬅️ Menú principal', callback_data: 'menu' }]]
+  },
+
+  agendar_dia: {
+    text: `¿Cuándo prefieres la llamada?`,
+    buttons: [
+      [{ text: '📅 Hoy', callback_data: 'llamada_hoy' }, { text: '📅 Mañana', callback_data: 'llamada_manana' }],
+      [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
     ]
   }
 };
@@ -395,6 +411,7 @@ REGLAS:
 - Para reservar: https://zipolitealdesnudo.com
 - Si piden asesor o no puedes resolver algo, termina con ESCALAR_ASESOR
 - Si el usuario menciona nombre, email o WhatsApp extráelos y termina con DATOS:{"nombre":"...","email":"...","whatsapp":"..."}
+- Si el usuario quiere que lo llamen o agendar una llamada, responde con AGENDAR_LLAMADA y Mateo activará el flujo de agendado
 - Nunca inventes precios ni fechas`;
 
 export default async function handler(req, res) {
@@ -439,6 +456,82 @@ export default async function handler(req, res) {
           temperatura: 'caliente'
         }).eq('id', contactoData.id);
       }
+
+      return res.status(200).end();
+    }
+
+    if (data === 'llamada_hoy' || data === 'llamada_manana') {
+      const dia = data === 'llamada_hoy' ? 'hoy' : 'mañana';
+      const ahora = new Date();
+      const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
+
+      const slots = [];
+      for (let h = 13; h <= 17; h++) {
+        for (let m = 0; m < 60; m += 15) {
+          if (h === 17 && m > 0) continue;
+          const minutos = h * 60 + m;
+          if (data === 'llamada_hoy' && minutos <= horaActual + 30) continue;
+          const label = `${h}:${m === 0 ? '00' : m}pm`;
+          slots.push({ text: label, callback_data: `slot_${dia}_${h}_${m}` });
+        }
+      }
+
+      if (slots.length === 0) {
+        await sendMessage(token, chatId,
+          `Lo siento, ya no hay horarios disponibles para hoy. ¿Agendamos para mañana?`,
+          [[{ text: '📅 Mañana', callback_data: 'llamada_manana' }, { text: '⬅️ Menú', callback_data: 'menu' }]]
+        );
+        return res.status(200).end();
+      }
+
+      const rows = [];
+      for (let i = 0; i < slots.length; i += 2) {
+        const row = [slots[i]];
+        if (slots[i + 1]) row.push(slots[i + 1]);
+        rows.push(row);
+      }
+      rows.push([{ text: '⬅️ Menú principal', callback_data: 'menu' }]);
+
+      await sendMessage(token, chatId,
+        `¿A qué hora te llamamos ${dia}? 👇`,
+        rows
+      );
+      return res.status(200).end();
+    }
+
+    if (data.startsWith('slot_')) {
+      const parts = data.split('_');
+      const dia = parts[1];
+      const hora = `${parts[2]}:${parts[3] === '0' ? '00' : parts[3]}pm`;
+      const diaTexto = dia === 'hoy' ? 'hoy' : 'mañana';
+
+      const { data: contacto } = await supabase
+        .from('contactos')
+        .select('nombre, whatsapp')
+        .eq('telegram_chat_id', chatId)
+        .maybeSingle();
+
+      const nombre = contacto?.nombre || query.from?.first_name || 'el cliente';
+      const telefono = contacto?.whatsapp || 'no registrado';
+
+      await sendMessage(token, chatId,
+        `✅ ¡Listo! Te llamamos ${diaTexto} a las ${hora}.\n\nSi el número no es correcto escríbelo aquí y lo actualizamos. 📱`,
+        [[{ text: '🏠 Menú principal', callback_data: 'menu' }]]
+      );
+
+      const alertaText = `📞 LLAMADA AGENDADA\n\nNombre: ${nombre}\nTeléfono: ${telefono}\nCuándo: ${diaTexto} a las ${hora}\nChat ID: ${chatId}\nUsername: @${query.from?.username || 'sin username'}`;
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText })
+      });
+
+      await supabase.from('interacciones').insert({
+        contacto_id: (await supabase.from('contactos').select('id').eq('telegram_chat_id', chatId).maybeSingle()).data?.id,
+        canal: 'telegram',
+        tipo: 'llamada',
+        resumen: `Llamada agendada ${diaTexto} a las ${hora}`
+      });
 
       return res.status(200).end();
     }
@@ -509,6 +602,9 @@ export default async function handler(req, res) {
     const escalar = reply.includes('ESCALAR_ASESOR');
     reply = reply.replace('ESCALAR_ASESOR', '').trim();
 
+    const agendar = reply.includes('AGENDAR_LLAMADA');
+    reply = reply.replace('AGENDAR_LLAMADA', '').trim();
+
     const datosMatch = reply.match(/DATOS:(\{.*?\})/s);
     let datosExtraidos = null;
     if (datosMatch) {
@@ -546,6 +642,14 @@ export default async function handler(req, res) {
 
     if (contactoId) {
       await registrarInteraccion(contactoId, 'mensaje_saliente', reply.substring(0, 200));
+    }
+
+    if (agendar) {
+      await sendMessage(token, chatId,
+        `📞 Con gusto te llamamos. ¿Cuándo prefieres?`,
+        [[{ text: '📅 Hoy', callback_data: 'llamada_hoy' }, { text: '📅 Mañana', callback_data: 'llamada_manana' }],
+         [{ text: '⬅️ Menú principal', callback_data: 'menu' }]]
+      );
     }
 
     if (escalar) {
