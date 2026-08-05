@@ -5,124 +5,58 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const MAX_HISTORIAL = 10;
+const MAX_HISTORIAL = 8;
+
+// ─── TEXTOS Y BOTONES ────────────────────────────────────────
 
 const MENU_PRINCIPAL = {
-  text: `🌊 ¡Hola! Soy Mateo, asesor de Zipolite al Desnudo 🌈
-
-Llevamos más de 10 años creando experiencias LGBT+ en la playa más libre de México. +342 viajeros ya vivieron esto. ¿Tú cuándo te unes?`,
+  text: `🌊 *¡Hola! Soy Mateo* 🌈\n\nAsesor de Zipolite al Desnudo — más de 10 años llevando a la comunidad LGBT+ a la playa más libre de México.\n\n+342 viajeros ya vivieron esto. ¿Tú cuándo te unes?`,
   buttons: [
     [{ text: '🏕️ Año Nuevo al Desnudo', callback_data: 'pkg_anonuevo' }],
     [{ text: '🌙 Lunas de Octubre', callback_data: 'pkg_lunas' }],
     [{ text: '💳 Métodos de pago', callback_data: 'info_pagos' }],
     [{ text: '❓ Preguntas frecuentes', callback_data: 'faq_menu' }],
+    [{ text: '📞 Agendar una llamada', callback_data: 'agendar_dia' }],
     [{ text: '🙋 Hablar con un asesor', callback_data: 'asesor' }]
   ]
 };
 
 const RESPUESTAS = {
   pkg_anonuevo: {
-    text: `🏕️ Año Nuevo al Desnudo
-
-📅 29 dic 2026 → 3 ene 2027 · 5 días / 4 noches
-💰 Desde $4,750 por persona
-
-🚌 Salida CDMX: 29 dic · 10:00pm (cita 9:30pm)
-🏠 Regreso: 3 ene · 6:00pm · Llegada CDMX madrugada 4 ene
-
-✅ ¿QUÉ INCLUYE?
-
-🏕️ Camping en área privada de 5 hectáreas:
-- Alberca · Duchas · Sanitarios · Electricidad · Seguridad
-- A 2 calles de la playa y 1 calle del adoquín
-- Por promoción: tienda y colchón inflable en préstamo
-
-🚌 Autobús con chofer certificado SCT, seguro de viajero, WC, pantallas y cargadores USB
-
-🌅 Day Pass incluido el último día — te quedas en instalaciones hasta las 6pm
-
-📅 ITINERARIO
-30 dic — Llegada a Zipolite. Día libre 🌊
-31 dic — Tour Mazunte + Punta Cometa 🌅 → Cena grupal en Restaurante 3 de Diciembre* → Bar en playa · show drag · fuegos artificiales · Año Nuevo 🎆
-1 ene — Día libre 🏖️
-2 ene — Opcional: Carrizalillo + Bioluminiscencia Laguna Manialtepec ✨ (+$1,000 por persona)
-3 ene — Regreso CDMX (cita 5:30pm)
-*La cena es a costo del viajero — nosotros organizamos la reserva del restaurante para que disfruten sin contratiempos 🍕
-
-🛏️ ¿QUIERES MÁS COMODIDAD?
-Hotel rústico · Cama matrimonial · Baño privado · Ventilador
-- 1 persona en habitación: $10,750 por persona — aparta con $3,000
-- 2 personas en habitación: $7,750 por persona — aparta con $3,000 por persona
-⚠️ Solo 5 habitaciones disponibles
-
-🏕️ Camping: $4,750 por persona — aparta con $1,500 por persona
-
-⚠️ En Zipolite no existe el todo incluido. Alimentos, bebidas, propinas y gastos personales van por cuenta de cada viajero.
-
-¿Te vas con nosotros? 🔥`,
+    text: `🏕️ *Año Nuevo al Desnudo*\n\n📅 29 dic 2026 → 3 ene 2027 · 5 días / 4 noches\n💰 Desde $4,750 por persona\n\n🚌 Salida CDMX: 29 dic · 10:00pm (cita 9:30pm)\n🏠 Regreso: 3 ene · 6:00pm · Llegada CDMX madrugada 4 ene\n\n✅ *¿QUÉ INCLUYE?*\n🏕️ Camping en área privada de 5 hectáreas:\n• Alberca · Duchas · Sanitarios · Electricidad · Seguridad 24/7\n• A 2 calles de la playa y 1 calle del adoquín\n• Por promoción: tienda y colchón inflable en préstamo\n\n🚌 Autobús con chofer certificado SCT, seguro de viajero, WC, pantallas y cargadores USB\n\n🌅 Day Pass incluido el último día — te quedas en instalaciones hasta las 6pm\n\n📅 *ITINERARIO*\n30 dic — Llegada a Zipolite. Día libre 🌊\n31 dic — Tour Mazunte + Punta Cometa 🌅 → Cena grupal organizada en Restaurante 3 de Diciembre* → Bar en playa · show drag · fuegos artificiales · Año Nuevo 🎆\n1 ene — Día libre 🏖️\n2 ene — Opcional: Carrizalillo + Bioluminiscencia Laguna Manialtepec ✨ (+$1,000 por persona)\n3 ene — Regreso CDMX (cita 5:30pm)\n\n*La cena y todos los consumos van por cuenta de cada viajero. En Zipolite no existe el todo incluido.\n\n🛏️ *¿QUIERES MÁS COMODIDAD?*\nHotel rústico · Cama matrimonial · Baño privado · Ventilador\n• 1 persona en habitación: $10,750 por persona — aparta con $3,000\n• 2 personas en habitación: $7,750 por persona — aparta con $3,000 por persona\n⚠️ Solo 5 habitaciones disponibles\n\n🏕️ Camping: $4,750 por persona — aparta con $1,500\n\n¿Te vas con nosotros? 🔥`,
     buttons: [
-      [{ text: '✅ ¡Me apunto!', callback_data: 'reservar_anonuevo' }],
-      [{ text: '🛏️ Quiero habitación', callback_data: 'habitacion_info' }],
+      [{ text: '✅ ¡Quiero reservar!', callback_data: 'reservar_anonuevo' }],
+      [{ text: '🛏️ Info habitaciones', callback_data: 'habitacion_info' }],
       [{ text: '🌊 Tour opcional +$1,000', callback_data: 'tour_opcional' }],
       [{ text: '💳 Formas de pago', callback_data: 'info_pagos' }],
+      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
       [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
     ]
   },
 
   pkg_lunas: {
-    text: `🌙 Lunas de Octubre
-
-📅 22 → 27 octubre 2026 · 6 días / 5 noches
-💰 $8,854 por persona
-
-✈️ VUELO REDONDO CDMX INCLUIDO
-- Salida: jue 22 oct · 12:00pm desde AICM
-- Regreso: mar 27 oct · 10:32pm
-
-✅ ¿QUÉ INCLUYE?
-- Vuelo redondo Ciudad de México ↔ Zipolite
-- 5 noches en Hotel Paraíso — línea de playa 🌊
-- Habitación doble
-- Traslados aeropuerto ↔ hotel
-
-Todo incluido. Solo llega y disfruta.
-
-💰 Aparta tu lugar con $1,500 por persona
-
-⚠️ En Zipolite no existe el todo incluido. Alimentos, bebidas, propinas y gastos personales van por cuenta de cada viajero.
-
-¿Te lo agendamos? 🌙`,
+    text: `🌙 *Lunas de Octubre*\n\n📅 22 → 27 octubre 2026 · 6 días / 5 noches\n💰 $8,854 por persona\n\n✈️ *VUELO REDONDO CDMX INCLUIDO*\n• Salida: jue 22 oct · 12:00pm desde AICM\n• Regreso: mar 27 oct · 10:32pm\n\n✅ *¿QUÉ INCLUYE?*\n• Vuelo redondo Ciudad de México ↔ Zipolite\n• 5 noches en Hotel Paraíso — línea de playa 🌊\n• Habitación doble\n• Traslados aeropuerto ↔ hotel\n\nTodo el viaje organizado. Solo llega y disfruta.\n\n💰 Aparta tu lugar con $1,500 por persona\n\n⚠️ Alimentos, bebidas y gastos personales van por cuenta de cada viajero. En Zipolite no existe el todo incluido.\n\n¿Te lo agendamos? 🌙`,
     buttons: [
-      [{ text: '✅ Quiero reservar', callback_data: 'reservar_lunas' }],
+      [{ text: '✅ ¡Quiero reservar!', callback_data: 'reservar_lunas' }],
       [{ text: '💳 Formas de pago', callback_data: 'info_pagos' }],
+      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
       [{ text: '🙋 Tengo preguntas', callback_data: 'asesor' }],
       [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
     ]
   },
 
   info_pagos: {
-    text: `💳 Formas de pago
-
-🏦 Transferencia o depósito bancario
-- Sin cargos adicionales
-- Confirmación en 24 horas
-
-💳 Tarjeta con financiamiento
-- 3, 6, 9, 12, 18 o 24 meses
-- Se aplica cargo por financiamiento
-
-En ambos casos apartas tu lugar con el anticipo y liquidas el resto antes del viaje. Tu lugar queda asegurado desde el primer pago. ✅
-
-¿Qué paquete te interesa?`,
+    text: `💳 *Formas de pago*\n\n🏦 *Transferencia o depósito bancario*\n• Sin cargos adicionales\n• Confirmación en 24 horas\n\n💳 *Tarjeta con financiamiento*\n• 3, 6, 9, 12, 18 o 24 meses\n• Se aplica cargo por financiamiento\n\nEn ambos casos apartas tu lugar con el anticipo y liquidas el resto antes del viaje. Tu lugar queda asegurado desde el primer pago. ✅`,
     buttons: [
       [{ text: '🏕️ Año Nuevo al Desnudo', callback_data: 'pkg_anonuevo' }],
       [{ text: '🌙 Lunas de Octubre', callback_data: 'pkg_lunas' }],
+      [{ text: '📞 Agendar llamada', callback_data: 'agendar_dia' }],
       [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
     ]
   },
 
   faq_menu: {
-    text: '❓ Preguntas frecuentes\n\n¿Sobre qué tienes dudas? 👇',
+    text: '❓ *Preguntas frecuentes*\n\n¿Sobre qué tienes dudas? 👇',
     buttons: [
       [{ text: '🌊 ¿Qué es Zipolite?', callback_data: 'faq_zipolite' }],
       [{ text: '👙 ¿Tengo que ser nudista?', callback_data: 'faq_nudismo' }],
@@ -134,11 +68,7 @@ En ambos casos apartas tu lugar con el anticipo y liquidas el resto antes del vi
   },
 
   faq_zipolite: {
-    text: `🌊 ¿Qué es Zipolite?
-
-Zipolite es la playa más libre de México, en Oaxaca. Un lugar donde puedes ser tú mismo sin filtros ni juicios. Ambiente relajado, naturaleza increíble y una comunidad que te recibe como eres. 🌴
-
-Es uno de los pocos destinos en México donde la libertad no es un concepto — es la forma de vivir.`,
+    text: `🌊 *¿Qué es Zipolite?*\n\nZipolite es la playa más libre de México, en Oaxaca. Un lugar donde puedes ser tú mismo sin filtros ni juicios. Ambiente relajado, naturaleza increíble y una comunidad que te recibe como eres. 🌴\n\nEs uno de los pocos destinos en México donde la libertad no es un concepto — es la forma de vivir.`,
     buttons: [
       [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
@@ -146,11 +76,7 @@ Es uno de los pocos destinos en México donde la libertad no es un concepto — 
   },
 
   faq_nudismo: {
-    text: `👙 ¿Tengo que ser nudista?
-
-Para nada. Nadie está obligado a nada. Tú decides cómo vivir la experiencia, siempre desde el respeto y tu comodidad.
-
-Hay quienes van en traje de baño todo el tiempo y también quienes se sueltan poco a poco. Lo importante es que te sientas libre a tu manera. 😊`,
+    text: `👙 *¿Tengo que ser nudista?*\n\nPara nada. Nadie está obligado a nada. Tú decides cómo vivir la experiencia, siempre desde el respeto y tu comodidad.\n\nHay quienes van en traje de baño todo el tiempo y también quienes se sueltan poco a poco. Lo importante es que te sientas libre a tu manera. 😊`,
     buttons: [
       [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
@@ -158,11 +84,7 @@ Hay quienes van en traje de baño todo el tiempo y también quienes se sueltan p
   },
 
   faq_solo: {
-    text: `👤 ¿Puedo ir solo?
-
-Sí, y es de lo más común. Muchos de nuestros viajeros llegan solos y regresan con amistades nuevas para toda la vida.
-
-Nuestros grupos están diseñados para que desde antes de salir ya te sientas acompañado. Llegas solo, regresas en familia. 🌈`,
+    text: `👤 *¿Puedo ir solo?*\n\nSí, y es de lo más común. Muchos de nuestros viajeros llegan solos y regresan con amistades nuevas para toda la vida.\n\nNuestros grupos están diseñados para que desde antes de salir ya te sientas acompañado. Llegas solo, regresas en familia. 🌈`,
     buttons: [
       [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
@@ -170,11 +92,7 @@ Nuestros grupos están diseñados para que desde antes de salir ya te sientas ac
   },
 
   faq_lgbt: {
-    text: `🏳️‍🌈 ¿Solo es para LGBT+?
-
-Somos una agencia 100% LGBT+ friendly. Nuestros grupos tienen principalmente viajeros LGBT+, aliados y personas con buena vibra.
-
-No importa quién seas — lo importante es el respeto y las ganas de pasarla bien. Aquí no tienes que encajar... solo llegar. 💛`,
+    text: `🏳️‍🌈 *¿Solo es para LGBT+?*\n\nSomos una agencia 100% LGBT+ friendly. Nuestros grupos tienen principalmente viajeros LGBT+, aliados y personas con buena vibra.\n\nNo importa quién seas — lo importante es el respeto y las ganas de pasarla bien. Aquí no tienes que encajar... solo llegar. 💛`,
     buttons: [
       [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
@@ -182,13 +100,7 @@ No importa quién seas — lo importante es el respeto y las ganas de pasarla bi
   },
 
   faq_cancelacion: {
-    text: `❌ ¿Qué pasa si cancelo?
-
-El anticipo no es reembolsable ya que se usa para asegurar tu lugar desde el momento en que reservas.
-
-Si cancelas con más de 30 días de anticipación, se reembolsa el saldo adicional que hayas pagado.
-
-Te explicamos todo claramente desde el inicio — sin letras chiquitas. 📋`,
+    text: `❌ *¿Qué pasa si cancelo?*\n\nEl anticipo no es reembolsable ya que se usa para asegurar tu lugar desde el momento en que reservas.\n\nSi cancelas con más de 30 días de anticipación, se reembolsa el saldo adicional que hayas pagado.\n\nTe explicamos todo claramente desde el inicio — sin letras chiquitas. 📋`,
     buttons: [
       [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
@@ -196,49 +108,17 @@ Te explicamos todo claramente desde el inicio — sin letras chiquitas. 📋`,
   },
 
   habitacion_info: {
-    text: `🛏️ Habitaciones — Año Nuevo al Desnudo
-
-Hotel rústico a 2 calles de la playa y a calle y media del adoquín:
-- Cama matrimonial
-- Baño privado
-- Ventilador de techo
-
-💰 Precios:
-- 1 persona en habitación: $10,750 por persona
-- 2 personas en habitación: $7,750 por persona
-- Anticipo: $3,000 por persona
-
-⚠️ Solo 5 habitaciones disponibles — se agotan rápido
-
-¿Quieres apartar la tuya?`,
+    text: `🛏️ *Habitaciones — Año Nuevo al Desnudo*\n\nHotel rústico a 2 calles de la playa y a calle y media del adoquín:\n• Cama matrimonial\n• Baño privado\n• Ventilador de techo\n\n💰 *Precios por persona:*\n• 1 persona en habitación: $10,750 — aparta con $3,000\n• 2 personas en habitación: $7,750 — aparta con $3,000 por persona\n\n⚠️ Solo 5 habitaciones disponibles — se agotan rápido\n\n¿Apartamos la tuya?`,
     buttons: [
       [{ text: '✅ Quiero reservar con habitación', callback_data: 'reservar_anonuevo' }],
+      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
       [{ text: '⬅️ Ver paquete completo', callback_data: 'pkg_anonuevo' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
     ]
   },
 
   tour_opcional: {
-    text: `🌊 Tour opcional — 2 de enero
-
-Uno de los días más especiales del viaje:
-
-🏖️ Playa Carrizalillo — Puerto Escondido
-Una de las playas más bonitas de Oaxaca. Aguas turquesas, arena blanca y ambiente increíble.
-
-✨ Laguna de Manialtepec — Bioluminiscencia
-Al caer la noche abordamos una lancha y nadamos en aguas que brillan como estrellas. Una experiencia que no olvidarás.
-
-✅ Incluye:
-- Transporte Zipolite → Carrizalillo → Manialtepec → Zipolite
-- Entrada a Laguna de Manialtepec
-- Tour en lancha
-- Guía local
-- Chaleco salvavidas
-
-💰 $1,000 por persona (costo adicional al paquete)
-
-¿Te apuntas?`,
+    text: `🌊 *Tour opcional — 2 de enero*\n\nUno de los días más especiales del viaje:\n\n🏖️ *Playa Carrizalillo — Puerto Escondido*\nUna de las playas más bonitas de Oaxaca. Aguas turquesas, arena blanca.\n\n✨ *Laguna de Manialtepec — Bioluminiscencia*\nAl caer la noche abordamos una lancha y nadamos en aguas que brillan como estrellas. Una experiencia que no olvidarás.\n\n✅ *Incluye:*\n• Transporte Zipolite → Carrizalillo → Manialtepec → Zipolite\n• Entrada a Laguna de Manialtepec\n• Tour en lancha · Guía local · Chaleco salvavidas\n\n💰 *$1,000 por persona* (costo adicional al paquete)\n\n¿Te apuntas?`,
     buttons: [
       [{ text: '✅ ¡Me apunto al tour!', callback_data: 'reservar_anonuevo' }],
       [{ text: '⬅️ Ver paquete completo', callback_data: 'pkg_anonuevo' }],
@@ -247,54 +127,33 @@ Al caer la noche abordamos una lancha y nadamos en aguas que brillan como estrel
   },
 
   reservar_anonuevo: {
-    text: `¡Perfecto! 🎉
-
-Para reservar tu lugar en Año Nuevo al Desnudo entra aquí:
-👉 https://zipolitealdesnudo.com
-
-Elige tu paquete, llena tus datos y aparta con $1,500 por persona (camping) o $3,000 por persona (habitación).
-
-Tu lugar queda confirmado desde el primer pago. ✅`,
+    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Año Nuevo al Desnudo:\n👉 https://zipolitealdesnudo.com\n\nElige tu paquete y aparta con:\n• $1,500 por persona (camping)\n• $3,000 por persona (habitación)\n\nTu lugar queda confirmado desde el primer pago. ✅`,
     buttons: [
-      [{ text: '🙋 Tengo dudas antes de reservar', callback_data: 'asesor' }],
       [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
+      [{ text: '🙋 Tengo una duda', callback_data: 'asesor' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
     ]
   },
 
   reservar_lunas: {
-    text: `¡Perfecto! 🎉
-
-Para reservar tu lugar en Lunas de Octubre entra aquí:
-👉 https://zipolitealdesnudo.com
-
-Aparta con $1,500 por persona y el resto lo pagas antes del viaje.
-
-Tu lugar queda confirmado desde el primer pago. ✅`,
+    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Lunas de Octubre:\n👉 https://zipolitealdesnudo.com\n\nAparta con $1,500 por persona y el resto lo pagas antes del viaje.\n\nTu lugar queda confirmado desde el primer pago. ✅`,
     buttons: [
-      [{ text: '🙋 Tengo dudas antes de reservar', callback_data: 'asesor' }],
       [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
+      [{ text: '🙋 Tengo una duda', callback_data: 'asesor' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
     ]
   },
 
   asesor: {
-    text: `¡Claro! Le aviso a un asesor ahora mismo 🙌
-
-En breve alguien se comunicará contigo por este mismo chat.`,
+    text: `🙋 *Hablar con un asesor*\n\nLe aviso a un asesor ahora mismo que quieres información.\n\nEn breve alguien se comunicará contigo por este mismo chat. 🌊`,
     buttons: [
-      [{ text: '📞 Agendar llamada', callback_data: 'agendar_dia' }],
+      [{ text: '📞 O agendamos una llamada', callback_data: 'agendar_dia' }],
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
     ]
   },
 
-  agendar_llamada: {
-    text: `📞 Con gusto agendamos una llamada contigo.\n\n¿A qué número te llamamos?`,
-    buttons: [[{ text: '⬅️ Menú principal', callback_data: 'menu' }]]
-  },
-
   agendar_dia: {
-    text: `¿Cuándo prefieres la llamada?`,
+    text: `📞 *Agendemos tu llamada*\n\n¿Cuándo prefieres que te llamemos?`,
     buttons: [
       [{ text: '📅 Hoy', callback_data: 'llamada_hoy' }, { text: '📅 Mañana', callback_data: 'llamada_manana' }],
       [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
@@ -302,17 +161,59 @@ En breve alguien se comunicará contigo por este mismo chat.`,
   }
 };
 
-const SALUDOS = ['hola', 'hi', 'buenas', 'hey', 'inicio', 'start', 'info', 'ayuda', 'help', 'menu', 'menú', 'buenos días', 'buenos dias', 'buenas tardes', 'buenas noches'];
+const SALUDOS = ['hola', 'hi', 'buenas', 'hey', 'inicio', 'start', 'info', 'ayuda', 'help', 'menu', 'menú', 'buenos días', 'buenos dias', 'buenas tardes', 'buenas noches', 'buen dia', 'buen día'];
+
+// ─── SISTEMA PROMPT ──────────────────────────────────────────
+
+const systemPrompt = `Eres Mateo, asesor de ventas de Zipolite al Desnudo, agencia LGBT+ mexicana con más de 10 años de experiencia y +342 viajeros. Eres cálido, directo y experto en cerrar ventas. Tu objetivo principal es que el usuario reserve.
+
+SOBRE LA AGENCIA:
+- Especialistas en viajes LGBT+ a Zipolite, Oaxaca
+- +10 años creando experiencias, +342 viajeros satisfechos, 5 estrellas
+- Ambiente 100% seguro, inclusivo y libre de discriminación
+- Comunidad real: llegas solo y regresas con amigos
+
+PAQUETES ACTUALES:
+1. AÑO NUEVO AL DESNUDO
+   - Precio: $4,750/persona camping · $7,750 habitación doble · $10,750 habitación individual
+   - Fechas: 29 dic 2026 al 3 ene 2027 · 5 días / 4 noches
+   - Salida CDMX: 29 dic 10:00pm (cita 9:30pm) · Regreso: 3 ene 6:00pm
+   - Incluye: autobús SCT con WC/pantallas/cargadores, camping 5 hectáreas privadas con alberca/duchas/seguridad, tienda y colchón en préstamo, Day Pass último día hasta 6pm
+   - Anticipo camping: $1,500/persona · Anticipo habitación: $3,000/persona
+   - Solo 5 habitaciones disponibles
+   - Itinerario: 30 dic día libre · 31 dic Mazunte+Punta Cometa+cena grupal organizada en Restaurante 3 de Diciembre (COSTO POR CUENTA DEL VIAJERO, nosotros solo organizamos la reserva)+bar en playa con show drag y fuegos artificiales · 1 ene día libre · 2 ene tour opcional · 3 ene regreso
+   - Tour opcional 2 ene: Carrizalillo+Bioluminiscencia Manialtepec · $1,000/persona extra
+   - NO incluye: alimentos, bebidas, consumos en bar, propinas ni ningún gasto personal
+
+2. LUNAS DE OCTUBRE
+   - Precio: $8,854/persona
+   - Fechas: 22-27 oct 2026 · 6 días / 5 noches
+   - Incluye: vuelo redondo CDMX AICM, 5 noches Hotel Paraíso línea de playa, habitación doble, traslados aeropuerto-hotel
+   - Salida: jue 22 oct 12:00pm · Regreso: mar 27 oct 10:32pm
+   - Anticipo: $1,500/persona
+   - NO incluye: alimentos, bebidas, propinas ni gastos personales
+
+PAGOS: Transferencia/depósito (sin cargo extra) o tarjeta con financiamiento 3-24 meses (aplica cargo)
+RESERVAS: https://zipolitealdesnudo.com
+
+REGLAS ESTRICTAS:
+1. Responde SIEMPRE en español
+2. Sé breve — máximo 3 párrafos cortos
+3. NUNCA pidas WhatsApp — el usuario ya está en Telegram
+4. NUNCA pidas email a menos que el usuario lo ofrezca voluntariamente
+5. Si el usuario da su nombre, úsalo en todas las respuestas siguientes
+6. Siempre termina con una llamada a acción clara hacia reservar o agendar llamada
+7. Si el usuario quiere agendar una llamada o que lo llamen, responde brevemente y termina con AGENDAR_LLAMADA
+8. Si no puedes resolver algo o el usuario pide hablar con alguien, termina con ESCALAR_ASESOR
+9. Crea urgencia real cuando aplique: "Solo quedan 5 habitaciones" / "Los lugares se están llenando"
+10. NUNCA inventes información que no esté en este prompt
+11. La cena del 31 de diciembre y TODOS los consumos (bar, restaurantes, bebidas) van por cuenta del viajero — NUNCA digas que están incluidos`;
+
+// ─── FUNCIONES UTILITARIAS ───────────────────────────────────
 
 async function sendMessage(token, chatId, text, buttons) {
-  const body = {
-    chat_id: chatId,
-    text,
-    parse_mode: 'HTML'
-  };
-  if (buttons) {
-    body.reply_markup = { inline_keyboard: buttons };
-  }
+  const body = { chat_id: chatId, text, parse_mode: 'Markdown' };
+  if (buttons) body.reply_markup = { inline_keyboard: buttons };
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -328,30 +229,18 @@ async function answerCallback(token, callbackQueryId) {
   });
 }
 
-async function getConversacion(chatId) {
+async function getContacto(chatId) {
   const { data } = await supabase
-    .from('conversaciones_telegram')
+    .from('contactos')
     .select('*')
-    .eq('chat_id', chatId)
+    .eq('telegram_chat_id', chatId)
     .maybeSingle();
   return data;
 }
 
-async function saveConversacion(chatId, updates) {
-  await supabase
-    .from('conversaciones_telegram')
-    .upsert({ chat_id: chatId, ...updates }, { onConflict: 'chat_id' });
-}
-
 async function upsertContacto(chatId, from) {
-  const { data: existing } = await supabase
-    .from('contactos')
-    .select('id')
-    .eq('telegram_chat_id', chatId)
-    .maybeSingle();
-
-  if (existing) return existing.id;
-
+  const existing = await getContacto(chatId);
+  if (existing) return existing;
   const { data } = await supabase
     .from('contactos')
     .insert({
@@ -361,120 +250,100 @@ async function upsertContacto(chatId, from) {
       estado_crm: 'lead',
       temperatura: 'frio'
     })
-    .select('id')
+    .select()
     .single();
+  return data;
+}
 
-  return data?.id;
+async function actualizarContacto(chatId, updates) {
+  await supabase.from('contactos').update(updates).eq('telegram_chat_id', chatId);
+}
+
+async function getHistorial(chatId) {
+  const { data } = await supabase
+    .from('conversaciones_telegram')
+    .select('historial, nombre, email, whatsapp, estado_embudo')
+    .eq('chat_id', chatId)
+    .maybeSingle();
+  return data || { historial: [], nombre: null, email: null, whatsapp: null };
+}
+
+async function saveHistorial(chatId, historial, extras = {}) {
+  await supabase
+    .from('conversaciones_telegram')
+    .upsert({ chat_id: chatId, historial, ...extras }, { onConflict: 'chat_id' });
 }
 
 async function registrarInteraccion(contactoId, tipo, resumen) {
+  if (!contactoId) return;
   await supabase.from('interacciones').insert({
     contacto_id: contactoId,
     canal: 'telegram',
     tipo,
-    resumen
+    resumen: resumen.substring(0, 200)
   });
 }
 
-const systemPrompt = `Eres Mateo, asesor de ventas de Zipolite al Desnudo, agencia LGBT+ mexicana con más de 10 años de experiencia y +342 viajeros. Eres cálido, profesional y experto en cerrar ventas.
+function generarSlotsHorario(dia) {
+  const ahora = new Date();
+  const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
+  const slots = [];
+  for (let h = 13; h <= 17; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 17 && m > 0) continue;
+      if (dia === 'hoy') {
+        const minutos = h * 60 + m;
+        if (minutos <= horaActual + 30) continue;
+      }
+      const label = `${h}:${m === 0 ? '00' : m}pm`;
+      slots.push({ text: label, callback_data: `slot_${dia}_${h}_${m}` });
+    }
+  }
+  return slots;
+}
 
-SOBRE LA AGENCIA:
-- Especialistas en viajes LGBT+ a Zipolite, Oaxaca
-- Más de 10 años creando experiencias
-- +342 viajeros satisfechos, 5 estrellas
-- Ambiente 100% seguro, inclusivo y libre
-
-PAQUETES:
-1. Año Nuevo al Desnudo - $4,750/persona camping
-   - 29 dic 2026 al 3 ene 2027 · 5 días / 4 noches
-   - Salida CDMX 29 dic 10pm (cita 9:30pm)
-   - Regreso 3 ene 6pm
-   - Itinerario: 30 dic día libre · 31 dic Mazunte + Punta Cometa. Organizamos reserva grupal en Restaurante 3 de Diciembre para cenar juntos — IMPORTANTE: el costo de la cena NO está incluido en el paquete, cada viajero paga su consumo. Después: bar en playa con show drag y fuegos artificiales para recibir el Año Nuevo. · 1 ene día libre · 2 ene tour opcional · 3 ene regreso
-   - Incluye: transporte en autobús SCT, camping 5 hectáreas, alberca, duchas, seguridad, tienda y colchón en préstamo, Day Pass último día
-   - Habitaciones disponibles (solo 5): 1 persona $10,750 · 2 personas $7,750 c/u · anticipo habitación $3,000
-   - Tour opcional 2 ene: Carrizalillo + Bioluminiscencia Manialtepec · $1,000 extra
-   - Anticipo camping: $1,500 por persona
-
-2. Lunas de Octubre - $8,854/persona
-   - 22 al 27 oct 2026 · 6 días / 5 noches
-   - Incluye vuelo redondo CDMX, Hotel Paraíso línea de playa, habitación doble, traslados
-   - Salida 22 oct 12pm AICM · Regreso 27 oct 10:32pm
-   - Anticipo: $1,500 por persona
-
-PAGOS: Transferencia/depósito (sin cargo) o financiamiento con tarjeta 3-24 meses
-IMPORTANTE: En Zipolite no existe todo incluido. Alimentos, bebidas y gastos personales no están incluidos.
-
-REGLAS:
-- Responde siempre en español
-- Sé breve, máximo 3 párrafos
-- Tu objetivo es cerrar la venta — guía siempre hacia reservar
-- Para reservar: https://zipolitealdesnudo.com
-- Si piden asesor o no puedes resolver algo, termina con ESCALAR_ASESOR
-- Si el usuario menciona nombre, email o WhatsApp extráelos y termina con DATOS:{"nombre":"...","email":"...","whatsapp":"..."}
-- Si el usuario quiere que lo llamen o agendar una llamada, responde con AGENDAR_LLAMADA y Mateo activará el flujo de agendado
-- Nunca inventes precios ni fechas`;
+// ─── HANDLER PRINCIPAL ───────────────────────────────────────
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-
   const body = req.body;
   const token = process.env.TELEGRAM_BOT_TOKEN;
 
-  // Manejar callback_query (botones)
+  // ── CALLBACK QUERY (botones) ──
   if (body.callback_query) {
     const query = body.callback_query;
     const chatId = String(query.message.chat.id);
     const data = query.data;
-
     await answerCallback(token, query.id);
-    await upsertContacto(chatId, query.from);
 
+    const contacto = await upsertContacto(chatId, query.from);
+    const nombre = contacto?.nombre || query.from?.first_name || '';
+
+    // Menú principal
     if (data === 'menu') {
-      await sendMessage(token, chatId, MENU_PRINCIPAL.text, MENU_PRINCIPAL.buttons);
+      const saludo = nombre ? `${MENU_PRINCIPAL.text}\n\n¡Hola de nuevo, ${nombre}! 👋` : MENU_PRINCIPAL.text;
+      await sendMessage(token, chatId, saludo, MENU_PRINCIPAL.buttons);
       return res.status(200).end();
     }
 
+    // Asesor
     if (data === 'asesor') {
       await sendMessage(token, chatId, RESPUESTAS.asesor.text, RESPUESTAS.asesor.buttons);
-
-      const alertaText = `🚨 Usuario pide asesor\n\nNombre: ${query.from?.first_name || 'Desconocido'}\nChat ID: ${chatId}\nUsername: @${query.from?.username || 'sin username'}`;
+      const alertaText = `🚨 *Usuario pide asesor*\n\nNombre: ${nombre}\nChat ID: ${chatId}\nUsername: @${query.from?.username || 'sin username'}`;
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText })
+        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText, parse_mode: 'Markdown' })
       });
-
-      const { data: contactoData } = await supabase
-        .from('contactos')
-        .select('id')
-        .eq('telegram_chat_id', chatId)
-        .maybeSingle();
-
-      if (contactoData) {
-        await supabase.from('contactos').update({
-          estado_crm: 'seguimiento',
-          temperatura: 'caliente'
-        }).eq('id', contactoData.id);
-      }
-
+      await actualizarContacto(chatId, { estado_crm: 'seguimiento', temperatura: 'caliente' });
+      await registrarInteraccion(contacto?.id, 'nota', 'Usuario solicitó hablar con asesor');
       return res.status(200).end();
     }
 
+    // Agendar día
     if (data === 'llamada_hoy' || data === 'llamada_manana') {
-      const dia = data === 'llamada_hoy' ? 'hoy' : 'mañana';
-      const ahora = new Date();
-      const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
-
-      const slots = [];
-      for (let h = 13; h <= 17; h++) {
-        for (let m = 0; m < 60; m += 15) {
-          if (h === 17 && m > 0) continue;
-          const minutos = h * 60 + m;
-          if (data === 'llamada_hoy' && minutos <= horaActual + 30) continue;
-          const label = `${h}:${m === 0 ? '00' : m}pm`;
-          slots.push({ text: label, callback_data: `slot_${dia}_${h}_${m}` });
-        }
-      }
+      const dia = data === 'llamada_hoy' ? 'hoy' : 'manana';
+      const slots = generarSlotsHorario(dia);
 
       if (slots.length === 0) {
         await sendMessage(token, chatId,
@@ -491,51 +360,39 @@ export default async function handler(req, res) {
         rows.push(row);
       }
       rows.push([{ text: '⬅️ Menú principal', callback_data: 'menu' }]);
-
-      await sendMessage(token, chatId,
-        `¿A qué hora te llamamos ${dia}? 👇`,
-        rows
-      );
+      const diaTexto = dia === 'hoy' ? 'hoy' : 'mañana';
+      await sendMessage(token, chatId, `⏰ ¿A qué hora te llamamos ${diaTexto}?`, rows);
       return res.status(200).end();
     }
 
+    // Slot de horario seleccionado
     if (data.startsWith('slot_')) {
       const parts = data.split('_');
       const dia = parts[1];
-      const hora = `${parts[2]}:${parts[3] === '0' ? '00' : parts[3]}pm`;
+      const h = parts[2];
+      const m = parts[3] === '0' ? '00' : parts[3];
+      const hora = `${h}:${m}pm`;
       const diaTexto = dia === 'hoy' ? 'hoy' : 'mañana';
-
-      const { data: contacto } = await supabase
-        .from('contactos')
-        .select('nombre, whatsapp')
-        .eq('telegram_chat_id', chatId)
-        .maybeSingle();
-
-      const nombre = contacto?.nombre || query.from?.first_name || 'el cliente';
       const telefono = contacto?.whatsapp || 'no registrado';
 
       await sendMessage(token, chatId,
-        `✅ ¡Listo! Te llamamos ${diaTexto} a las ${hora}.\n\nSi el número no es correcto escríbelo aquí y lo actualizamos. 📱`,
+        `✅ *¡Llamada agendada!*\n\nTe llamamos ${diaTexto} a las *${hora}*.\n\nSi el número al que te llamaremos no es correcto, escríbelo aquí. 📱`,
         [[{ text: '🏠 Menú principal', callback_data: 'menu' }]]
       );
 
-      const alertaText = `📞 LLAMADA AGENDADA\n\nNombre: ${nombre}\nTeléfono: ${telefono}\nCuándo: ${diaTexto} a las ${hora}\nChat ID: ${chatId}\nUsername: @${query.from?.username || 'sin username'}`;
+      const alertaText = `📞 *LLAMADA AGENDADA*\n\nNombre: ${nombre}\nTeléfono: ${telefono}\nCuándo: ${diaTexto} a las ${hora}\nChat ID: ${chatId}\nUsername: @${query.from?.username || 'sin username'}`;
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText })
+        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText, parse_mode: 'Markdown' })
       });
 
-      await supabase.from('interacciones').insert({
-        contacto_id: (await supabase.from('contactos').select('id').eq('telegram_chat_id', chatId).maybeSingle()).data?.id,
-        canal: 'telegram',
-        tipo: 'llamada',
-        resumen: `Llamada agendada ${diaTexto} a las ${hora}`
-      });
-
+      await actualizarContacto(chatId, { estado_crm: 'seguimiento', temperatura: 'caliente' });
+      await registrarInteraccion(contacto?.id, 'llamada', `Llamada agendada ${diaTexto} a las ${hora}`);
       return res.status(200).end();
     }
 
+    // Respuestas hardcodeadas
     if (RESPUESTAS[data]) {
       await sendMessage(token, chatId, RESPUESTAS[data].text, RESPUESTAS[data].buttons);
       return res.status(200).end();
@@ -544,42 +401,54 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Manejar mensajes de texto
+  // ── MENSAJE DE TEXTO ──
   if (!body.message?.text) return res.status(200).end();
 
   const chatId = String(body.message.chat.id);
   const userText = body.message.text.trim();
   const from = body.message.from;
 
-  await upsertContacto(chatId, from);
+  const contacto = await upsertContacto(chatId, from);
+  const conv = await getHistorial(chatId);
+  const nombre = conv.nombre || contacto?.nombre || from?.first_name || '';
 
-  // Detectar saludos → mostrar menú
+  await registrarInteraccion(contacto?.id, 'mensaje_entrante', userText);
+
+  // Detectar saludo → menú
   const esSaludo = SALUDOS.some(s => userText.toLowerCase().includes(s)) || userText === '/start';
   if (esSaludo) {
-    await sendMessage(token, chatId, MENU_PRINCIPAL.text, MENU_PRINCIPAL.buttons);
+    const saludo = nombre
+      ? `🌊 ¡Hola de nuevo, *${nombre}*! Me alegra verte por aquí 🌈\n\n¿En qué te puedo ayudar hoy?`
+      : MENU_PRINCIPAL.text;
+    await sendMessage(token, chatId, saludo, MENU_PRINCIPAL.buttons);
     return res.status(200).end();
   }
 
-  // Texto libre → Claude
-  const conversacion = await getConversacion(chatId);
-  const historial = conversacion?.historial || [];
-  const contactoId = await upsertContacto(chatId, from);
-
-  if (contactoId) {
-    await registrarInteraccion(contactoId, 'mensaje_entrante', userText.substring(0, 200));
+  // Detectar si el usuario da un número de teléfono para actualizar
+  const telMatch = userText.match(/[\d\s\-\+]{10,15}/);
+  if (telMatch && conv.estado_embudo === 'agendando') {
+    const tel = telMatch[0].replace(/\s|-/g, '');
+    await actualizarContacto(chatId, { whatsapp: tel });
+    await saveHistorial(chatId, conv.historial, { estado_embudo: null });
+    await sendMessage(token, chatId,
+      `✅ Número actualizado: *${tel}*\n\n¿Cuándo prefieres la llamada?`,
+      [[{ text: '📅 Hoy', callback_data: 'llamada_hoy' }, { text: '📅 Mañana', callback_data: 'llamada_manana' }]]
+    );
+    return res.status(200).end();
   }
 
+  // Claude para texto libre
+  const historial = conv.historial || [];
   const messages = [
     ...historial.slice(-MAX_HISTORIAL),
     { role: 'user', content: userText }
   ];
 
   try {
-    let reply;
+    let reply = '¡Hola! Soy Mateo 🌊 Visita zipolitealdesnudo.com para ver nuestros paquetes.';
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      reply = '¡Hola! Soy Mateo 🌊 Tu asesor de viajes LGBT+ a Zipolite. Visita zipolitealdesnudo.com para ver nuestros paquetes.';
-    } else {
+    if (process.env.ANTHROPIC_API_KEY) {
+      const contextExtra = nombre ? `El usuario se llama ${nombre}.` : '';
       const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -589,82 +458,60 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 500,
-          system: systemPrompt,
+          max_tokens: 400,
+          system: systemPrompt + (contextExtra ? `\n\nCONTEXTO: ${contextExtra}` : ''),
           messages
         })
       });
-
       const aiData = await aiRes.json();
-      reply = aiData.content?.[0]?.text || 'Lo siento, intenta de nuevo en un momento.';
+      reply = aiData.content?.[0]?.text || reply;
     }
 
+    // Detectar señales especiales
     const escalar = reply.includes('ESCALAR_ASESOR');
-    reply = reply.replace('ESCALAR_ASESOR', '').trim();
-
     const agendar = reply.includes('AGENDAR_LLAMADA');
-    reply = reply.replace('AGENDAR_LLAMADA', '').trim();
+    reply = reply.replace('ESCALAR_ASESOR', '').replace('AGENDAR_LLAMADA', '').trim();
 
-    const datosMatch = reply.match(/DATOS:(\{.*?\})/s);
-    let datosExtraidos = null;
-    if (datosMatch) {
-      try { datosExtraidos = JSON.parse(datosMatch[1]); } catch(e) {}
-      reply = reply.replace(/DATOS:\{.*?\}/s, '').trim();
+    // Detectar si el usuario dio su nombre
+    const nombreMatch = reply.match(/NOMBRE:([^\n]+)/);
+    if (nombreMatch) {
+      const nuevoNombre = nombreMatch[1].trim();
+      reply = reply.replace(/NOMBRE:[^\n]+/, '').trim();
+      await actualizarContacto(chatId, { nombre: nuevoNombre, estado_crm: 'contactado', temperatura: 'tibio' });
+      await saveHistorial(chatId, [
+        ...historial.slice(-MAX_HISTORIAL),
+        { role: 'user', content: userText },
+        { role: 'assistant', content: reply }
+      ], { nombre: nuevoNombre });
+    } else {
+      await saveHistorial(chatId, [
+        ...historial.slice(-MAX_HISTORIAL),
+        { role: 'user', content: userText },
+        { role: 'assistant', content: reply }
+      ]);
     }
 
-    const nuevoHistorial = [
-      ...historial.slice(-MAX_HISTORIAL),
-      { role: 'user', content: userText },
-      { role: 'assistant', content: reply }
-    ];
-
-    const updates = { historial: nuevoHistorial };
-    if (datosExtraidos?.nombre) updates.nombre = datosExtraidos.nombre;
-    if (datosExtraidos?.email) updates.email = datosExtraidos.email;
-    if (datosExtraidos?.whatsapp) updates.whatsapp = datosExtraidos.whatsapp;
-    await saveConversacion(chatId, updates);
-
-    if (datosExtraidos && contactoId) {
-      const contactUpdate = {};
-      if (datosExtraidos.nombre) contactUpdate.nombre = datosExtraidos.nombre;
-      if (datosExtraidos.email) contactUpdate.email = datosExtraidos.email;
-      if (datosExtraidos.whatsapp) contactUpdate.whatsapp = datosExtraidos.whatsapp;
-      if (Object.keys(contactUpdate).length > 0) {
-        contactUpdate.estado_crm = 'contactado';
-        contactUpdate.temperatura = 'tibio';
-        await supabase.from('contactos').update(contactUpdate).eq('id', contactoId);
-      }
-    }
-
-    await sendMessage(token, chatId, reply, [
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]);
-
-    if (contactoId) {
-      await registrarInteraccion(contactoId, 'mensaje_saliente', reply.substring(0, 200));
-    }
-
+    // Botones por defecto en texto libre
+    const botonesDefault = [[{ text: '🏠 Menú principal', callback_data: 'menu' }]];
     if (agendar) {
-      await sendMessage(token, chatId,
-        `📞 Con gusto te llamamos. ¿Cuándo prefieres?`,
-        [[{ text: '📅 Hoy', callback_data: 'llamada_hoy' }, { text: '📅 Mañana', callback_data: 'llamada_manana' }],
-         [{ text: '⬅️ Menú principal', callback_data: 'menu' }]]
-      );
+      botonesDefault.unshift([
+        { text: '📅 Llamada hoy', callback_data: 'llamada_hoy' },
+        { text: '📅 Llamada mañana', callback_data: 'llamada_manana' }
+      ]);
     }
 
+    await sendMessage(token, chatId, reply, botonesDefault);
+    await registrarInteraccion(contacto?.id, 'mensaje_saliente', reply);
+
+    // Escalar a asesor
     if (escalar) {
-      if (contactoId) {
-        await supabase.from('contactos').update({
-          estado_crm: 'seguimiento',
-          temperatura: 'caliente'
-        }).eq('id', contactoId);
-        await registrarInteraccion(contactoId, 'nota', 'Usuario solicitó hablar con asesor');
-      }
-      const alertaText = `🚨 Usuario pide asesor\n\nNombre: ${from?.first_name || 'Desconocido'}\nChat ID: ${chatId}\nUsername: @${from?.username || 'sin username'}\nMensaje: ${userText}`;
+      await actualizarContacto(chatId, { estado_crm: 'seguimiento', temperatura: 'caliente' });
+      await registrarInteraccion(contacto?.id, 'nota', 'Usuario solicitó hablar con asesor vía texto libre');
+      const alertaText = `🚨 *Usuario pide asesor*\n\nNombre: ${nombre}\nChat ID: ${chatId}\nMensaje: ${userText}`;
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText })
+        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText, parse_mode: 'Markdown' })
       });
     }
 
