@@ -127,7 +127,7 @@ const RESPUESTAS = {
   },
 
   reservar_anonuevo: {
-    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Año Nuevo al Desnudo:\n👉 https://zipolitealdesnudo.com\n\nElige tu paquete y aparta con:\n• $1,500 por persona (camping)\n• $3,000 por persona (habitación)\n\nTu lugar queda confirmado desde el primer pago. ✅`,
+    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Año Nuevo al Desnudo:\n👉 https://zipolitealdesnudo.com/?paquete=ano-nuevo-al-desnudo\n\nElige tu paquete y aparta con:\n• $1,500 por persona (camping)\n• $3,000 por persona (habitación)\n\nTu lugar queda confirmado desde el primer pago. ✅`,
     buttons: [
       [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
       [{ text: '🙋 Tengo una duda', callback_data: 'asesor' }],
@@ -136,7 +136,7 @@ const RESPUESTAS = {
   },
 
   reservar_lunas: {
-    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Lunas de Octubre:\n👉 https://zipolitealdesnudo.com\n\nAparta con $1,500 por persona y el resto lo pagas antes del viaje.\n\nTu lugar queda confirmado desde el primer pago. ✅`,
+    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Lunas de Octubre:\n👉 https://zipolitealdesnudo.com/?paquete=lunas-de-octubre\n\nAparta con $1,500 por persona y el resto lo pagas antes del viaje.\n\nTu lugar queda confirmado desde el primer pago. ✅`,
     buttons: [
       [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
       [{ text: '🙋 Tengo una duda', callback_data: 'asesor' }],
