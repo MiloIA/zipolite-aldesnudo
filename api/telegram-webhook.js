@@ -35,7 +35,7 @@ const RESPUESTAS = {
   },
 
   pkg_lunas: {
-    text: `🌙 *Lunas de Octubre*\n\n📅 22 → 27 octubre 2026 · 6 días / 5 noches\n💰 $8,854 por persona\n\n✈️ *VUELO REDONDO CDMX INCLUIDO*\n• Salida: jue 22 oct · 12:00pm desde AICM\n• Regreso: mar 27 oct · 10:32pm\n\n✅ *¿QUÉ INCLUYE?*\n• Vuelo redondo Ciudad de México ↔ Zipolite\n• 5 noches en Hotel Paraíso — línea de playa 🌊\n• Habitación doble\n• Traslados aeropuerto ↔ hotel\n\nTodo el viaje organizado. Solo llega y disfruta.\n\n💰 Aparta tu lugar con $1,500 por persona\n\n⚠️ Alimentos, bebidas y gastos personales van por cuenta de cada viajero. En Zipolite no existe el todo incluido.\n\n¿Te lo agendamos? 🌙`,
+    text: `🌙 *Lunas de Octubre*\n\n📅 22 → 27 octubre 2026 · 6 días / 5 noches\n💰 $8,854 por persona\n\n✈️ *VUELO REDONDO CDMX INCLUIDO*\n• Salida: jue 22 oct · 12:00pm desde AICM\n• Regreso: mar 27 oct · 10:32pm\n\n✅ *¿QUÉ INCLUYE?*\n• Vuelo redondo Ciudad de México ↔ Zipolite\n• 5 noches en Hotel Paraíso — línea de playa 🌊\n• Habitación doble\n• Traslados aeropuerto ↔ hotel\n\nTodo el viaje organizado. Solo llega y disfruta.\n\n💰 Aparta tu lugar con $3,500 por persona\n\n⚠️ Alimentos, bebidas y gastos personales van por cuenta de cada viajero. En Zipolite no existe el todo incluido.\n\n¿Te lo agendamos? 🌙`,
     buttons: [
       [{ text: '✅ ¡Quiero reservar!', callback_data: 'reservar_lunas' }],
       [{ text: '💳 Formas de pago', callback_data: 'info_pagos' }],
@@ -136,7 +136,7 @@ const RESPUESTAS = {
   },
 
   reservar_lunas: {
-    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Lunas de Octubre:\n👉 https://zipolitealdesnudo.com/?paquete=lunas-de-octubre\n\nAparta con $1,500 por persona y el resto lo pagas antes del viaje.\n\nTu lugar queda confirmado desde el primer pago. ✅`,
+    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Lunas de Octubre:\n👉 https://zipolitealdesnudo.com/?paquete=lunas-de-octubre\n\nAparta con $3,500 por persona y el resto lo pagas antes del viaje.\n\nTu lugar queda confirmado desde el primer pago. ✅`,
     buttons: [
       [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
       [{ text: '🙋 Tengo una duda', callback_data: 'asesor' }],
@@ -190,7 +190,7 @@ PAQUETES ACTUALES:
    - Fechas: 22-27 oct 2026 · 6 días / 5 noches
    - Incluye: vuelo redondo CDMX AICM, 5 noches Hotel Paraíso línea de playa, habitación doble, traslados aeropuerto-hotel
    - Salida: jue 22 oct 12:00pm · Regreso: mar 27 oct 10:32pm
-   - Anticipo: $1,500/persona
+   - Anticipo: $3,500/persona
    - NO incluye: alimentos, bebidas, propinas ni gastos personales
 
 PAGOS: Transferencia/depósito (sin cargo extra) o tarjeta con financiamiento 3-24 meses (aplica cargo)
