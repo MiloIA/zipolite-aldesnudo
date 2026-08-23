@@ -456,14 +456,14 @@ section{padding:56px 18px;}
 
 #crm-kanban {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(160px, 1fr));
   gap: 12px;
+  padding-bottom: 16px;
   overflow-x: auto;
-  padding-bottom: 8px;
 }
 
 .crm-col {
-  min-width: 0;
+  min-width: 160px;
   background: var(--bg-secondary, #f5f7fa);
   border-radius: 12px;
   padding: 12px;
@@ -471,17 +471,24 @@ section{padding:56px 18px;}
 
 .crm-col-header {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
   margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  white-space: nowrap;
 }
 
 .crm-count {
   background: #0d9488;
   color: white;
   border-radius: 20px;
-  padding: 2px 8px;
+  padding: 2px 7px;
   font-size: 11px;
+  font-weight: 600;
+}
+
+.crm-card strong {
+  font-size: 13px;
+  line-height: 1.3;
 }
