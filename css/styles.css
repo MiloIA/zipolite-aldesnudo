@@ -452,14 +452,18 @@ section{padding:56px 18px;}
 .galeria-ver-mas strong{font-size:1.1rem;}
 
 
-#admin-section-crm { padding: 16px; }
+#admin-section-crm {
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
 
 #crm-kanban {
   display: grid;
-  grid-template-columns: repeat(6, minmax(160px, 1fr));
-  gap: 12px;
-  padding-bottom: 16px;
-  overflow-x: auto;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .crm-col {
