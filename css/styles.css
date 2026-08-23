@@ -492,6 +492,13 @@ section{padding:56px 18px;}
   font-weight: 600;
 }
 
+.crm-card {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+.crm-card:last-child {
+  border-bottom: none !important;
+}
+
 .crm-card strong {
   font-size: 13px;
   line-height: 1.3;
