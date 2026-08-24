@@ -108,12 +108,14 @@ function renderPkgs(list) {
       <div class="pkg-variants" role="group" aria-label="Elige tu modalidad">
         ${variantes.map((v, i) => {
           const nl = (v.nombre||'').toLowerCase();
+          const esHab = nl.includes('habitación individual') || nl.includes('habitacion individual') || nl.includes('habitación doble') || nl.includes('habitacion doble');
           const chipLabel = nl.includes('habitación individual') || nl.includes('habitacion individual')
             ? 'Habitación individual (1 persona)'
             : nl.includes('habitación doble') || nl.includes('habitacion doble')
               ? 'Habitación doble (2 personas)'
               : v.nombre;
-          return `<button class="pkg-variant-chip${i===0?' active':''}" data-precio="${v.precio}" data-anticipo="${v.anticipo}" data-anticipo-total="${v.anticipo_es_total||false}" data-variante-id="${v.id}" data-nombre="${v.nombre}" data-lugares-totales="${v.lugares_totales||''}" data-lugares-vendidos="${v.lugares_vendidos||0}"><span class="chip-label">${chipLabel}</span><span class="chip-precio">$${Number(v.precio).toLocaleString('es-MX')}</span></button>`;
+          const dispSpan = esHab && v.lugares_totales ? `<span class="chip-disponibilidad">Solo ${v.lugares_totales} habitaciones</span>` : '';
+          return `<button class="pkg-variant-chip${i===0?' active':''}" data-precio="${v.precio}" data-anticipo="${v.anticipo}" data-anticipo-total="${v.anticipo_es_total||false}" data-variante-id="${v.id}" data-nombre="${v.nombre}" data-lugares-totales="${v.lugares_totales||''}" data-lugares-vendidos="${v.lugares_vendidos||0}"><span class="chip-label">${chipLabel}</span><span class="chip-precio">$${Number(v.precio).toLocaleString('es-MX')}</span>${dispSpan}</button>`;
         }).join('')}
       </div>` : '';
 
