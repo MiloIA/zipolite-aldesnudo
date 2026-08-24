@@ -641,6 +641,8 @@ export default async function handler(req, res) {
   // Detectar saludo → menú
   const esSaludo = SALUDOS.some(s => userText.toLowerCase().includes(s)) || userText === '/start';
   if (esSaludo) {
+    console.log('PAQUETES EN MENU:', JSON.stringify(paquetes?.map(p => p.nombre)));
+    console.log('MENU BUTTONS:', JSON.stringify(menuButtons?.slice(0, 3)));
     const saludo = nombre
       ? `🌊 ¡Hola de nuevo, *${nombre}*! Me alegra verte por aquí 🌈\n\n¿En qué te puedo ayudar hoy?`
       : MENU_PRINCIPAL.text;
