@@ -307,8 +307,16 @@ async function loadData() {
       '<tr><td colspan="9" style="text-align:center;color:var(--red);padding:24px;">Error al cargar datos</td></tr>';
     return;
   }
-  const { data } = await r.json();
+  const { data, variantes: variantesData } = await r.json();
   reservaciones = data || [];
+  if (variantesData) {
+    variantes = variantesData;
+    const sel = document.getElementById('nr-variante');
+    if (sel) {
+      sel.innerHTML = '<option value="" data-precio="0">Sin variante</option>' +
+        variantes.map(v => `<option value="${v.id}" data-precio="${v.precio}">${v.nombre} — ${fmt(v.precio)}</option>`).join('');
+    }
+  }
   renderSummary();
   renderTable();
 }
@@ -327,26 +335,23 @@ function reload() { expandedId = null; loadData(); }
 
 // ── SUMMARY ──────────────────────────────────────────────────────────────────
 function renderSummary() {
-  let totalViajeros = 0, glamping = 0, individual = 0, doble = 0;
-  let totalCobrado = 0, totalPendiente = 0;
-
+  let totalViajeros = 0, totalCobrado = 0, totalPendiente = 0;
   reservaciones.forEach(r => {
-    const personas = Number(r.personas) || 0;
-    totalViajeros += personas;
-
-    const vn = (r.variante_nombre || '').toLowerCase();
-    if (vn.includes('glamping')) glamping += personas;
-    else if (vn.includes('individual')) individual += personas;
-    else if (vn.includes('doble')) doble += personas;
-
+    totalViajeros += Number(r.personas) || 0;
     totalCobrado += Number(r.total_pagado) || 0;
     totalPendiente += Math.max(0, (Number(r.total) || 0) - (Number(r.total_pagado) || 0));
   });
 
+  const findV = kw => variantes.find(v => (v.nombre || '').toLowerCase().includes(kw));
+  const gl = findV('glamping'), ind = findV('individual'), dob = findV('doble');
+
   document.getElementById('stat-viajeros').textContent = totalViajeros;
-  document.getElementById('stat-glamping').textContent = glamping + '/48';
-  document.getElementById('stat-individual').textContent = individual + '/6';
-  document.getElementById('stat-doble').textContent = doble + '/6';
+  document.getElementById('stat-glamping').textContent =
+    `${gl?.lugares_vendidos ?? 0}/${gl?.lugares_totales ?? 48}`;
+  document.getElementById('stat-individual').textContent =
+    `${ind?.lugares_vendidos ?? 0}/${ind?.lugares_totales ?? 6}`;
+  document.getElementById('stat-doble').textContent =
+    `${dob?.lugares_vendidos ?? 0}/${dob?.lugares_totales ?? 6}`;
   document.getElementById('stat-cobrado').textContent = fmt(totalCobrado);
   document.getElementById('stat-pendiente').textContent = fmt(totalPendiente);
 }
@@ -385,15 +390,16 @@ function renderTable() {
     return `
       <tr class="reserva-row" onclick="toggleDetail('${r.id}')">
         <td><strong>${r.nombre}</strong><br><small style="color:#888;">${r.email}</small></td>
-        <td>${r.variante_nombre || '—'}</td>
+        <td>${r.variantes_paquete?.nombre || r.variante_nombre || '—'}</td>
         <td style="text-align:center;">${r.personas}</td>
         <td>${fmt(total)}</td>
         <td style="color:${pagado > 0 ? 'var(--green)' : '#888'};">${fmt(pagado)}</td>
         <td style="color:${pendiente > 0 ? '#e07b00' : 'var(--green)'};">${fmt(pendiente)}</td>
         <td style="font-size:0.8rem;">${ultimoPago(r)}</td>
         <td>${estadoBadge(r)}</td>
-        <td onclick="event.stopPropagation()">
+        <td onclick="event.stopPropagation()" style="white-space:nowrap;">
           <button class="btn btn-teal btn-sm" onclick="showPagoForm('${r.id}')">+ Pago</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarReservacion('${r.id}')" style="margin-left:4px;">Eliminar</button>
         </td>
       </tr>
       <tr class="detail-row" id="detail-${r.id}" style="display:${isExpanded ? 'table-row' : 'none'}">
@@ -419,9 +425,11 @@ function renderDetailPanel(r) {
                 : `<span class="badge badge-yellow">Pendiente</span>`}
               </td>
               <td style="color:#888;font-size:0.8rem;">${p.notas || '—'}</td>
-              <td>${!p.confirmado
-                ? `<button class="btn btn-teal btn-sm" onclick="confirmarPago('${p.id}','${r.id}')">Confirmar</button>`
-                : ''}
+              <td style="white-space:nowrap;">
+                ${!p.confirmado
+                  ? `<button class="btn btn-teal btn-sm" onclick="confirmarPago('${p.id}','${r.id}')">Confirmar</button> `
+                  : ''}
+                <button class="btn btn-danger btn-sm" onclick="eliminarPago('${p.id}','${r.id}')" title="Eliminar pago">✕</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -531,6 +539,28 @@ async function confirmarPago(pagoId, reservacionId) {
   });
   if (!r.ok) { alert('Error al confirmar pago'); return; }
   expandedId = reservacionId;
+  await loadData();
+}
+
+async function eliminarPago(pagoId, reservacionId) {
+  if (!confirm('¿Eliminar este pago?')) return;
+  const r = await fetch(`/api/pagos?pago_id=${pagoId}`, {
+    method: 'DELETE',
+    headers: { 'x-admin-token': adminToken },
+  });
+  if (!r.ok) { alert('Error al eliminar pago'); return; }
+  expandedId = reservacionId;
+  await loadData();
+}
+
+async function eliminarReservacion(reservacionId) {
+  if (!confirm('¿Eliminar esta reservación y todos sus pagos? Esta acción no se puede deshacer.')) return;
+  const r = await fetch(`/api/pagos?reservacion_id=${reservacionId}&delete_reservacion=1`, {
+    method: 'DELETE',
+    headers: { 'x-admin-token': adminToken },
+  });
+  if (!r.ok) { alert('Error al eliminar reservación'); return; }
+  expandedId = null;
   await loadData();
 }
 

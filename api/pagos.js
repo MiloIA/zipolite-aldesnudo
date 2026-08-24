@@ -18,16 +18,21 @@ export default async function handler(req, res) {
   // ── GET ──────────────────────────────────────────────────────────────────
   if (method === 'GET') {
 
-    // GET ?all=1 → all reservaciones for año nuevo + pagos aggregated
+    // GET ?all=1 → all reservaciones for año nuevo + pagos aggregated + variantes
     if (params.get('all') === '1') {
-      const { data: reservaciones, error } = await sb
-        .from('reservaciones')
-        .select('*')
-        .eq('paquete_id', ANO_NUEVO_PKG_ID)
-        .order('created_at', { ascending: true });
+      const [{ data: reservaciones, error }, { data: variantes }] = await Promise.all([
+        sb.from('reservaciones')
+          .select('*, variantes_paquete(nombre)')
+          .eq('paquete_id', ANO_NUEVO_PKG_ID)
+          .order('created_at', { ascending: true }),
+        sb.from('variantes_paquete')
+          .select('id, nombre, precio, lugares_totales, lugares_vendidos')
+          .eq('paquete_id', ANO_NUEVO_PKG_ID)
+          .order('nombre'),
+      ]);
 
       if (error) return res.status(500).json({ error: error.message });
-      if (!reservaciones || reservaciones.length === 0) return res.status(200).json({ data: [] });
+      if (!reservaciones || reservaciones.length === 0) return res.status(200).json({ data: [], variantes: variantes || [] });
 
       const ids = reservaciones.map(r => r.id);
       const { data: pagos } = await sb
@@ -50,7 +55,7 @@ export default async function handler(req, res) {
           .reduce((s, p) => s + (Number(p.monto) || 0), 0),
       }));
 
-      return res.status(200).json({ data });
+      return res.status(200).json({ data, variantes: variantes || [] });
     }
 
     // GET ?variantes=1 → variantes for año nuevo package
@@ -150,6 +155,35 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
+  // ── DELETE ───────────────────────────────────────────────────────────────
+  if (method === 'DELETE') {
+    const pagoId = params.get('pago_id');
+    const reservacionId = params.get('reservacion_id');
+    const deleteReservacion = params.get('delete_reservacion') === '1';
+
+    // DELETE ?reservacion_id=XXX&delete_reservacion=1
+    if (deleteReservacion && reservacionId) {
+      await sb.from('pagos').delete().eq('reservacion_id', reservacionId);
+      const { error } = await sb.from('reservaciones').delete().eq('id', reservacionId);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ ok: true });
+    }
+
+    // DELETE ?pago_id=XXX
+    if (pagoId) {
+      const { data: pago } = await sb
+        .from('pagos').select('reservacion_id, confirmado').eq('id', pagoId).single();
+      const { error } = await sb.from('pagos').delete().eq('id', pagoId);
+      if (error) return res.status(500).json({ error: error.message });
+      if (pago?.confirmado && pago?.reservacion_id) {
+        await confirmarYActualizar(pago.reservacion_id);
+      }
+      return res.status(200).json({ ok: true });
+    }
+
+    return res.status(400).json({ error: 'Falta pago_id o reservacion_id con delete_reservacion=1' });
+  }
+
   return res.status(405).json({ error: 'Método no permitido' });
 }
 
@@ -163,8 +197,15 @@ async function confirmarYActualizar(reservacionId) {
 
   const totalPagado = (pagosConf || []).reduce((s, p) => s + (Number(p.monto) || 0), 0);
 
+  const { data: reservaInfo } = await sb
+    .from('reservaciones').select('total').eq('id', reservacionId).single();
+  const totalPkg = Number(reservaInfo?.total) || 0;
+  const estado = totalPagado === 0 ? 'pendiente'
+    : totalPkg > 0 && totalPagado >= totalPkg ? 'confirmada'
+    : 'parcial';
+
   await sb.from('reservaciones')
-    .update({ anticipo_pagado: totalPagado })
+    .update({ anticipo_pagado: totalPagado, estado })
     .eq('id', reservacionId);
 
   // Only update lugares_vendidos on the FIRST confirmed pago
