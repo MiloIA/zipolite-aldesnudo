@@ -106,7 +106,15 @@ function renderPkgs(list) {
 
     const variantChips = variantes.length > 0 ? `
       <div class="pkg-variants" role="group" aria-label="Elige tu modalidad">
-        ${variantes.map((v, i) => `<button class="pkg-variant-chip${i===0?' active':''}" data-precio="${v.precio}" data-anticipo="${v.anticipo}" data-anticipo-total="${v.anticipo_es_total||false}" data-variante-id="${v.id}" data-nombre="${v.nombre}" data-lugares-totales="${v.lugares_totales||''}" data-lugares-vendidos="${v.lugares_vendidos||0}"><span class="chip-label">${v.nombre}</span><span class="chip-precio">$${Number(v.precio).toLocaleString('es-MX')}</span></button>`).join('')}
+        ${variantes.map((v, i) => {
+          const nl = (v.nombre||'').toLowerCase();
+          const chipLabel = nl.includes('habitación individual') || nl.includes('habitacion individual')
+            ? 'Habitación individual (1 persona)'
+            : nl.includes('habitación doble') || nl.includes('habitacion doble')
+              ? 'Habitación doble (2 personas)'
+              : v.nombre;
+          return `<button class="pkg-variant-chip${i===0?' active':''}" data-precio="${v.precio}" data-anticipo="${v.anticipo}" data-anticipo-total="${v.anticipo_es_total||false}" data-variante-id="${v.id}" data-nombre="${v.nombre}" data-lugares-totales="${v.lugares_totales||''}" data-lugares-vendidos="${v.lugares_vendidos||0}"><span class="chip-label">${chipLabel}</span><span class="chip-precio">$${Number(v.precio).toLocaleString('es-MX')}</span></button>`;
+        }).join('')}
       </div>` : '';
 
     const toursHtml = tours.length > 0 ? `
@@ -142,6 +150,10 @@ function renderPkgs(list) {
           <div class="pkg-price-main">
             <span class="pkg-price-label">Precio por persona</span>
             <span class="pkg-price-amount">$<span class="js-precio">${defaultPrecio.toLocaleString('es-MX')}</span></span>
+          </div>
+          <div class="pkg-price-doble" style="display:none">
+            <span class="pkg-price-doble-label">Total 2 personas</span>
+            <span class="pkg-price-doble-amount">$<span class="js-total-doble">0</span></span>
           </div>
           <div class="pkg-anticipo-block">
             <span class="pkg-anticipo-label">Aparta hoy con</span>
@@ -188,9 +200,15 @@ function initVariantChips() {
       const anticipoEl = card.querySelector('.js-anticipo');
       const btnAnticipo = card.querySelector('.js-btn-anticipo');
       const totalEl = card.querySelector('.js-total-precio');
+      const dobleEl = card.querySelector('.js-total-doble');
+      const dobleWrap = card.querySelector('.pkg-price-doble');
+      const activeChip = card.querySelector('.pkg-variant-chip.active');
+      const esDoble = activeChip && ((activeChip.dataset.nombre||'').toLowerCase().includes('habitación doble') || (activeChip.dataset.nombre||'').toLowerCase().includes('habitacion doble'));
       if (anticipoEl) anticipoEl.textContent = (anticipo * personas).toLocaleString('es-MX');
       if (btnAnticipo) btnAnticipo.textContent = (anticipo * personas).toLocaleString('es-MX');
       if (totalEl) totalEl.textContent = `Total: $${(precio * personas).toLocaleString('es-MX')}`;
+      if (dobleWrap) dobleWrap.style.display = esDoble ? '' : 'none';
+      if (dobleEl && esDoble) dobleEl.textContent = (precio * 2).toLocaleString('es-MX');
     }
 
     function setPersonasForChip(chip) {
@@ -200,36 +218,38 @@ function initVariantChips() {
       const vendidos = Number(chip.dataset.lugaresVendidos) || 0;
       const disponibles = totales !== null ? Math.max(1, totales - vendidos) : 20;
 
+      const wrapEl = card.querySelector('.pkg-personas-wrap');
       const labelEl = card.querySelector('.js-personas-label');
       const noteEl = card.querySelector('.js-personas-note');
 
-      let min = 1, max = 20, fixed = null;
-      let label = '¿Cuántas personas?', note = '';
+      const esIndividual = nombre.includes('habitación individual') || nombre.includes('habitacion individual');
+      const esDoble = nombre.includes('habitación doble') || nombre.includes('habitacion doble');
 
-      if (nombre.includes('glamping')) {
-        min = 1; max = disponibles;
-      } else if (nombre.includes('habitación individual') || nombre.includes('habitacion individual')) {
-        min = 1; max = disponibles; label = '¿Cuántas habitaciones?';
-      } else if (nombre.includes('habitación doble') || nombre.includes('habitacion doble')) {
-        fixed = 2; note = 'Precio por 2 personas. Reserva con quien tú elijas.';
-      }
-
-      if (labelEl) labelEl.textContent = label;
-      if (noteEl) { noteEl.textContent = note; noteEl.style.display = note ? '' : 'none'; }
-
-      if (fixed !== null) {
-        // Habitación doble: lock at 2, disable both buttons
-        if (countEl) { countEl.textContent = fixed; countEl.dataset.personas = fixed; countEl.dataset.min = fixed; countEl.dataset.max = fixed; }
+      if (esIndividual) {
+        // Always 1 person — hide the whole selector
+        if (countEl) { countEl.textContent = 1; countEl.dataset.personas = 1; countEl.dataset.min = 1; countEl.dataset.max = 1; }
         if (minusBtn) minusBtn.disabled = true;
         if (plusBtn) plusBtn.disabled = true;
+        if (wrapEl) wrapEl.style.display = 'none';
+        if (noteEl) { noteEl.textContent = ''; noteEl.style.display = 'none'; }
+      } else if (esDoble) {
+        // Always 2 persons — show wrap but disable controls
+        if (countEl) { countEl.textContent = 2; countEl.dataset.personas = 2; countEl.dataset.min = 2; countEl.dataset.max = 2; }
+        if (minusBtn) minusBtn.disabled = true;
+        if (plusBtn) plusBtn.disabled = true;
+        if (wrapEl) wrapEl.style.display = '';
+        if (labelEl) labelEl.textContent = '¿Cuántas personas?';
+        if (noteEl) { noteEl.textContent = 'Habitación para 2 personas. Reserva con quien tú elijas.'; noteEl.style.display = ''; }
       } else {
-        // Re-enable buttons (may be coming from a doble lock), reset count to min (1)
-        if (minusBtn) minusBtn.disabled = false;
-        if (plusBtn) plusBtn.disabled = false;
-        const count = min; // always reset to 1 on variant switch
-        if (countEl) { countEl.textContent = count; countEl.dataset.personas = count; countEl.dataset.min = min; countEl.dataset.max = max; }
-        if (minusBtn) minusBtn.disabled = (count <= min);
-        if (plusBtn) plusBtn.disabled = (count >= max);
+        // Glamping / transporte / default — enable, reset to 1
+        const max = nombre.includes('glamping') ? disponibles : 20;
+        const count = 1;
+        if (countEl) { countEl.textContent = count; countEl.dataset.personas = count; countEl.dataset.min = 1; countEl.dataset.max = max; }
+        if (minusBtn) { minusBtn.disabled = false; minusBtn.disabled = (count <= 1); }
+        if (plusBtn) { plusBtn.disabled = false; plusBtn.disabled = (count >= max); }
+        if (wrapEl) wrapEl.style.display = '';
+        if (labelEl) labelEl.textContent = '¿Cuántas personas?';
+        if (noteEl) { noteEl.textContent = ''; noteEl.style.display = 'none'; }
       }
     }
 

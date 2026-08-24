@@ -999,3 +999,21 @@ section{padding:56px 18px;}
 #disc-section {
   margin-bottom: 4px;
 }
+
+/* ── Precio total para habitación doble ── */
+.pkg-price-doble {
+  text-align: right;
+}
+.pkg-price-doble-label {
+  display: block;
+  font-size: 0.72rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+.pkg-price-doble-amount {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1A3A4A;
+}
