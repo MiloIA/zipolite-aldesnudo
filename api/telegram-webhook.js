@@ -11,7 +11,7 @@ const MAX_HISTORIAL = 8;
 
 let pkgCache = null;
 let pkgCacheTime = 0;
-const PKG_CACHE_MS = 10 * 60 * 1000; // 10 minutos
+const PKG_CACHE_MS = 10 * 60 * 1000;
 
 async function getPaqueteData() {
   if (pkgCache && Date.now() - pkgCacheTime < PKG_CACHE_MS) return pkgCache;
@@ -82,6 +82,21 @@ const RESPUESTAS = {
 
 const SALUDOS = ['hola', 'hi', 'buenas', 'hey', 'inicio', 'start', 'info', 'ayuda', 'help', 'menu', 'menú', 'buenos días', 'buenos dias', 'buenas tardes', 'buenas noches', 'buen dia', 'buen día'];
 
+const REPLY_KEYBOARD = {
+  keyboard: [
+    [{ text: '🏠 Menú principal' }, { text: '📞 Agendar llamada' }, { text: '🙋 Hablar con asesor' }]
+  ],
+  resize_keyboard: true,
+  persistent: true,
+  input_field_placeholder: 'Escribe tu mensaje...'
+};
+
+const REPLY_KB_ACTIONS = {
+  '🏠 Menú principal': 'menu',
+  '📞 Agendar llamada': 'agendar_dia',
+  '🙋 Hablar con asesor': 'asesor'
+};
+
 // ─── HELPERS ─────────────────────────────────────────────────
 
 function slugify(nombre) {
@@ -95,30 +110,10 @@ function slugify(nombre) {
 }
 
 function buildMenuButtons(paquetes) {
-  const pkgBtns = (paquetes || []).map(p => ([{
+  return (paquetes || []).map(p => ([{
     text: `${p.icono || '🌴'} ${p.nombre}`,
     callback_data: `pkg_${p.id}`
   }]));
-  return [
-    ...pkgBtns,
-    [{ text: '💳 Métodos de pago', callback_data: 'info_pagos' }],
-    [{ text: '❓ Preguntas frecuentes', callback_data: 'faq_menu' }],
-    [{ text: '📞 Agendar una llamada', callback_data: 'agendar_dia' }],
-    [{ text: '🙋 Hablar con un asesor', callback_data: 'asesor' }]
-  ];
-}
-
-function buildAiButtons(paquetes) {
-  return [
-    ...(paquetes || []).map(p => ([{
-      text: `${p.icono || '🌴'} ${p.nombre}`,
-      callback_data: `pkg_${p.id}`
-    }])),
-    [
-      { text: '📞 Agendar llamada', callback_data: 'agendar_dia' },
-      { text: '🏠 Menú principal', callback_data: 'menu' }
-    ]
-  ];
 }
 
 // ─── SISTEMA PROMPT ──────────────────────────────────────────
@@ -208,9 +203,15 @@ REGLAS ESTRICTAS:
 
 // ─── FUNCIONES UTILITARIAS ───────────────────────────────────
 
-async function sendMessage(token, chatId, text, buttons) {
-  const body = { chat_id: chatId, text, parse_mode: 'Markdown' };
-  if (buttons) body.reply_markup = { inline_keyboard: buttons };
+async function sendMessage(token, chatId, text, inlineButtons = null) {
+  const body = {
+    chat_id: chatId,
+    text,
+    parse_mode: 'Markdown',
+    reply_markup: inlineButtons
+      ? { inline_keyboard: inlineButtons }
+      : REPLY_KEYBOARD
+  };
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -301,7 +302,7 @@ function generarSlotsHorario(dia) {
 
 // ─── HANDLER DE IA UNIFICADO ─────────────────────────────────
 
-async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, resenas, token, nombre) {
+async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, resenas, token, nombre, inlineButtons = null) {
   const historial = conv.historial || [];
   const messages = [
     ...historial.slice(-MAX_HISTORIAL),
@@ -359,7 +360,24 @@ async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, r
       [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
     ]);
   } else {
-    await sendMessage(token, chatId, reply, buildAiButtons(paquetes));
+    // Show closing buttons when AI signals a reservation moment
+    const closingPhrases = ['¿te aparto', '¿apartamos', '¿reservamos'];
+    const isClosing = closingPhrases.some(ph => reply.toLowerCase().includes(ph));
+
+    let finalButtons = inlineButtons;
+    if (isClosing && paquetes.length > 0) {
+      const allText = [...historial.map(m => m.content), userMessage].join(' ').toLowerCase();
+      const relevantPaq = paquetes.find(p => allText.includes(p.nombre.toLowerCase())) || paquetes[0];
+      const pkgSlug = slugify(relevantPaq.nombre);
+      finalButtons = [
+        [
+          { text: '✅ Confirmar reserva', callback_data: `reservar_${pkgSlug}` },
+          { text: '💳 Ver formas de pago', callback_data: 'info_pagos' }
+        ]
+      ];
+    }
+
+    await sendMessage(token, chatId, reply, finalButtons);
   }
 
   await registrarInteraccion(contacto?.id, 'mensaje_saliente', reply);
@@ -388,7 +406,7 @@ export default async function handler(req, res) {
   });
   const menuButtons = buildMenuButtons(paquetes);
 
-  // ── CALLBACK QUERY (botones) ──────────────────────────────
+  // ── CALLBACK QUERY (botones inline) ──────────────────────
   if (body.callback_query) {
     const query = body.callback_query;
     const chatId = String(query.message.chat.id);
@@ -398,14 +416,12 @@ export default async function handler(req, res) {
     const contacto = await upsertContacto(chatId, query.from);
     const nombre = contacto?.nombre || query.from?.first_name || '';
 
-    // ── Menú principal ──
     if (data === 'menu') {
       const saludo = nombre ? `${MENU_PRINCIPAL_TEXT}\n\n¡Hola de nuevo, ${nombre}! 👋` : MENU_PRINCIPAL_TEXT;
       await sendMessage(token, chatId, saludo, menuButtons);
       return res.status(200).end();
     }
 
-    // ── Asesor (escalación directa, sin AI) ──
     if (data === 'asesor') {
       await sendMessage(token, chatId, RESPUESTAS.asesor.text, RESPUESTAS.asesor.buttons);
       const alertaText = `🚨 *Usuario pide asesor*\n\nNombre: ${nombre}\nChat ID: ${chatId}\nUsername: @${query.from?.username || 'sin username'}`;
@@ -419,13 +435,11 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    // ── FAQ menú (navegación rápida, sin AI) ──
     if (data === 'faq_menu') {
       await sendMessage(token, chatId, RESPUESTAS.faq_menu.text, RESPUESTAS.faq_menu.buttons);
       return res.status(200).end();
     }
 
-    // ── Agendar llamada (flujo scheduling, sin AI) ──
     if (data === 'agendar_dia') {
       await sendMessage(token, chatId, RESPUESTAS.agendar_dia.text, RESPUESTAS.agendar_dia.buttons);
       return res.status(200).end();
@@ -479,7 +493,6 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    // ── AI: paquete (UUID o legacy slug) ──────────────────
     if (data.startsWith('pkg_')) {
       const conv = await getHistorial(chatId);
       const paq = paquetes.find(p => `pkg_${p.id}` === data)
@@ -492,7 +505,6 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    // ── AI: variante específica ───────────────────────────
     if (data.startsWith('var_')) {
       const conv = await getHistorial(chatId);
       const varId = data.slice(4);
@@ -507,23 +519,31 @@ export default async function handler(req, res) {
       const context = foundVar
         ? `[CONTEXTO: El usuario seleccionó la variante "${foundVar.nombre}" del paquete "${foundPaq?.nombre}" a $${(foundVar.precio || 0).toLocaleString('es-MX')}/persona con anticipo de $${(foundVar.anticipo || 0).toLocaleString('es-MX')}${disponibles !== null ? `. Hay ${disponibles} lugares disponibles` : ''}. Pregúntale cuántas personas van y avanza hacia el cierre.]`
         : `[CONTEXTO: El usuario seleccionó una variante de paquete. Pregúntale cuántas personas van y avanza hacia el cierre.]`;
+
+      const slug = slugify(foundPaq?.nombre || '');
+      const varButtons = slug ? [
+        [
+          { text: '✅ Confirmar reserva', url: `https://zipolitealdesnudo.com/?paquete=${slug}` },
+          { text: '💳 Ver formas de pago', callback_data: 'info_pagos' }
+        ]
+      ] : null;
+
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
-      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
+      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre, varButtons);
       return res.status(200).end();
     }
 
-    // ── AI: reservar ──────────────────────────────────────
-    if (data === 'reservar_anonuevo' || data === 'reservar_lunas') {
+    if (data.startsWith('reservar_')) {
       const conv = await getHistorial(chatId);
-      const slug = data === 'reservar_anonuevo' ? 'ano-nuevo-al-desnudo' : 'lunas-de-octubre';
-      const pkgNombre = data === 'reservar_anonuevo' ? 'Año Nuevo al Desnudo' : 'Lunas de Octubre';
+      const slug = data.slice(9);
+      const paq = paquetes.find(p => slugify(p.nombre) === slug);
+      const pkgNombre = paq?.nombre || slug.replace(/-/g, ' ');
       const context = `[CONTEXTO: El usuario quiere reservar ${pkgNombre}. Pídele su nombre completo para registrar la reserva. Una vez que lo dé, dale el link: https://zipolitealdesnudo.com/?paquete=${slug}]`;
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
       await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
       return res.status(200).end();
     }
 
-    // ── AI: formas de pago ────────────────────────────────
     if (data === 'info_pagos') {
       const conv = await getHistorial(chatId);
       const context = `[CONTEXTO: El usuario pregunta por formas de pago. Explica brevemente: transferencia/depósito (sin cargo) y tarjeta con financiamiento 3-24 meses (aplica cargo). Luego pregunta cuál prefiere y para qué paquete.]`;
@@ -532,7 +552,6 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    // ── AI: tour opcional ─────────────────────────────────
     if (data === 'tour_opcional') {
       const conv = await getHistorial(chatId);
       const context = `[CONTEXTO: El usuario pregunta por el tour Carrizalillo + Bioluminiscencia ($1,000/persona). Descríbelo con entusiasmo en 2-3 líneas y pregunta si quiere agregarlo a su reserva.]`;
@@ -541,7 +560,6 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    // ── AI: habitaciones ──────────────────────────────────
     if (data === 'habitacion_info') {
       const conv = await getHistorial(chatId);
       const context = `[CONTEXTO: El usuario pregunta por las habitaciones del paquete Año Nuevo al Desnudo. Describe las opciones individual y doble con precios y anticipo desde los datos de paquetes. Pregunta cuántas personas van.]`;
@@ -550,7 +568,6 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    // ── AI: preguntas frecuentes ──────────────────────────
     if (data.startsWith('faq_')) {
       const conv = await getHistorial(chatId);
       const topics = {
@@ -583,13 +600,41 @@ export default async function handler(req, res) {
 
   await registrarInteraccion(contacto?.id, 'mensaje_entrante', userText);
 
-  // ── Saludo → menú estático (sin AI, respuesta rápida) ──
+  // ── Reply keyboard taps → route as equivalent callback ──
+  const rkAction = REPLY_KB_ACTIONS[userText];
+  if (rkAction) {
+    if (rkAction === 'menu') {
+      const saludo = nombre ? `${MENU_PRINCIPAL_TEXT}\n\n¡Hola de nuevo, ${nombre}! 👋` : MENU_PRINCIPAL_TEXT;
+      await sendMessage(token, chatId, saludo, menuButtons);
+    } else if (rkAction === 'asesor') {
+      await sendMessage(token, chatId, RESPUESTAS.asesor.text, RESPUESTAS.asesor.buttons);
+      await actualizarContacto(chatId, { estado_crm: 'seguimiento', temperatura: 'caliente' });
+      await registrarInteraccion(contacto?.id, 'nota', 'Usuario solicitó hablar con asesor');
+      const alertaText = `🚨 *Usuario pide asesor*\n\nNombre: ${nombre}\nChat ID: ${chatId}\nUsername: @${from?.username || 'sin username'}`;
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText, parse_mode: 'Markdown' })
+      });
+    } else if (rkAction === 'agendar_dia') {
+      await sendMessage(token, chatId, RESPUESTAS.agendar_dia.text, RESPUESTAS.agendar_dia.buttons);
+    }
+    return res.status(200).end();
+  }
+
+  // ── Saludo → menú (sin AI, respuesta rápida) ──
   const esSaludo = SALUDOS.some(s => userText.toLowerCase().includes(s)) || userText === '/start';
   if (esSaludo) {
     const saludo = nombre
       ? `🌊 ¡Hola de nuevo, *${nombre}*! Me alegra verte por aquí 🌈\n\n¿En qué te puedo ayudar hoy?`
       : MENU_PRINCIPAL_TEXT;
-    await sendMessage(token, chatId, saludo, menuButtons);
+    if (userText === '/start') {
+      // First message: set reply keyboard, then show inline menu
+      await sendMessage(token, chatId, saludo);
+      await sendMessage(token, chatId, '¿Qué paquete te interesa? 👇', menuButtons);
+    } else {
+      await sendMessage(token, chatId, saludo, menuButtons);
+    }
     return res.status(200).end();
   }
 
