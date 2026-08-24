@@ -750,7 +750,8 @@ async function openPay(id) {
     if (banner) banner.style.display = session ? 'none' : 'block';
   });
   document.getElementById('r-cuanto').value = 'anticipo';
-  document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(curPkg.monto_anticipo||3000)} — aparta todos los lugares`;
+  const _p = curPkg._personas || 1;
+  document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt((curPkg.monto_anticipo||1500) * _p)} — aparta tu lugar`;
   // Itinerario
   const s1itin = document.getElementById('s1-itinerario');
   if (s1itin) {
@@ -1118,7 +1119,7 @@ function applyDiscountToBase(basePorPersona, personas) {
 
 function calcCotizador() {
   if (!curPkg) return;
-  const p = parseInt(document.getElementById('m-personas').value);
+  const p = parseInt(document.getElementById('m-personas')?.value) || curPkg._personas || 1;
   const cuanto = document.getElementById('r-cuanto')?.value || 'total';
   const metodoSel = document.getElementById('m-metodo');
   const financVals = ['3','6','9','12','18','24'];
@@ -1144,8 +1145,8 @@ function calcCotizador() {
   }
 
   if (cuanto === 'anticipo') {
-    const montoAnticipo = (curPkg.monto_anticipo || 3000) * p;
-    document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(montoAnticipo)} — aparta todos los lugares`;
+    const montoAnticipo = (curPkg.monto_anticipo || 1500) * p;
+    document.getElementById('r-cuanto-anticipo-opt').textContent = `Anticipo ${fmt(montoAnticipo)} — aparta tu lugar`;
     const resto = Math.max(0, base - montoAnticipo);
     if (metodo === 'transfer') {
       document.getElementById('bank-clabe-display').textContent = localStorage.getItem('bank_clabe') || '—';
