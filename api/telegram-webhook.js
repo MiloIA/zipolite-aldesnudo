@@ -7,6 +7,29 @@ const supabase = createClient(
 
 const MAX_HISTORIAL = 8;
 
+// ─── CACHÉ DE PAQUETES ───────────────────────────────────────
+
+let pkgCache = null;
+let pkgCacheTime = 0;
+const PKG_CACHE_MS = 10 * 60 * 1000; // 10 minutos
+
+async function getPaqueteData() {
+  if (pkgCache && Date.now() - pkgCacheTime < PKG_CACHE_MS) return pkgCache;
+  const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  const [{ data: paquetes }, { data: variantes }, { data: tours }] = await Promise.all([
+    sb.from('paquetes').select('*').eq('activo', true).order('created_at'),
+    sb.from('variantes_paquete').select('*').eq('activo', true).order('orden'),
+    sb.from('tours_paquete').select('*').eq('activo', true).order('orden')
+  ]);
+  pkgCache = (paquetes || []).map(p => ({
+    ...p,
+    variantes: (variantes || []).filter(v => v.paquete_id === p.id),
+    tours: (tours || []).filter(t => t.paquete_id === p.id)
+  }));
+  pkgCacheTime = Date.now();
+  return pkgCache;
+}
+
 // ─── TEXTOS Y BOTONES ────────────────────────────────────────
 
 const MENU_PRINCIPAL = {
@@ -163,9 +186,85 @@ const RESPUESTAS = {
 
 const SALUDOS = ['hola', 'hi', 'buenas', 'hey', 'inicio', 'start', 'info', 'ayuda', 'help', 'menu', 'menú', 'buenos días', 'buenos dias', 'buenas tardes', 'buenas noches', 'buen dia', 'buen día'];
 
+// ─── HELPERS DE MENSAJES DINÁMICOS ───────────────────────────
+
+function slugify(nombre) {
+  return (nombre || '').toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
+
+function buildPaqueteMsg(p) {
+  let msg = `🌴 *${p.nombre}*\n`;
+  if (p.fechas) msg += `📅 ${p.fechas}\n`;
+  msg += `\n*Modalidades disponibles:*\n`;
+  (p.variantes || []).forEach(v => {
+    const disp = v.lugares_totales
+      ? ` _(${v.lugares_totales - (v.lugares_vendidos || 0)} disponibles)_`
+      : '';
+    const ant = v.anticipo_es_total
+      ? ' _(pago completo)_'
+      : ` _(anticipo $${(v.anticipo || 0).toLocaleString('es-MX')})_`;
+    msg += `• *${v.nombre}*: $${(v.precio || 0).toLocaleString('es-MX')} p/persona${ant}${disp}\n`;
+  });
+  if (p.tours && p.tours.length > 0) {
+    msg += `\n🗺 *Tours opcionales:*\n`;
+    p.tours.forEach(t => {
+      msg += `• ${t.nombre}: +$${(t.precio || 0).toLocaleString('es-MX')}\n`;
+    });
+  }
+  if (p.nota) msg += `\n⚠️ _${p.nota}_\n`;
+  msg += `\n✅ Reserva en: https://zipolitealdesnudo.com/?paquete=${slugify(p.nombre)}`;
+  return msg;
+}
+
+function buildPaqueteButtons(p) {
+  return [
+    [{ text: '✅ Reservar ahora', url: `https://zipolitealdesnudo.com/?paquete=${slugify(p.nombre)}` }],
+    [{ text: '💳 Formas de pago', callback_data: 'info_pagos' }],
+    [{ text: '📞 Agendar llamada', callback_data: 'agendar_dia' }],
+    [{ text: '🙋 Hablar con asesor', callback_data: 'asesor' }],
+    [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
+  ];
+}
+
+function buildMenuButtons(paquetes) {
+  const pkgBtns = (paquetes || []).map(p => ([{
+    text: `${p.icono || '🌴'} ${p.nombre}`,
+    callback_data: `pkg_${p.id}`
+  }]));
+  return [
+    ...pkgBtns,
+    [{ text: '💳 Métodos de pago', callback_data: 'info_pagos' }],
+    [{ text: '❓ Preguntas frecuentes', callback_data: 'faq_menu' }],
+    [{ text: '📞 Agendar una llamada', callback_data: 'agendar_dia' }],
+    [{ text: '🙋 Hablar con un asesor', callback_data: 'asesor' }]
+  ];
+}
+
 // ─── SISTEMA PROMPT ──────────────────────────────────────────
 
-const systemPrompt = `Eres Mateo, asesor de ventas de Zipolite al Desnudo, agencia LGBT+ mexicana con más de 10 años de experiencia y +342 viajeros. Eres cálido, directo y experto en cerrar ventas. Tu objetivo principal es que el usuario reserve.
+function buildSystemPrompt(paquetes) {
+  let pkgsInfo = '';
+  (paquetes || []).forEach((p, i) => {
+    pkgsInfo += `\n${i + 1}. ${p.nombre.toUpperCase()}\n`;
+    pkgsInfo += `   - Fechas: ${p.fechas || 'por confirmar'}\n`;
+    (p.variantes || []).forEach(v => {
+      const disponibles = v.lugares_totales
+        ? ` · ${v.lugares_totales - (v.lugares_vendidos || 0)} lugares disponibles`
+        : '';
+      const anticipoInfo = v.anticipo_es_total
+        ? 'pago completo al reservar'
+        : `anticipo $${(v.anticipo || 0).toLocaleString('es-MX')}/persona`;
+      pkgsInfo += `   - ${v.nombre}: $${(v.precio || 0).toLocaleString('es-MX')}/persona · ${anticipoInfo}${disponibles}\n`;
+    });
+    (p.tours || []).forEach(t => {
+      pkgsInfo += `   - Tour opcional ${t.nombre}: +$${(t.precio || 0).toLocaleString('es-MX')}/persona\n`;
+    });
+    if (p.nota) pkgsInfo += `   ⚠️ ${p.nota}\n`;
+  });
+
+  return `Eres Mateo, asesor de ventas de Zipolite al Desnudo, agencia LGBT+ mexicana con más de 10 años de experiencia y +342 viajeros. Eres cálido, directo y experto en cerrar ventas. Tu objetivo principal es que el usuario reserve.
 
 SOBRE LA AGENCIA:
 - Especialistas en viajes LGBT+ a Zipolite, Oaxaca
@@ -173,26 +272,7 @@ SOBRE LA AGENCIA:
 - Ambiente 100% seguro, inclusivo y libre de discriminación
 - Comunidad real: llegas solo y regresas con amigos
 
-PAQUETES ACTUALES:
-1. AÑO NUEVO AL DESNUDO
-   - Precio: $4,750/persona camping · $7,750 habitación doble · $10,750 habitación individual
-   - Fechas: 29 dic 2026 al 3 ene 2027 · 5 días / 4 noches
-   - Salida CDMX: 29 dic 10:00pm (cita 9:30pm) · Regreso: 3 ene 6:00pm
-   - Incluye: autobús SCT con WC/pantallas/cargadores, camping 5 hectáreas privadas con alberca/duchas/seguridad, tienda y colchón en préstamo, Day Pass último día hasta 6pm
-   - Anticipo camping: $1,500/persona · Anticipo habitación: $3,000/persona
-   - Solo 5 habitaciones disponibles
-   - Itinerario: 30 dic día libre · 31 dic Mazunte+Punta Cometa+cena grupal organizada en Restaurante 3 de Diciembre (COSTO POR CUENTA DEL VIAJERO, nosotros solo organizamos la reserva)+bar en playa con show drag y fuegos artificiales · 1 ene día libre · 2 ene tour opcional · 3 ene regreso
-   - Tour opcional 2 ene: Carrizalillo+Bioluminiscencia Manialtepec · $1,000/persona extra
-   - NO incluye: alimentos, bebidas, consumos en bar, propinas ni ningún gasto personal
-
-2. LUNAS DE OCTUBRE
-   - Precio: $8,854/persona
-   - Fechas: 22-27 oct 2026 · 6 días / 5 noches
-   - Incluye: vuelo redondo CDMX AICM, 5 noches Hotel Paraíso línea de playa, habitación doble, traslados aeropuerto-hotel
-   - Salida: jue 22 oct 12:00pm · Regreso: mar 27 oct 10:32pm
-   - Anticipo: $3,500/persona
-   - NO incluye: alimentos, bebidas, propinas ni gastos personales
-
+PAQUETES ACTUALES:${pkgsInfo}
 PAGOS: Transferencia/depósito (sin cargo extra) o tarjeta con financiamiento 3-24 meses (aplica cargo)
 RESERVAS: https://zipolitealdesnudo.com
 
@@ -205,9 +285,10 @@ REGLAS ESTRICTAS:
 6. Siempre termina con una llamada a acción clara hacia reservar o agendar llamada
 7. Si el usuario quiere agendar una llamada o que lo llamen, responde ÚNICAMENTE con la palabra AGENDAR_LLAMADA sin ningún texto adicional antes ni después
 8. Si no puedes resolver algo o el usuario pide hablar con alguien, termina con ESCALAR_ASESOR
-9. Crea urgencia real cuando aplique: "Solo quedan 5 habitaciones" / "Los lugares se están llenando"
+9. Crea urgencia real cuando aplique: menciona cuántos lugares quedan si son pocos
 10. NUNCA inventes información que no esté en este prompt
 11. La cena del 31 de diciembre y TODOS los consumos (bar, restaurantes, bebidas) van por cuenta del viajero — NUNCA digas que están incluidos`;
+}
 
 // ─── FUNCIONES UTILITARIAS ───────────────────────────────────
 
@@ -308,6 +389,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const body = req.body;
   const token = process.env.TELEGRAM_BOT_TOKEN;
+  const paquetes = await getPaqueteData().catch(() => []);
+  const menuButtons = buildMenuButtons(paquetes);
 
   // ── CALLBACK QUERY (botones) ──
   if (body.callback_query) {
@@ -322,7 +405,7 @@ export default async function handler(req, res) {
     // Menú principal
     if (data === 'menu') {
       const saludo = nombre ? `${MENU_PRINCIPAL.text}\n\n¡Hola de nuevo, ${nombre}! 👋` : MENU_PRINCIPAL.text;
-      await sendMessage(token, chatId, saludo, MENU_PRINCIPAL.buttons);
+      await sendMessage(token, chatId, saludo, menuButtons);
       return res.status(200).end();
     }
 
@@ -392,7 +475,16 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    // Respuestas hardcodeadas
+    // Paquete dinámico desde Supabase (pkg_{uuid})
+    if (data.startsWith('pkg_') && !RESPUESTAS[data]) {
+      const paq = paquetes.find(p => `pkg_${p.id}` === data);
+      if (paq) {
+        await sendMessage(token, chatId, buildPaqueteMsg(paq), buildPaqueteButtons(paq));
+      }
+      return res.status(200).end();
+    }
+
+    // Respuestas hardcodeadas (fallback estático)
     if (RESPUESTAS[data]) {
       await sendMessage(token, chatId, RESPUESTAS[data].text, RESPUESTAS[data].buttons);
       return res.status(200).end();
@@ -420,7 +512,7 @@ export default async function handler(req, res) {
     const saludo = nombre
       ? `🌊 ¡Hola de nuevo, *${nombre}*! Me alegra verte por aquí 🌈\n\n¿En qué te puedo ayudar hoy?`
       : MENU_PRINCIPAL.text;
-    await sendMessage(token, chatId, saludo, MENU_PRINCIPAL.buttons);
+    await sendMessage(token, chatId, saludo, menuButtons);
     return res.status(200).end();
   }
 
@@ -459,7 +551,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 400,
-          system: systemPrompt + (contextExtra ? `\n\nCONTEXTO: ${contextExtra}` : ''),
+          system: buildSystemPrompt(paquetes) + (contextExtra ? `\n\nCONTEXTO: ${contextExtra}` : ''),
           messages
         })
       });
