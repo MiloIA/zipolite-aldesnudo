@@ -389,6 +389,8 @@ REGLAS ESTRICTAS:
     });
   }
 
+  prompt += '\n\nIMPORTANTE: El usuario acaba de escribir un mensaje de texto libre. NO des información de paquetes todavía. Primero haz UNA sola pregunta para entender qué busca: ¿viaja solo o en grupo? ¿ya conoce Zipolite? ¿tiene fechas en mente? Elige la pregunta más relevante según su mensaje.';
+
   return prompt;
 }
 
