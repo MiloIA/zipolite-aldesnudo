@@ -87,16 +87,6 @@ export default async function handler(req, res) {
       const { nombre, email, whatsapp, variante_id, personas, total, notas } = body;
       if (!nombre || !email) return res.status(400).json({ error: 'nombre y email son requeridos' });
 
-      let varianteNombre = '';
-      if (variante_id) {
-        const { data: v } = await sb
-          .from('variantes_paquete')
-          .select('nombre')
-          .eq('id', variante_id)
-          .single();
-        varianteNombre = v?.nombre || '';
-      }
-
       const { data, error } = await sb.from('reservaciones').insert([{
         paquete_id: ANO_NUEVO_PKG_ID,
         paquete_nombre: 'Año Nuevo al Desnudo',
@@ -105,7 +95,6 @@ export default async function handler(req, res) {
         whatsapp: whatsapp || null,
         personas: Number(personas) || 1,
         variante_id: variante_id || null,
-        variante_nombre: varianteNombre || null,
         total: Number(total) || 0,
         anticipo_pagado: 0,
         estado: 'pendiente',
