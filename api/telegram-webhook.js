@@ -17,7 +17,6 @@ async function getPaqueteData() {
   if (pkgCache && Date.now() - pkgCacheTime < PKG_CACHE_MS) return pkgCache;
   const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
-  // Promise.resolve() converts the Supabase PromiseLike to a full Promise so .catch() is available
   const [
     { data: paquetes, error: ePaq },
     { data: variantes, error: eVar },
@@ -49,54 +48,11 @@ async function getPaqueteData() {
   return pkgCache;
 }
 
-// ─── TEXTOS Y BOTONES ────────────────────────────────────────
+// ─── TEXTOS ESTÁTICOS ────────────────────────────────────────
 
-const MENU_PRINCIPAL = {
-  text: `🌊 *¡Hola! Soy Mateo* 🌈\n\nAsesor de Zipolite al Desnudo — más de 10 años llevando a la comunidad LGBT+ a la playa más libre de México.\n\n+342 viajeros ya vivieron esto. ¿Tú cuándo te unes?`,
-  buttons: [
-    [{ text: '🏕️ Año Nuevo al Desnudo', callback_data: 'pkg_anonuevo' }],
-    [{ text: '🌙 Lunas de Octubre', callback_data: 'pkg_lunas' }],
-    [{ text: '💳 Métodos de pago', callback_data: 'info_pagos' }],
-    [{ text: '❓ Preguntas frecuentes', callback_data: 'faq_menu' }],
-    [{ text: '📞 Agendar una llamada', callback_data: 'agendar_dia' }],
-    [{ text: '🙋 Hablar con un asesor', callback_data: 'asesor' }]
-  ]
-};
+const MENU_PRINCIPAL_TEXT = `🌊 *¡Hola! Soy Mateo* 🌈\n\nAsesor de Zipolite al Desnudo — más de 10 años llevando a la comunidad LGBT+ a la playa más libre de México.\n\n+342 viajeros ya vivieron esto. ¿Tú cuándo te unes?`;
 
 const RESPUESTAS = {
-  pkg_anonuevo: {
-    text: `🏕️ *Año Nuevo al Desnudo*\n\n📅 29 dic 2026 → 3 ene 2027 · 5 días / 4 noches\n💰 Desde $4,750 por persona\n\n🚌 Salida CDMX: 29 dic · 10:00pm (cita 9:30pm)\n🏠 Regreso: 3 ene · 6:00pm · Llegada CDMX madrugada 4 ene\n\n✅ *¿QUÉ INCLUYE?*\n🏕️ Camping en área privada de 5 hectáreas:\n• Alberca · Duchas · Sanitarios · Electricidad · Seguridad 24/7\n• A 2 calles de la playa y 1 calle del adoquín\n• Por promoción: tienda y colchón inflable en préstamo\n\n🚌 Autobús con chofer certificado SCT, seguro de viajero, WC, pantallas y cargadores USB\n\n🌅 Day Pass incluido el último día — te quedas en instalaciones hasta las 6pm\n\n📅 *ITINERARIO*\n30 dic — Llegada a Zipolite. Día libre 🌊\n31 dic — Tour Mazunte + Punta Cometa 🌅 → Cena grupal organizada en Restaurante 3 de Diciembre* → Bar en playa · show drag · fuegos artificiales · Año Nuevo 🎆\n1 ene — Día libre 🏖️\n2 ene — Opcional: Carrizalillo + Bioluminiscencia Laguna Manialtepec ✨ (+$1,000 por persona)\n3 ene — Regreso CDMX (cita 5:30pm)\n\n*La cena y todos los consumos van por cuenta de cada viajero. En Zipolite no existe el todo incluido.\n\n🛏️ *¿QUIERES MÁS COMODIDAD?*\nHotel rústico · Cama matrimonial · Baño privado · Ventilador\n• 1 persona en habitación: $10,750 por persona — aparta con $3,000\n• 2 personas en habitación: $7,750 por persona — aparta con $3,000 por persona\n⚠️ Solo 5 habitaciones disponibles\n\n🏕️ Camping: $4,750 por persona — aparta con $1,500\n\n¿Te vas con nosotros? 🔥`,
-    buttons: [
-      [{ text: '✅ ¡Quiero reservar!', callback_data: 'reservar_anonuevo' }],
-      [{ text: '🛏️ Info habitaciones', callback_data: 'habitacion_info' }],
-      [{ text: '🌊 Tour opcional +$1,000', callback_data: 'tour_opcional' }],
-      [{ text: '💳 Formas de pago', callback_data: 'info_pagos' }],
-      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
-      [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  pkg_lunas: {
-    text: `🌙 *Lunas de Octubre*\n\n📅 22 → 27 octubre 2026 · 6 días / 5 noches\n💰 $8,854 por persona\n\n✈️ *VUELO REDONDO CDMX INCLUIDO*\n• Salida: jue 22 oct · 12:00pm desde AICM\n• Regreso: mar 27 oct · 10:32pm\n\n✅ *¿QUÉ INCLUYE?*\n• Vuelo redondo Ciudad de México ↔ Zipolite\n• 5 noches en Hotel Paraíso — línea de playa 🌊\n• Habitación doble\n• Traslados aeropuerto ↔ hotel\n\nTodo el viaje organizado. Solo llega y disfruta.\n\n💰 Aparta tu lugar con $3,500 por persona\n\n⚠️ Alimentos, bebidas y gastos personales van por cuenta de cada viajero. En Zipolite no existe el todo incluido.\n\n¿Te lo agendamos? 🌙`,
-    buttons: [
-      [{ text: '✅ ¡Quiero reservar!', callback_data: 'reservar_lunas' }],
-      [{ text: '💳 Formas de pago', callback_data: 'info_pagos' }],
-      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
-      [{ text: '🙋 Tengo preguntas', callback_data: 'asesor' }],
-      [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  info_pagos: {
-    text: `💳 *Formas de pago*\n\n🏦 *Transferencia o depósito bancario*\n• Sin cargos adicionales\n• Confirmación en 24 horas\n\n💳 *Tarjeta con financiamiento*\n• 3, 6, 9, 12, 18 o 24 meses\n• Se aplica cargo por financiamiento\n\nEn ambos casos apartas tu lugar con el anticipo y liquidas el resto antes del viaje. Tu lugar queda asegurado desde el primer pago. ✅`,
-    buttons: [
-      [{ text: '🏕️ Año Nuevo al Desnudo', callback_data: 'pkg_anonuevo' }],
-      [{ text: '🌙 Lunas de Octubre', callback_data: 'pkg_lunas' }],
-      [{ text: '📞 Agendar llamada', callback_data: 'agendar_dia' }],
-      [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
   faq_menu: {
     text: '❓ *Preguntas frecuentes*\n\n¿Sobre qué tienes dudas? 👇',
     buttons: [
@@ -108,84 +64,6 @@ const RESPUESTAS = {
       [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
     ]
   },
-
-  faq_zipolite: {
-    text: `🌊 *¿Qué es Zipolite?*\n\nZipolite es la playa más libre de México, en Oaxaca. Un lugar donde puedes ser tú mismo sin filtros ni juicios. Ambiente relajado, naturaleza increíble y una comunidad que te recibe como eres. 🌴\n\nEs uno de los pocos destinos en México donde la libertad no es un concepto — es la forma de vivir.`,
-    buttons: [
-      [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  faq_nudismo: {
-    text: `👙 *¿Tengo que ser nudista?*\n\nPara nada. Nadie está obligado a nada. Tú decides cómo vivir la experiencia, siempre desde el respeto y tu comodidad.\n\nHay quienes van en traje de baño todo el tiempo y también quienes se sueltan poco a poco. Lo importante es que te sientas libre a tu manera. 😊`,
-    buttons: [
-      [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  faq_solo: {
-    text: `👤 *¿Puedo ir solo?*\n\nSí, y es de lo más común. Muchos de nuestros viajeros llegan solos y regresan con amistades nuevas para toda la vida.\n\nNuestros grupos están diseñados para que desde antes de salir ya te sientas acompañado. Llegas solo, regresas en familia. 🌈`,
-    buttons: [
-      [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  faq_lgbt: {
-    text: `🏳️‍🌈 *¿Solo es para LGBT+?*\n\nSomos una agencia 100% LGBT+ friendly. Nuestros grupos tienen principalmente viajeros LGBT+, aliados y personas con buena vibra.\n\nNo importa quién seas — lo importante es el respeto y las ganas de pasarla bien. Aquí no tienes que encajar... solo llegar. 💛`,
-    buttons: [
-      [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  faq_cancelacion: {
-    text: `❌ *¿Qué pasa si cancelo?*\n\nEl anticipo no es reembolsable ya que se usa para asegurar tu lugar desde el momento en que reservas.\n\nSi cancelas con más de 30 días de anticipación, se reembolsa el saldo adicional que hayas pagado.\n\nTe explicamos todo claramente desde el inicio — sin letras chiquitas. 📋`,
-    buttons: [
-      [{ text: '⬅️ Más preguntas', callback_data: 'faq_menu' }],
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  habitacion_info: {
-    text: `🛏️ *Habitaciones — Año Nuevo al Desnudo*\n\nHotel rústico a 2 calles de la playa y a calle y media del adoquín:\n• Cama matrimonial\n• Baño privado\n• Ventilador de techo\n\n💰 *Precios por persona:*\n• 1 persona en habitación: $10,750 — aparta con $3,000\n• 2 personas en habitación: $7,750 — aparta con $3,000 por persona\n\n⚠️ Solo 5 habitaciones disponibles — se agotan rápido\n\n¿Apartamos la tuya?`,
-    buttons: [
-      [{ text: '✅ Quiero reservar con habitación', callback_data: 'reservar_anonuevo' }],
-      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
-      [{ text: '⬅️ Ver paquete completo', callback_data: 'pkg_anonuevo' }],
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  tour_opcional: {
-    text: `🌊 *Tour opcional — 2 de enero*\n\nUno de los días más especiales del viaje:\n\n🏖️ *Playa Carrizalillo — Puerto Escondido*\nUna de las playas más bonitas de Oaxaca. Aguas turquesas, arena blanca.\n\n✨ *Laguna de Manialtepec — Bioluminiscencia*\nAl caer la noche abordamos una lancha y nadamos en aguas que brillan como estrellas. Una experiencia que no olvidarás.\n\n✅ *Incluye:*\n• Transporte Zipolite → Carrizalillo → Manialtepec → Zipolite\n• Entrada a Laguna de Manialtepec\n• Tour en lancha · Guía local · Chaleco salvavidas\n\n💰 *$1,000 por persona* (costo adicional al paquete)\n\n¿Te apuntas?`,
-    buttons: [
-      [{ text: '✅ ¡Me apunto al tour!', callback_data: 'reservar_anonuevo' }],
-      [{ text: '⬅️ Ver paquete completo', callback_data: 'pkg_anonuevo' }],
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  reservar_anonuevo: {
-    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Año Nuevo al Desnudo:\n👉 https://zipolitealdesnudo.com/?paquete=ano-nuevo-al-desnudo\n\nAparta con $1,500 por persona (glamping) o $3,000 por persona (habitación).\n\nTu lugar queda confirmado desde el primer pago. ✅`,
-    buttons: [
-      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
-      [{ text: '🙋 Tengo una duda', callback_data: 'asesor' }],
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
-  reservar_lunas: {
-    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Lunas de Octubre:\n👉 https://zipolitealdesnudo.com/?paquete=lunas-de-octubre\n\nAparta con $3,500 por persona y el resto lo pagas antes del viaje.\n\nTu lugar queda confirmado desde el primer pago. ✅`,
-    buttons: [
-      [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
-      [{ text: '🙋 Tengo una duda', callback_data: 'asesor' }],
-      [{ text: '🏠 Menú principal', callback_data: 'menu' }]
-    ]
-  },
-
   asesor: {
     text: `🙋 *Hablar con un asesor*\n\nLe aviso a un asesor ahora mismo que quieres información.\n\nEn breve alguien se comunicará contigo por este mismo chat. 🌊`,
     buttons: [
@@ -193,7 +71,6 @@ const RESPUESTAS = {
       [{ text: '🏠 Menú principal', callback_data: 'menu' }]
     ]
   },
-
   agendar_dia: {
     text: `📞 *Agendemos tu llamada*\n\n¿Cuándo prefieres que te llamemos?`,
     buttons: [
@@ -205,7 +82,7 @@ const RESPUESTAS = {
 
 const SALUDOS = ['hola', 'hi', 'buenas', 'hey', 'inicio', 'start', 'info', 'ayuda', 'help', 'menu', 'menú', 'buenos días', 'buenos dias', 'buenas tardes', 'buenas noches', 'buen dia', 'buen día'];
 
-// ─── HELPERS DE MENSAJES DINÁMICOS ───────────────────────────
+// ─── HELPERS ─────────────────────────────────────────────────
 
 function slugify(nombre) {
   return (nombre || '')
@@ -215,92 +92,6 @@ function slugify(nombre) {
     .replace(/ü/g, 'u')
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '');
-}
-
-function buildPaqueteMsg(p) {
-  let msg = `🌴 *${p.nombre}*\n`;
-  if (p.fechas) msg += `📅 ${p.fechas}\n`;
-  msg += `\n*Modalidades disponibles:*\n`;
-  (p.variantes || []).forEach(v => {
-    const disp = v.lugares_totales
-      ? ` _(${v.lugares_totales - (v.lugares_vendidos || 0)} disponibles)_`
-      : '';
-    const ant = v.anticipo_es_total
-      ? ' _(pago completo)_'
-      : ` _(anticipo $${(v.anticipo || 0).toLocaleString('es-MX')})_`;
-    msg += `• *${v.nombre}*: $${(v.precio || 0).toLocaleString('es-MX')} p/persona${ant}${disp}\n`;
-  });
-  if (p.tours && p.tours.length > 0) {
-    msg += `\n🗺 *Tours opcionales:*\n`;
-    p.tours.forEach(t => {
-      msg += `• ${t.nombre}: +$${(t.precio || 0).toLocaleString('es-MX')}\n`;
-    });
-  }
-  if (p.nota) msg += `\n⚠️ _${p.nota}_\n`;
-  msg += `\n✅ Reserva en: https://zipolitealdesnudo.com/?paquete=${slugify(p.nombre)}`;
-  return msg;
-}
-
-function varianteIcon(nombre) {
-  if (!nombre) return '🌴';
-  const n = nombre.toLowerCase();
-  if (n.includes('glamping') || n.includes('camping')) return '🏕️';
-  if (n.includes('individual')) return '🛏️';
-  if (n.includes('doble')) return '🛏️🛏️';
-  if (n.includes('transport') || n.includes('autobús') || n.includes('autobus')) return '🚌';
-  return '🌴';
-}
-
-function buildVarianteButtons(p) {
-  const varianteBtns = (p.variantes || []).map(v => ([{
-    text: `${varianteIcon(v.nombre)} ${v.nombre} — $${(v.precio || 0).toLocaleString('es-MX')}`,
-    callback_data: `var_${v.id}`
-  }]));
-  const tourBtns = (p.tours || []).map(t => ([{
-    text: `🗺 ${t.nombre} +$${(t.precio || 0).toLocaleString('es-MX')}`,
-    callback_data: 'tour_opcional'
-  }]));
-  return [
-    ...varianteBtns,
-    ...tourBtns,
-    [{ text: '📞 Agendar llamada', callback_data: 'agendar_dia' }],
-    [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
-  ];
-}
-
-function refreshRespuestas(paquetes) {
-  const anoNuevo = paquetes.find(p => slugify(p.nombre).includes('ano-nuevo'));
-  const lunas = paquetes.find(p => slugify(p.nombre).includes('lunas'));
-
-  if (anoNuevo) {
-    const glamping = anoNuevo.variantes.find(v => v.nombre.toLowerCase().includes('glamping') || v.nombre.toLowerCase().includes('camping'));
-    const habDoble = anoNuevo.variantes.find(v => v.nombre.toLowerCase().includes('doble'));
-    const habIndiv = anoNuevo.variantes.find(v => v.nombre.toLowerCase().includes('individual'));
-
-    if (glamping || habDoble || habIndiv) {
-      const lines = [];
-      if (habIndiv) lines.push(`• 1 persona en habitación: $${(habIndiv.precio || 0).toLocaleString('es-MX')} — aparta con $${(habIndiv.anticipo || 0).toLocaleString('es-MX')}`);
-      if (habDoble) lines.push(`• 2 personas en habitación: $${(habDoble.precio || 0).toLocaleString('es-MX')} — aparta con $${(habDoble.anticipo || 0).toLocaleString('es-MX')} por persona`);
-      const dispHab = habIndiv?.lugares_totales
-        ? `\n⚠️ Solo ${habIndiv.lugares_totales - (habIndiv.lugares_vendidos || 0)} habitaciones disponibles — se agotan rápido`
-        : '\n⚠️ Habitaciones limitadas — se agotan rápido';
-
-      RESPUESTAS.habitacion_info.text = `🛏️ *Habitaciones — Año Nuevo al Desnudo*\n\nHotel rústico a 2 calles de la playa y a calle y media del adoquín:\n• Cama matrimonial\n• Baño privado\n• Ventilador de techo\n\n💰 *Precios por persona:*\n${lines.join('\n')}${dispHab}\n\n¿Apartamos la tuya?`;
-
-      if (glamping) {
-        const gAnt = glamping.anticipo || 1500;
-        const hAnt = habDoble?.anticipo || habIndiv?.anticipo || 3000;
-        RESPUESTAS.reservar_anonuevo.text = `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Año Nuevo al Desnudo:\n👉 https://zipolitealdesnudo.com/?paquete=ano-nuevo-al-desnudo\n\nAparta con $${gAnt.toLocaleString('es-MX')} por persona (glamping) o $${hAnt.toLocaleString('es-MX')} por persona (habitación).\n\nTu lugar queda confirmado desde el primer pago. ✅`;
-      }
-    }
-  }
-
-  if (lunas) {
-    const v = lunas.variantes[0];
-    if (v) {
-      RESPUESTAS.reservar_lunas.text = `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Lunas de Octubre:\n👉 https://zipolitealdesnudo.com/?paquete=${slugify(lunas.nombre)}\n\nAparta con $${(v.anticipo || 3500).toLocaleString('es-MX')} por persona y el resto lo pagas antes del viaje.\n\nTu lugar queda confirmado desde el primer pago. ✅`;
-    }
-  }
 }
 
 function buildMenuButtons(paquetes) {
@@ -314,6 +105,19 @@ function buildMenuButtons(paquetes) {
     [{ text: '❓ Preguntas frecuentes', callback_data: 'faq_menu' }],
     [{ text: '📞 Agendar una llamada', callback_data: 'agendar_dia' }],
     [{ text: '🙋 Hablar con un asesor', callback_data: 'asesor' }]
+  ];
+}
+
+function buildAiButtons(paquetes) {
+  return [
+    ...(paquetes || []).map(p => ([{
+      text: `${p.icono || '🌴'} ${p.nombre}`,
+      callback_data: `pkg_${p.id}`
+    }])),
+    [
+      { text: '📞 Agendar llamada', callback_data: 'agendar_dia' },
+      { text: '🏠 Menú principal', callback_data: 'menu' }
+    ]
   ];
 }
 
@@ -353,35 +157,31 @@ RESERVAS: https://zipolitealdesnudo.com
 
 PERSONALIDAD Y ESTILO:
 - Eres un vendedor consultivo, cálido y con personalidad. No eres un catálogo de precios.
-- Antes de dar información, haz UNA pregunta para entender al cliente: ¿viaja solo o en grupo? ¿ya conoce Zipolite? ¿cuál es su presupuesto?
+- Si el mensaje empieza con [CONTEXTO:], sigue las instrucciones de ese contexto exactamente.
+- Si es texto libre sin contexto, haz UNA pregunta para entender al cliente antes de dar info.
 - Nunca listes todas las variantes de golpe. Recomienda la más apropiada según lo que sabes del cliente.
 - Usa el nombre del cliente siempre que lo sepas.
-- Mensajes cortos — máximo 4 líneas por respuesta. Si necesitas dar más info, hazlo en dos mensajes o con botones.
+- Mensajes cortos — máximo 4 líneas por respuesta.
 - Termina SIEMPRE con una pregunta que avance hacia el cierre o una CTA clara.
 
 FLUJO DE CIERRE (síguelo en orden):
 1. CALIFICAR → Pregunta: ¿solo o en grupo? ¿cuántas personas? ¿ya conoce Zipolite?
 2. RECOMENDAR → Basado en respuestas, sugiere UNA variante específica con precio y anticipo
-3. MANEJAR OBJECIONES → Si dice "está caro": habla de financiamiento y del valor. Si dice "voy solo": habla de la comunidad y de que muchos van solos.
+3. MANEJAR OBJECIONES → Si dice "está caro": habla de financiamiento y del valor. Si dice "voy solo": habla de la comunidad.
 4. CERRAR → "¿Te aparto el lugar?" Si dice sí: pide su nombre completo para la reserva
-5. COBRAR → Da los datos de transferencia O el link de reserva con Clip
-6. CONFIRMAR → Avisa que recibirá confirmación por email y será agregado al grupo de WhatsApp del viaje
+5. COBRAR → Da el link de reserva: https://zipolitealdesnudo.com/?paquete=[slug]
+6. CONFIRMAR → Avisa que recibirá confirmación por email
 
 MANEJO DE OBJECIONES:
-- "Está caro" → "Entiendo. ¿Sabías que puedes apartar tu lugar con solo $1,500 y el resto pagarlo en partes? Muchos viajeros lo hacen así."
-- "Voy solo" → "¡Perfecto! La mayoría llega solo. Al segundo día ya tienes nuevos amigos. ¿Quieres que te cuente cómo funciona el grupo?"
-- "No sé si puedo ir" → "Las fechas son 29 dic al 4 ene. ¿Qué te lo impediría? A veces encontramos solución."
-- "Lo pienso" → "Claro, tómate tu tiempo. Solo te digo que quedan [X] lugares en glamping y el año pasado se llenó. ¿Qué necesitas saber para decidirte?"
-
-SOBRE OPINIONES Y RESEÑAS:
-- Puedes mencionar que tenemos más de 342 viajeros satisfechos y reseñas de 5 estrellas
-- Algunos testimonios reales: "Fue una gran experiencia, les agradezco a cada uno" — Gonzalo; "Me la pasé increíble" — Isaac; "Un gusto conocerles" — Luis Ángel (Feb 2026)
+- "Está caro" → "Entiendo. ¿Sabías que puedes apartar tu lugar con solo $1,500 y el resto pagarlo en partes?"
+- "Voy solo" → "¡Perfecto! La mayoría llega solo. Al segundo día ya tienes nuevos amigos."
+- "No sé si puedo ir" → "¿Qué te lo impediría? A veces encontramos solución."
+- "Lo pienso" → "Claro. Solo te digo que quedan [X] lugares y el año pasado se llenó. ¿Qué necesitas saber?"
 
 SOBRE EL DESTINO:
 - Zipolite es la única playa nudista legal de México, en Oaxaca. Ambiente relajado, sin juicios.
 - No es obligatorio el nudismo — cada quien a su ritmo
-- Ambiente LGBT+ friendly, comunidad real, seguro
-- Hotel Los Ángeles (glamping): 5 hectáreas, alberca, duchas, seguridad, wifi, a 2 calles de la playa
+- Hotel Los Ángeles (glamping): 5 hectáreas, alberca, duchas, seguridad, a 2 calles de la playa
 - Hotel Juquila (habitaciones): rústico, a calle y media de la playa, sin asignación de compañero
 
 REGLAS ESTRICTAS:
@@ -402,8 +202,6 @@ REGLAS ESTRICTAS:
       prompt += `- "${r.texto}" — ${r.nombre}\n`;
     });
   }
-
-  prompt += '\n\nIMPORTANTE: El usuario acaba de escribir un mensaje de texto libre. NO des información de paquetes todavía. Primero haz UNA sola pregunta para entender qué busca: ¿viaja solo o en grupo? ¿ya conoce Zipolite? ¿tiene fechas en mente? Elige la pregunta más relevante según su mensaje.';
 
   return prompt;
 }
@@ -501,6 +299,83 @@ function generarSlotsHorario(dia) {
   return slots;
 }
 
+// ─── HANDLER DE IA UNIFICADO ─────────────────────────────────
+
+async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, resenas, token, nombre) {
+  const historial = conv.historial || [];
+  const messages = [
+    ...historial.slice(-MAX_HISTORIAL),
+    { role: 'user', content: userMessage }
+  ];
+
+  let reply = '¡Hola! Soy Mateo 🌊 Visita zipolitealdesnudo.com para ver nuestros paquetes.';
+
+  if (process.env.ANTHROPIC_API_KEY) {
+    const contextExtra = nombre ? `El usuario se llama ${nombre}.` : '';
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        system: buildSystemPrompt(paquetes, resenas) + (contextExtra ? `\n\nCONTEXTO: ${contextExtra}` : ''),
+        messages
+      })
+    });
+    const aiData = await aiRes.json();
+    reply = aiData.content?.[0]?.text || reply;
+  }
+
+  const escalar = reply.includes('ESCALAR_ASESOR');
+  const agendar = reply.includes('AGENDAR_LLAMADA');
+  reply = reply.replace('ESCALAR_ASESOR', '').replace('AGENDAR_LLAMADA', '').trim();
+
+  const nombreMatch = reply.match(/NOMBRE:([^\n]+)/);
+  if (nombreMatch) {
+    const nuevoNombre = nombreMatch[1].trim();
+    reply = reply.replace(/NOMBRE:[^\n]+/, '').trim();
+    await actualizarContacto(chatId, { nombre: nuevoNombre, estado_crm: 'contactado', temperatura: 'tibio' });
+    await saveHistorial(chatId, [
+      ...historial.slice(-MAX_HISTORIAL),
+      { role: 'user', content: userMessage },
+      { role: 'assistant', content: reply }
+    ], { nombre: nuevoNombre });
+  } else {
+    await saveHistorial(chatId, [
+      ...historial.slice(-MAX_HISTORIAL),
+      { role: 'user', content: userMessage },
+      { role: 'assistant', content: reply }
+    ]);
+  }
+
+  if (agendar) {
+    const agendarMsg = reply.trim() || `📞 *Agendemos tu llamada*\n\n¿Cuándo prefieres que te llamemos?`;
+    await sendMessage(token, chatId, agendarMsg, [
+      [{ text: '📅 Hoy', callback_data: 'llamada_hoy' }, { text: '📅 Mañana', callback_data: 'llamada_manana' }],
+      [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
+    ]);
+  } else {
+    await sendMessage(token, chatId, reply, buildAiButtons(paquetes));
+  }
+
+  await registrarInteraccion(contacto?.id, 'mensaje_saliente', reply);
+
+  if (escalar) {
+    await actualizarContacto(chatId, { estado_crm: 'seguimiento', temperatura: 'caliente' });
+    await registrarInteraccion(contacto?.id, 'nota', 'Usuario solicitó hablar con asesor');
+    const alertaText = `🚨 *Usuario pide asesor*\n\nNombre: ${nombre}\nChat ID: ${chatId}\nMensaje: ${userMessage.substring(0, 200)}`;
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText, parse_mode: 'Markdown' })
+    });
+  }
+}
+
 // ─── HANDLER PRINCIPAL ───────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -511,10 +386,9 @@ export default async function handler(req, res) {
     console.error('getPaqueteData failed:', err?.message);
     return { paquetes: [], resenas: null };
   });
-  if (paquetes.length) refreshRespuestas(paquetes);
   const menuButtons = buildMenuButtons(paquetes);
 
-  // ── CALLBACK QUERY (botones) ──
+  // ── CALLBACK QUERY (botones) ──────────────────────────────
   if (body.callback_query) {
     const query = body.callback_query;
     const chatId = String(query.message.chat.id);
@@ -524,14 +398,14 @@ export default async function handler(req, res) {
     const contacto = await upsertContacto(chatId, query.from);
     const nombre = contacto?.nombre || query.from?.first_name || '';
 
-    // Menú principal
+    // ── Menú principal ──
     if (data === 'menu') {
-      const saludo = nombre ? `${MENU_PRINCIPAL.text}\n\n¡Hola de nuevo, ${nombre}! 👋` : MENU_PRINCIPAL.text;
+      const saludo = nombre ? `${MENU_PRINCIPAL_TEXT}\n\n¡Hola de nuevo, ${nombre}! 👋` : MENU_PRINCIPAL_TEXT;
       await sendMessage(token, chatId, saludo, menuButtons);
       return res.status(200).end();
     }
 
-    // Asesor
+    // ── Asesor (escalación directa, sin AI) ──
     if (data === 'asesor') {
       await sendMessage(token, chatId, RESPUESTAS.asesor.text, RESPUESTAS.asesor.buttons);
       const alertaText = `🚨 *Usuario pide asesor*\n\nNombre: ${nombre}\nChat ID: ${chatId}\nUsername: @${query.from?.username || 'sin username'}`;
@@ -545,7 +419,18 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    // Agendar día
+    // ── FAQ menú (navegación rápida, sin AI) ──
+    if (data === 'faq_menu') {
+      await sendMessage(token, chatId, RESPUESTAS.faq_menu.text, RESPUESTAS.faq_menu.buttons);
+      return res.status(200).end();
+    }
+
+    // ── Agendar llamada (flujo scheduling, sin AI) ──
+    if (data === 'agendar_dia') {
+      await sendMessage(token, chatId, RESPUESTAS.agendar_dia.text, RESPUESTAS.agendar_dia.buttons);
+      return res.status(200).end();
+    }
+
     if (data === 'llamada_hoy' || data === 'llamada_manana') {
       const dia = data === 'llamada_hoy' ? 'hoy' : 'manana';
       const slots = generarSlotsHorario(dia);
@@ -570,7 +455,6 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    // Slot de horario seleccionado
     if (data.startsWith('slot_')) {
       const parts = data.split('_');
       const dia = parts[1];
@@ -584,65 +468,109 @@ export default async function handler(req, res) {
         `✅ *¡Llamada agendada!*\n\nTe llamamos ${diaTexto} a las *${hora}*.\n\nSi el número al que te llamaremos no es correcto, escríbelo aquí. 📱`,
         [[{ text: '🏠 Menú principal', callback_data: 'menu' }]]
       );
-
       const alertaText = `📞 *LLAMADA AGENDADA*\n\nNombre: ${nombre}\nTeléfono: ${telefono}\nCuándo: ${diaTexto} a las ${hora}\nChat ID: ${chatId}\nUsername: @${query.from?.username || 'sin username'}`;
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText, parse_mode: 'Markdown' })
       });
-
       await actualizarContacto(chatId, { estado_crm: 'seguimiento', temperatura: 'caliente' });
       await registrarInteraccion(contacto?.id, 'llamada', `Llamada agendada ${diaTexto} a las ${hora}`);
       return res.status(200).end();
     }
 
-    // Paquete dinámico desde Supabase (pkg_{uuid})
-    if (data.startsWith('pkg_') && !RESPUESTAS[data]) {
-      const paq = paquetes.find(p => `pkg_${p.id}` === data);
-      if (paq) {
-        await sendMessage(token, chatId, buildPaqueteMsg(paq), buildVarianteButtons(paq));
-      }
+    // ── AI: paquete (UUID o legacy slug) ──────────────────
+    if (data.startsWith('pkg_')) {
+      const conv = await getHistorial(chatId);
+      const paq = paquetes.find(p => `pkg_${p.id}` === data)
+        || paquetes.find(p => data.includes(slugify(p.nombre).slice(0, 6)));
+      const context = paq
+        ? `[CONTEXTO: El usuario quiere información sobre el paquete "${paq.nombre}". Sigue el flujo consultivo: haz UNA pregunta para calificar (¿solo o en grupo? ¿cuántas personas?). NO listes todas las variantes todavía.]`
+        : `[CONTEXTO: El usuario toca el botón de un paquete de viaje. Pregúntale cuál le interesa y cuántas personas van.]`;
+      await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
+      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
       return res.status(200).end();
     }
 
-    // Variante específica (var_{uuid})
+    // ── AI: variante específica ───────────────────────────
     if (data.startsWith('var_')) {
+      const conv = await getHistorial(chatId);
       const varId = data.slice(4);
-      let foundVar = null;
-      let foundPaq = null;
+      let foundVar = null, foundPaq = null;
       for (const p of paquetes) {
         const v = (p.variantes || []).find(v => v.id === varId);
         if (v) { foundVar = v; foundPaq = p; break; }
       }
-      if (foundVar && foundPaq) {
-        const disp = foundVar.lugares_totales
-          ? `\n${foundVar.lugares_totales - (foundVar.lugares_vendidos || 0)} lugares disponibles`
-          : '';
-        const ant = foundVar.anticipo_es_total
-          ? 'pago completo'
-          : `Anticipo $${(foundVar.anticipo || 0).toLocaleString('es-MX')}`;
-        const msg = `${varianteIcon(foundVar.nombre)} *${foundVar.nombre} — ${foundPaq.nombre}*\n$${(foundVar.precio || 0).toLocaleString('es-MX')} por persona · ${ant}${disp}\n\n¿Cuántas personas van?`;
-        const slug = slugify(foundPaq.nombre);
-        await sendMessage(token, chatId, msg, [
-          [{ text: '✅ Reservar esta opción', url: `https://zipolitealdesnudo.com/?paquete=${slug}` }],
-          [{ text: '💳 Formas de pago', callback_data: 'info_pagos' }],
-          [{ text: '⬅️ Ver otras opciones', callback_data: `pkg_${foundPaq.id}` }]
-        ]);
-      }
+      const disponibles = foundVar?.lugares_totales != null
+        ? foundVar.lugares_totales - (foundVar.lugares_vendidos || 0)
+        : null;
+      const context = foundVar
+        ? `[CONTEXTO: El usuario seleccionó la variante "${foundVar.nombre}" del paquete "${foundPaq?.nombre}" a $${(foundVar.precio || 0).toLocaleString('es-MX')}/persona con anticipo de $${(foundVar.anticipo || 0).toLocaleString('es-MX')}${disponibles !== null ? `. Hay ${disponibles} lugares disponibles` : ''}. Pregúntale cuántas personas van y avanza hacia el cierre.]`
+        : `[CONTEXTO: El usuario seleccionó una variante de paquete. Pregúntale cuántas personas van y avanza hacia el cierre.]`;
+      await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
+      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
       return res.status(200).end();
     }
 
-    // Respuestas hardcodeadas (fallback estático)
-    if (RESPUESTAS[data]) {
-      await sendMessage(token, chatId, RESPUESTAS[data].text, RESPUESTAS[data].buttons);
+    // ── AI: reservar ──────────────────────────────────────
+    if (data === 'reservar_anonuevo' || data === 'reservar_lunas') {
+      const conv = await getHistorial(chatId);
+      const slug = data === 'reservar_anonuevo' ? 'ano-nuevo-al-desnudo' : 'lunas-de-octubre';
+      const pkgNombre = data === 'reservar_anonuevo' ? 'Año Nuevo al Desnudo' : 'Lunas de Octubre';
+      const context = `[CONTEXTO: El usuario quiere reservar ${pkgNombre}. Pídele su nombre completo para registrar la reserva. Una vez que lo dé, dale el link: https://zipolitealdesnudo.com/?paquete=${slug}]`;
+      await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
+      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
+      return res.status(200).end();
+    }
+
+    // ── AI: formas de pago ────────────────────────────────
+    if (data === 'info_pagos') {
+      const conv = await getHistorial(chatId);
+      const context = `[CONTEXTO: El usuario pregunta por formas de pago. Explica brevemente: transferencia/depósito (sin cargo) y tarjeta con financiamiento 3-24 meses (aplica cargo). Luego pregunta cuál prefiere y para qué paquete.]`;
+      await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
+      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
+      return res.status(200).end();
+    }
+
+    // ── AI: tour opcional ─────────────────────────────────
+    if (data === 'tour_opcional') {
+      const conv = await getHistorial(chatId);
+      const context = `[CONTEXTO: El usuario pregunta por el tour Carrizalillo + Bioluminiscencia ($1,000/persona). Descríbelo con entusiasmo en 2-3 líneas y pregunta si quiere agregarlo a su reserva.]`;
+      await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
+      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
+      return res.status(200).end();
+    }
+
+    // ── AI: habitaciones ──────────────────────────────────
+    if (data === 'habitacion_info') {
+      const conv = await getHistorial(chatId);
+      const context = `[CONTEXTO: El usuario pregunta por las habitaciones del paquete Año Nuevo al Desnudo. Describe las opciones individual y doble con precios y anticipo desde los datos de paquetes. Pregunta cuántas personas van.]`;
+      await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
+      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
+      return res.status(200).end();
+    }
+
+    // ── AI: preguntas frecuentes ──────────────────────────
+    if (data.startsWith('faq_')) {
+      const conv = await getHistorial(chatId);
+      const topics = {
+        faq_zipolite: 'qué es Zipolite y por qué es un destino único',
+        faq_nudismo: 'si es obligatorio el nudismo en Zipolite',
+        faq_solo: 'si se puede ir solo y cómo funciona el grupo social del viaje',
+        faq_lgbt: 'si el viaje es exclusivo para LGBT+ y la política de inclusión',
+        faq_cancelacion: 'la política de cancelación y reembolsos',
+      };
+      const topic = topics[data] || data.replace('faq_', '').replace(/_/g, ' ');
+      const context = `[CONTEXTO: El usuario tiene una pregunta frecuente sobre: ${topic}. Respóndela de forma cálida y breve en 2-3 líneas, luego redirige hacia reservar con una pregunta o CTA.]`;
+      await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
+      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
       return res.status(200).end();
     }
 
     return res.status(200).end();
   }
 
-  // ── MENSAJE DE TEXTO ──
+  // ── MENSAJE DE TEXTO ──────────────────────────────────────
   if (!body.message?.text) return res.status(200).end();
 
   const chatId = String(body.message.chat.id);
@@ -655,19 +583,17 @@ export default async function handler(req, res) {
 
   await registrarInteraccion(contacto?.id, 'mensaje_entrante', userText);
 
-  // Detectar saludo → menú
+  // ── Saludo → menú estático (sin AI, respuesta rápida) ──
   const esSaludo = SALUDOS.some(s => userText.toLowerCase().includes(s)) || userText === '/start';
   if (esSaludo) {
-    console.log('PAQUETES EN MENU:', JSON.stringify(paquetes?.map(p => p.nombre)));
-    console.log('MENU BUTTONS:', JSON.stringify(menuButtons?.slice(0, 3)));
     const saludo = nombre
       ? `🌊 ¡Hola de nuevo, *${nombre}*! Me alegra verte por aquí 🌈\n\n¿En qué te puedo ayudar hoy?`
-      : MENU_PRINCIPAL.text;
+      : MENU_PRINCIPAL_TEXT;
     await sendMessage(token, chatId, saludo, menuButtons);
     return res.status(200).end();
   }
 
-  // Detectar si el usuario da un número de teléfono para actualizar
+  // ── Número de teléfono (flujo agendando) ──
   const telMatch = userText.match(/[\d\s\-\+]{10,15}/);
   if (telMatch && conv.estado_embudo === 'agendando') {
     const tel = telMatch[0].replace(/\s|-/g, '');
@@ -680,96 +606,11 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Claude para texto libre
-  const historial = conv.historial || [];
-  const messages = [
-    ...historial.slice(-MAX_HISTORIAL),
-    { role: 'user', content: userText }
-  ];
-
+  // ── Todo lo demás → AI ────────────────────────────────────
   try {
-    let reply = '¡Hola! Soy Mateo 🌊 Visita zipolitealdesnudo.com para ver nuestros paquetes.';
-
-    if (process.env.ANTHROPIC_API_KEY) {
-      const contextExtra = nombre ? `El usuario se llama ${nombre}.` : '';
-      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 400,
-          system: buildSystemPrompt(paquetes, resenas) + (contextExtra ? `\n\nCONTEXTO: ${contextExtra}` : ''),
-          messages
-        })
-      });
-      const aiData = await aiRes.json();
-      reply = aiData.content?.[0]?.text || reply;
-    }
-
-    // Detectar señales especiales
-    const escalar = reply.includes('ESCALAR_ASESOR');
-    const agendar = reply.includes('AGENDAR_LLAMADA');
-    reply = reply.replace('ESCALAR_ASESOR', '').replace('AGENDAR_LLAMADA', '').trim();
-
-    // Detectar si el usuario dio su nombre
-    const nombreMatch = reply.match(/NOMBRE:([^\n]+)/);
-    if (nombreMatch) {
-      const nuevoNombre = nombreMatch[1].trim();
-      reply = reply.replace(/NOMBRE:[^\n]+/, '').trim();
-      await actualizarContacto(chatId, { nombre: nuevoNombre, estado_crm: 'contactado', temperatura: 'tibio' });
-      await saveHistorial(chatId, [
-        ...historial.slice(-MAX_HISTORIAL),
-        { role: 'user', content: userText },
-        { role: 'assistant', content: reply }
-      ], { nombre: nuevoNombre });
-    } else {
-      await saveHistorial(chatId, [
-        ...historial.slice(-MAX_HISTORIAL),
-        { role: 'user', content: userText },
-        { role: 'assistant', content: reply }
-      ]);
-    }
-
-    // Botones por defecto en texto libre
-    const botonesDefault = [[{ text: '🏠 Menú principal', callback_data: 'menu' }]];
-    if (agendar) {
-      botonesDefault.unshift([
-        { text: '📅 Llamada hoy', callback_data: 'llamada_hoy' },
-        { text: '📅 Llamada mañana', callback_data: 'llamada_manana' }
-      ]);
-    }
-
-    if (agendar && reply.trim() === '') {
-      await sendMessage(token, chatId,
-        `📞 *Agendemos tu llamada*\n\n¿Cuándo prefieres que te llamemos?`,
-        [[{ text: '📅 Hoy', callback_data: 'llamada_hoy' }, { text: '📅 Mañana', callback_data: 'llamada_manana' }],
-         [{ text: '⬅️ Menú principal', callback_data: 'menu' }]]
-      );
-      return res.status(200).end();
-    }
-
-    await sendMessage(token, chatId, reply, botonesDefault);
-    await registrarInteraccion(contacto?.id, 'mensaje_saliente', reply);
-
-    // Escalar a asesor
-    if (escalar) {
-      await actualizarContacto(chatId, { estado_crm: 'seguimiento', temperatura: 'caliente' });
-      await registrarInteraccion(contacto?.id, 'nota', 'Usuario solicitó hablar con asesor vía texto libre');
-      const alertaText = `🚨 *Usuario pide asesor*\n\nNombre: ${nombre}\nChat ID: ${chatId}\nMensaje: ${userText}`;
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: alertaText, parse_mode: 'Markdown' })
-      });
-    }
-
-    res.status(200).end();
+    await handleWithClaude(chatId, userText, conv, contacto, paquetes, resenas, token, nombre);
   } catch (err) {
     console.error('Webhook error:', err);
-    res.status(200).end();
   }
+  res.status(200).end();
 }
