@@ -1,3 +1,4 @@
+// v2
 const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
 const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
