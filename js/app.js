@@ -122,9 +122,21 @@ function renderPkgs(list) {
       ${header}
       <div class="pkg-body">
         ${variantChips}
+        <button class="pkg-info-btn" data-pkg-id="${p.id}">ℹ️ Información del viaje</button>
         <div class="pkg-availability" style="display:none">
           <div class="avail-bar-wrap"><div class="avail-bar-fill"></div></div>
           <span class="avail-text"></span>
+        </div>
+        <div class="pkg-personas-wrap">
+          <label class="pkg-personas-label">
+            <span class="js-personas-label">¿Cuántas personas?</span>
+            <div class="pkg-personas-controls">
+              <button type="button" class="personas-btn personas-minus" aria-label="Menos">−</button>
+              <span class="personas-count js-personas-count" data-personas="1" data-min="1" data-max="20">1</span>
+              <button type="button" class="personas-btn personas-plus" aria-label="Más">+</button>
+            </div>
+          </label>
+          <p class="pkg-personas-note js-personas-note" style="display:none"></p>
         </div>
         <div class="pkg-price-block">
           <div class="pkg-price-main">
@@ -136,6 +148,7 @@ function renderPkgs(list) {
             <span class="pkg-anticipo-amount">$<span class="js-anticipo">${defaultAnticipo.toLocaleString('es-MX')}</span></span>
           </div>
         </div>
+        <span class="js-total-precio">Total: $${defaultPrecio.toLocaleString('es-MX')}</span>
         ${p.nota ? `<p class="pkg-nota">⚠️ ${p.nota}</p>` : ''}
         ${toursHtml}
         <button class="pkg-btn pkg-btn-${p.tipo||'primary'} js-reservar-btn" data-pkg-id="${p.id}">
@@ -153,19 +166,69 @@ function renderPkgs(list) {
     </div>`;
   }).join('');
   initVariantChips();
+  initPkgInfoDrawer();
 }
 
 function initVariantChips() {
   document.querySelectorAll('.pkg-card').forEach(card => {
     const chips = card.querySelectorAll('.pkg-variant-chip');
     const precioEl = card.querySelector('.js-precio');
-    const anticipoEl = card.querySelector('.js-anticipo');
-    const btnAnticipo = card.querySelector('.js-btn-anticipo');
     const priceAmount = card.querySelector('.pkg-price-amount');
     const availEl = card.querySelector('.pkg-availability');
     const availFill = card.querySelector('.avail-bar-fill');
     const availText = card.querySelector('.avail-text');
     const reservarBtn = card.querySelector('.js-reservar-btn');
+    const minusBtn = card.querySelector('.personas-minus');
+    const plusBtn = card.querySelector('.personas-plus');
+    const countEl = card.querySelector('.js-personas-count');
+    const infoBtn = card.querySelector('.pkg-info-btn');
+
+    function recalcTotals(precio, anticipo) {
+      const personas = Number(countEl?.dataset.personas || 1);
+      const anticipoEl = card.querySelector('.js-anticipo');
+      const btnAnticipo = card.querySelector('.js-btn-anticipo');
+      const totalEl = card.querySelector('.js-total-precio');
+      if (anticipoEl) anticipoEl.textContent = (anticipo * personas).toLocaleString('es-MX');
+      if (btnAnticipo) btnAnticipo.textContent = (anticipo * personas).toLocaleString('es-MX');
+      if (totalEl) totalEl.textContent = `Total: $${(precio * personas).toLocaleString('es-MX')}`;
+    }
+
+    function setPersonasForChip(chip) {
+      const nombre = (chip.dataset.nombre || '').toLowerCase();
+      const totalesRaw = chip.dataset.lugaresTotales;
+      const totales = totalesRaw ? Number(totalesRaw) : null;
+      const vendidos = Number(chip.dataset.lugaresVendidos) || 0;
+      const disponibles = totales !== null ? Math.max(1, totales - vendidos) : 20;
+
+      const labelEl = card.querySelector('.js-personas-label');
+      const noteEl = card.querySelector('.js-personas-note');
+
+      let min = 1, max = 20, fixed = null;
+      let label = '¿Cuántas personas?', note = '';
+
+      if (nombre.includes('glamping')) {
+        min = 1; max = disponibles;
+      } else if (nombre.includes('habitación individual') || nombre.includes('habitacion individual')) {
+        min = 1; max = disponibles; label = '¿Cuántas habitaciones?';
+      } else if (nombre.includes('habitación doble') || nombre.includes('habitacion doble')) {
+        fixed = 2; note = 'Precio por 2 personas. Reserva con quien tú elijas.';
+      }
+
+      if (labelEl) labelEl.textContent = label;
+      if (noteEl) { noteEl.textContent = note; noteEl.style.display = note ? '' : 'none'; }
+
+      if (fixed !== null) {
+        if (countEl) { countEl.textContent = fixed; countEl.dataset.personas = fixed; }
+        if (minusBtn) minusBtn.disabled = true;
+        if (plusBtn) plusBtn.disabled = true;
+      } else {
+        const current = Number(countEl?.dataset.personas || 1);
+        const clamped = Math.min(Math.max(current, min), max);
+        if (countEl) { countEl.textContent = clamped; countEl.dataset.personas = clamped; countEl.dataset.min = min; countEl.dataset.max = max; }
+        if (minusBtn) { minusBtn.disabled = (clamped <= min); }
+        if (plusBtn) { plusBtn.disabled = (clamped >= max); }
+      }
+    }
 
     function applyChip(chip) {
       const precio = Number(chip.dataset.precio) || 0;
@@ -179,8 +242,6 @@ function initVariantChips() {
         setTimeout(() => priceAmount.classList.remove('updating'), 200);
       }
       if (precioEl) precioEl.textContent = precio.toLocaleString('es-MX');
-      if (anticipoEl) anticipoEl.textContent = anticipo.toLocaleString('es-MX');
-      if (btnAnticipo) btnAnticipo.textContent = anticipo.toLocaleString('es-MX');
 
       if (totales !== null && availEl) {
         const pct = Math.min(100, Math.round((vendidos / totales) * 100));
@@ -190,7 +251,31 @@ function initVariantChips() {
       } else if (availEl) {
         availEl.style.display = 'none';
       }
+
+      setPersonasForChip(chip);
+      recalcTotals(precio, anticipo);
     }
+
+    function updatePersonas(delta) {
+      const current = Number(countEl.textContent);
+      const min = Number(countEl.dataset.min || 1);
+      const max = Number(countEl.dataset.max || 20);
+      const next = Math.min(Math.max(min, current + delta), max);
+      countEl.textContent = next;
+      countEl.dataset.personas = next;
+      if (minusBtn) minusBtn.disabled = (next <= min);
+      if (plusBtn) plusBtn.disabled = (next >= max);
+      const activeChip = card.querySelector('.pkg-variant-chip.active');
+      if (activeChip) {
+        recalcTotals(Number(activeChip.dataset.precio) || 0, Number(activeChip.dataset.anticipo) || 0);
+      } else {
+        const pkg = pkgs.find(p => String(p.id) === String(card.dataset.pkgId));
+        if (pkg) recalcTotals(Number(pkg.precio) || 0, Number(pkg.monto_anticipo) || 0);
+      }
+    }
+
+    if (minusBtn) minusBtn.addEventListener('click', () => updatePersonas(-1));
+    if (plusBtn) plusBtn.addEventListener('click', () => updatePersonas(1));
 
     chips.forEach(chip => {
       chip.addEventListener('click', () => {
@@ -200,14 +285,15 @@ function initVariantChips() {
       });
     });
 
+    if (infoBtn) infoBtn.addEventListener('click', () => openPkgInfoDrawer(infoBtn.dataset.pkgId));
+
     if (reservarBtn) {
       reservarBtn.addEventListener('click', () => {
         const pkgId = reservarBtn.dataset.pkgId;
         const activeChip = card.querySelector('.pkg-variant-chip.active');
+        const personas = Number(countEl?.dataset.personas || 1);
         const selectedTours = [...card.querySelectorAll('.pkg-tour-check:checked')].map(cb => ({
-          id: cb.dataset.tourId,
-          nombre: cb.dataset.tourNombre,
-          precio: Number(cb.dataset.tourPrecio)
+          id: cb.dataset.tourId, nombre: cb.dataset.tourNombre, precio: Number(cb.dataset.tourPrecio)
         }));
         const pkg = pkgs.find(p => String(p.id) === String(pkgId));
         if (pkg && activeChip) {
@@ -217,23 +303,169 @@ function initVariantChips() {
           pkg._varianteNombre = activeChip.dataset.nombre;
           pkg._anticipo_es_total = activeChip.dataset.anticipoTotal === 'true';
           pkg._selectedTours = selectedTours;
+          pkg._personas = personas;
         }
         openPay(pkgId);
       });
     }
 
-    // Seed pkg object with first chip so openPay gets valid data on slug-activate
     const firstActive = card.querySelector('.pkg-variant-chip.active');
     if (firstActive) {
       applyChip(firstActive);
-      const pkgId = card.dataset.pkgId;
-      const pkg = pkgs.find(p => String(p.id) === String(pkgId));
+      const pkg = pkgs.find(p => String(p.id) === String(card.dataset.pkgId));
+      if (pkg) { pkg.precio = Number(firstActive.dataset.precio); pkg.monto_anticipo = Number(firstActive.dataset.anticipo); }
+    } else {
+      const pkg = pkgs.find(p => String(p.id) === String(card.dataset.pkgId));
       if (pkg) {
-        pkg.precio = Number(firstActive.dataset.precio);
-        pkg.monto_anticipo = Number(firstActive.dataset.anticipo);
+        recalcTotals(Number(pkg.precio) || 0, Number(pkg.monto_anticipo) || 0);
       }
     }
   });
+}
+
+function initPkgInfoDrawer() {
+  if (document.getElementById('pkg-info-drawer')) return;
+  const drawer = document.createElement('div');
+  drawer.id = 'pkg-info-drawer';
+  drawer.className = 'pkg-info-drawer';
+  drawer.innerHTML = `
+    <div class="pkg-info-overlay"></div>
+    <div class="pkg-info-panel">
+      <div class="pkg-info-header">
+        <h2 class="pkg-info-title js-drawer-title"></h2>
+        <button class="pkg-info-close">✕</button>
+      </div>
+      <div class="pkg-info-body">
+        <div class="pkg-info-tabs">
+          <button class="pkg-info-tab active" data-tab="incluye">¿Qué incluye?</button>
+          <button class="pkg-info-tab" data-tab="itinerario">Itinerario</button>
+          <button class="pkg-info-tab" data-tab="fotos">Fotos</button>
+          <button class="pkg-info-tab" data-tab="hotel">El lugar</button>
+        </div>
+        <div class="pkg-info-tab-content active" data-content="incluye"></div>
+        <div class="pkg-info-tab-content" data-content="itinerario"></div>
+        <div class="pkg-info-tab-content" data-content="fotos"></div>
+        <div class="pkg-info-tab-content" data-content="hotel"></div>
+      </div>
+    </div>`;
+  document.body.appendChild(drawer);
+
+  drawer.querySelector('.pkg-info-overlay').addEventListener('click', closePkgInfoDrawer);
+  drawer.querySelector('.pkg-info-close').addEventListener('click', closePkgInfoDrawer);
+
+  drawer.querySelectorAll('.pkg-info-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      drawer.querySelectorAll('.pkg-info-tab').forEach(t => t.classList.remove('active'));
+      drawer.querySelectorAll('.pkg-info-tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      drawer.querySelector(`.pkg-info-tab-content[data-content="${tab.dataset.tab}"]`).classList.add('active');
+    });
+  });
+}
+
+function openPkgInfoDrawer(pkgId) {
+  const drawer = document.getElementById('pkg-info-drawer');
+  if (!drawer) return;
+  const pkg = pkgs.find(p => String(p.id) === String(pkgId));
+  if (!pkg) return;
+
+  drawer.querySelector('.js-drawer-title').textContent = pkg.nombre;
+
+  drawer.querySelectorAll('.pkg-info-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  drawer.querySelectorAll('.pkg-info-tab-content').forEach((c, i) => c.classList.toggle('active', i === 0));
+
+  const inc = Array.isArray(pkg.incluye) ? pkg.incluye : (pkg.incluye||'').split('\n').filter(i => i.trim());
+  drawer.querySelector('[data-content="incluye"]').innerHTML =
+    `<ul style="list-style:none;padding:0">${inc.map(i =>
+      `<li style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f0f9fa;font-size:0.9rem;color:#3a5060"><span style="color:#1a9fa0;font-weight:700;flex-shrink:0">✓</span><span>${i}</span></li>`
+    ).join('')}</ul>`;
+
+  renderDrawerItinerario(drawer, pkg);
+  renderDrawerHotel(drawer, pkg);
+  renderDrawerFotos(drawer, pkg);
+
+  drawer.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePkgInfoDrawer() {
+  const drawer = document.getElementById('pkg-info-drawer');
+  if (drawer) drawer.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderDrawerItinerario(drawer, pkg) {
+  const el = drawer.querySelector('[data-content="itinerario"]');
+  const isAnioNuevo = /año nuevo|ano nuevo/i.test(pkg.nombre || '');
+
+  if (isAnioNuevo) {
+    const dias = [
+      { emoji: '🚌', dia: '29 dic (noche)', titulo: 'Salida CDMX 10:00 pm en autobús' },
+      { emoji: '🌊', dia: '30 dic',          titulo: 'Llegada a Zipolite. Instalación y primer día de playa' },
+      { emoji: '🎉', dia: '31 dic',          titulo: 'Día libre en Zipolite. Noche de Año Nuevo (por cuenta del viajero)' },
+      { emoji: '☀️', dia: '1 ene',           titulo: 'Año Nuevo en la playa más libre de México' },
+      { emoji: '🏖️', dia: '2 ene',           titulo: 'Día libre (tour opcional Carrizalillo + Bioluminiscencia)' },
+      { emoji: '🌅', dia: '3 ene',           titulo: 'Último día en Zipolite. Salida 6:00 pm en autobús' },
+      { emoji: '🏠', dia: '4 ene',           titulo: 'Llegada a CDMX (madrugada)' },
+    ];
+    el.innerHTML = dias.map(d => `
+      <div class="info-itinerario-item">
+        <div class="info-itin-emoji">${d.emoji}</div>
+        <div><div class="info-itin-dia">${d.dia}</div><div class="info-itin-titulo">${d.titulo}</div></div>
+      </div>`).join('');
+  } else if (Array.isArray(pkg.itinerario) && pkg.itinerario.length) {
+    el.innerHTML = pkg.itinerario.map(d => `
+      <div class="info-itinerario-item">
+        <div class="info-itin-emoji">${d.emoji || '📅'}</div>
+        <div><div class="info-itin-dia">${d.dia || ''}</div><div class="info-itin-titulo">${d.titulo || d.descripcion || ''}</div></div>
+      </div>`).join('');
+  } else {
+    el.innerHTML = '<p style="color:#aaa;font-size:0.9rem;padding:16px 0">Itinerario próximamente.</p>';
+  }
+}
+
+function renderDrawerHotel(drawer, pkg) {
+  const el = drawer.querySelector('[data-content="hotel"]');
+  const isAnioNuevo = /año nuevo|ano nuevo/i.test(pkg.nombre || '');
+
+  if (isAnioNuevo) {
+    el.innerHTML = `
+      <div class="info-lugar-block">
+        <div class="info-lugar-tipo">Glamping</div>
+        <div class="info-lugar-nombre">Hotel Los Ángeles · Rancho Los Mangos</div>
+        <p class="info-lugar-desc">5 hectáreas de naturaleza tropical a 2 calles de la playa. Área de camping con alberca, duchas, sanitarios, seguridad, wifi y asadores. Ambiente LGBT+ friendly. Tienda y colchón inflable en préstamo incluidos.</p>
+        <a class="info-lugar-map" href="https://maps.app.goo.gl/zipolite-los-angeles" target="_blank" rel="noopener">📍 Ver en Google Maps</a>
+      </div>
+      <div class="info-lugar-block">
+        <div class="info-lugar-tipo">Habitación</div>
+        <div class="info-lugar-nombre">Hotel Juquila</div>
+        <p class="info-lugar-desc">Hotel rústico a calle y media de la playa. Habitaciones con 1 o 2 camas. Sin asignación de compañero/a — tú eliges con quién compartes. Máximo 5 habitaciones disponibles para nuestro grupo.</p>
+      </div>`;
+  } else {
+    el.innerHTML = '<p style="color:#aaa;font-size:0.9rem;padding:16px 0">Información del lugar próximamente.</p>';
+  }
+}
+
+async function renderDrawerFotos(drawer, pkg) {
+  const el = drawer.querySelector('[data-content="fotos"]');
+  el.innerHTML = '<p style="color:#aaa;font-size:0.9rem;padding:16px 0">Cargando fotos…</p>';
+
+  if (!pkg.id || String(pkg.id).startsWith('d')) {
+    el.innerHTML = '<p style="color:#aaa;font-size:0.9rem;padding:16px 0">Sin fotos disponibles.</p>';
+    return;
+  }
+
+  const { data: fotos } = await sb.from('galeria').select('*').eq('paquete_id', pkg.id).order('orden').order('created_at');
+
+  if (!fotos || !fotos.length) {
+    el.innerHTML = '<p style="color:#aaa;font-size:0.9rem;padding:16px 0">Sin fotos por ahora.</p>';
+    return;
+  }
+
+  lbImages = fotos;
+  el.innerHTML = `<div class="info-fotos-grid">${fotos.map((f, i) =>
+    `<img src="${f.url}" alt="${f.descripcion || 'Zipolite'}" loading="lazy" onclick="openLightbox(${i})">`
+  ).join('')}</div>`;
 }
 
 function toggleExtras(btn) {
