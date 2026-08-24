@@ -53,7 +53,18 @@ async function loadPkgs() {
   console.log(data);
   const today = new Date().toISOString().split('T')[0];
   const vigentes = (data||[]).filter(p => !p.fecha_fin || p.fecha_fin >= today);
-  pkgs = vigentes.length > 0 ? vigentes : DEFAULT_PKGS;
+  const base = vigentes.length > 0 ? vigentes : DEFAULT_PKGS;
+
+  const enriched = await Promise.all(base.map(async p => {
+    if (!p.id || String(p.id).startsWith('d')) return { ...p, variantes: [], tours: [] };
+    const [{ data: variantes }, { data: tours }] = await Promise.all([
+      sb.from('variantes_paquete').select('*').eq('paquete_id', p.id).eq('activo', true).order('orden'),
+      sb.from('tours_paquete').select('*').eq('paquete_id', p.id).eq('activo', true).order('orden')
+    ]);
+    return { ...p, variantes: variantes || [], tours: tours || [] };
+  }));
+
+  pkgs = enriched;
   renderPkgs(pkgs);
   if (pendingSlug) { activateSlugCard(pendingSlug); pendingSlug = null; }
 }
@@ -62,7 +73,8 @@ function renderPkgs(list) {
   const c = document.getElementById('pkg-container');
   if (!list.length) { c.innerHTML='<div class="empty-msg">No hay paquetes.</div>'; return; }
   c.innerHTML = list.map(p => {
-    const inc = Array.isArray(p.incluye) ? p.incluye : (p.incluye||'').split('\n').filter(i=>i.trim());
+    const variantes = p.variantes || [];
+    const tours = p.tours || [];
     const placeholderBg = p.tipo==='secondary' ? 'background:linear-gradient(135deg,#1a4a22,#4CAF50)' : 'background:linear-gradient(135deg,#006080,#00BCD4)';
     const header = p.foto_url
       ? `<div class="pkg-img-wrap">
@@ -90,14 +102,43 @@ function renderPkgs(list) {
         </div>`;
     const slug = slugify(p.nombre);
     const shareUrl = `https://zipolitealdesnudo.com/?paquete=${slug}`;
-    return `<div class="pkg-card" data-slug="${slug}">
+
+    const variantChips = variantes.length > 0 ? `
+      <div class="pkg-variants" role="group" aria-label="Elige tu modalidad">
+        ${variantes.map((v, i) => `<button class="pkg-variant-chip${i===0?' active':''}" data-precio="${v.precio}" data-anticipo="${v.anticipo}" data-anticipo-total="${v.anticipo_es_total||false}" data-variante-id="${v.id}" data-nombre="${v.nombre}" data-lugares-totales="${v.lugares_totales||''}" data-lugares-vendidos="${v.lugares_vendidos||0}"><span class="chip-label">${v.nombre}</span><span class="chip-precio">$${Number(v.precio).toLocaleString('es-MX')}</span></button>`).join('')}
+      </div>` : '';
+
+    const toursHtml = tours.length > 0 ? `
+      <div class="pkg-tours">
+        <p class="pkg-tours-label">Tours opcionales</p>
+        ${tours.map(t => `<label class="pkg-tour-item"><input type="checkbox" class="pkg-tour-check" data-tour-id="${t.id}" data-tour-precio="${t.precio}" data-tour-nombre="${t.nombre}"><span class="pkg-tour-nombre">${t.nombre}</span><span class="pkg-tour-precio">+$${Number(t.precio).toLocaleString('es-MX')}</span></label>`).join('')}
+      </div>` : '';
+
+    const defaultPrecio = variantes.length > 0 ? (Number(variantes[0].precio)||0) : (Number(p.precio)||0);
+    const defaultAnticipo = variantes.length > 0 ? (Number(variantes[0].anticipo)||0) : (Number(p.monto_anticipo)||0);
+
+    return `<div class="pkg-card" data-slug="${slug}" data-pkg-id="${p.id}">
       ${header}
       <div class="pkg-body">
-        <div class="pkg-price"><span class="currency">MXN $</span><span class="amount">${Number(p.precio).toLocaleString()}</span><span class="per">/ persona</span></div>
-        <div class="pkg-urgency">${p.tipo==='secondary'?'🏕️ ¡Solo 48 lugares disponibles!':'✈️ Incluye vuelo, hotel y traslados'}</div>
-        <ul class="pkg-features">${inc.slice(0,5).map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}${inc.length>5?`<div class="pkg-extra-items" style="display:none">${inc.slice(5).map(i=>`<li><span class="chk">✓</span><span>${i.trim()}</span></li>`).join('')}</div><button class="pkg-more-btn" onclick="toggleExtras(this)">+ ${inc.length-5} más incluidos ▾</button>`:''}</ul>
-        <button class="pkg-btn pkg-btn-${p.tipo||'primary'}" onclick="openPay('${p.id}')">
-          🏖️ Reservar ahora
+        ${variantChips}
+        <div class="pkg-availability" style="display:none">
+          <div class="avail-bar-wrap"><div class="avail-bar-fill"></div></div>
+          <span class="avail-text"></span>
+        </div>
+        <div class="pkg-price-block">
+          <div class="pkg-price-main">
+            <span class="pkg-price-label">Precio por persona</span>
+            <span class="pkg-price-amount">$<span class="js-precio">${defaultPrecio.toLocaleString('es-MX')}</span></span>
+          </div>
+          <div class="pkg-anticipo-block">
+            <span class="pkg-anticipo-label">Aparta hoy con</span>
+            <span class="pkg-anticipo-amount">$<span class="js-anticipo">${defaultAnticipo.toLocaleString('es-MX')}</span></span>
+          </div>
+        </div>
+        ${p.nota ? `<p class="pkg-nota">⚠️ ${p.nota}</p>` : ''}
+        ${toursHtml}
+        <button class="pkg-btn pkg-btn-${p.tipo||'primary'} js-reservar-btn" data-pkg-id="${p.id}">
+          🏖️ Reservar — anticipo $<span class="js-btn-anticipo">${defaultAnticipo.toLocaleString('es-MX')}</span>
         </button>
         <div class="pkg-share-wrap">
           <button class="pkg-share-btn" onclick="toggleShareMenu(this)">🔗 Compartir</button>
@@ -110,6 +151,88 @@ function renderPkgs(list) {
       </div>
     </div>`;
   }).join('');
+  initVariantChips();
+}
+
+function initVariantChips() {
+  document.querySelectorAll('.pkg-card').forEach(card => {
+    const chips = card.querySelectorAll('.pkg-variant-chip');
+    const precioEl = card.querySelector('.js-precio');
+    const anticipoEl = card.querySelector('.js-anticipo');
+    const btnAnticipo = card.querySelector('.js-btn-anticipo');
+    const priceAmount = card.querySelector('.pkg-price-amount');
+    const availEl = card.querySelector('.pkg-availability');
+    const availFill = card.querySelector('.avail-bar-fill');
+    const availText = card.querySelector('.avail-text');
+    const reservarBtn = card.querySelector('.js-reservar-btn');
+
+    function applyChip(chip) {
+      const precio = Number(chip.dataset.precio) || 0;
+      const anticipo = Number(chip.dataset.anticipo) || 0;
+      const totalesRaw = chip.dataset.lugaresTotales;
+      const totales = totalesRaw ? Number(totalesRaw) : null;
+      const vendidos = Number(chip.dataset.lugaresVendidos) || 0;
+
+      if (priceAmount) {
+        priceAmount.classList.add('updating');
+        setTimeout(() => priceAmount.classList.remove('updating'), 200);
+      }
+      if (precioEl) precioEl.textContent = precio.toLocaleString('es-MX');
+      if (anticipoEl) anticipoEl.textContent = anticipo.toLocaleString('es-MX');
+      if (btnAnticipo) btnAnticipo.textContent = anticipo.toLocaleString('es-MX');
+
+      if (totales !== null && availEl) {
+        const pct = Math.min(100, Math.round((vendidos / totales) * 100));
+        availEl.style.display = '';
+        if (availFill) availFill.style.width = pct + '%';
+        if (availText) availText.textContent = `Quedan ${totales - vendidos} de ${totales} lugares`;
+      } else if (availEl) {
+        availEl.style.display = 'none';
+      }
+    }
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        applyChip(chip);
+      });
+    });
+
+    if (reservarBtn) {
+      reservarBtn.addEventListener('click', () => {
+        const pkgId = reservarBtn.dataset.pkgId;
+        const activeChip = card.querySelector('.pkg-variant-chip.active');
+        const selectedTours = [...card.querySelectorAll('.pkg-tour-check:checked')].map(cb => ({
+          id: cb.dataset.tourId,
+          nombre: cb.dataset.tourNombre,
+          precio: Number(cb.dataset.tourPrecio)
+        }));
+        const pkg = pkgs.find(p => String(p.id) === String(pkgId));
+        if (pkg && activeChip) {
+          pkg.precio = Number(activeChip.dataset.precio);
+          pkg.monto_anticipo = Number(activeChip.dataset.anticipo);
+          pkg._varianteId = activeChip.dataset.varianteId;
+          pkg._varianteNombre = activeChip.dataset.nombre;
+          pkg._anticipo_es_total = activeChip.dataset.anticipoTotal === 'true';
+          pkg._selectedTours = selectedTours;
+        }
+        openPay(pkgId);
+      });
+    }
+
+    // Seed pkg object with first chip so openPay gets valid data on slug-activate
+    const firstActive = card.querySelector('.pkg-variant-chip.active');
+    if (firstActive) {
+      applyChip(firstActive);
+      const pkgId = card.dataset.pkgId;
+      const pkg = pkgs.find(p => String(p.id) === String(pkgId));
+      if (pkg) {
+        pkg.precio = Number(firstActive.dataset.precio);
+        pkg.monto_anticipo = Number(firstActive.dataset.anticipo);
+      }
+    }
+  });
 }
 
 function toggleExtras(btn) {
