@@ -329,6 +329,8 @@ footer a{color:var(--teal);text-decoration:none;}
 .pay-btn{width:100%;padding:14px;background:var(--red);color:white;border:none;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.97rem;font-weight:700;cursor:pointer;margin-top:18px;display:flex;align-items:center;justify-content:center;gap:8px;}
 .pay-btn:hover{background:#c0241d;}
 .pay-btn:disabled{background:#ccc;cursor:not-allowed;}
+#confirm-btn{background:#1a9fa0;}
+#confirm-btn:hover{background:#157f80;}
 .secure{display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.76rem;color:#bbb;margin-top:10px;}
 #pay-error{color:#c0241d;font-size:0.83rem;margin-top:8px;display:none;}
 /* REGISTRO USUARIOS */

@@ -316,9 +316,7 @@ function initVariantChips() {
 
     // Initialization: always use chips[0] as the default active chip
     if (chips.length > 0) {
-      chips.forEach(c => c.classList.remove('active'));
-      chips[0].classList.add('active');
-      applyChip(chips[0]);
+      card.querySelectorAll('.pkg-variant-chip')[0]?.click();
       const pkg = pkgs.find(p => String(p.id) === String(card.dataset.pkgId));
       if (pkg) { pkg.precio = Number(chips[0].dataset.precio); pkg.monto_anticipo = Number(chips[0].dataset.anticipo); }
     } else {
