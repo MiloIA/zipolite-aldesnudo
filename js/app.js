@@ -218,15 +218,18 @@ function initVariantChips() {
       if (noteEl) { noteEl.textContent = note; noteEl.style.display = note ? '' : 'none'; }
 
       if (fixed !== null) {
-        if (countEl) { countEl.textContent = fixed; countEl.dataset.personas = fixed; }
+        // Habitación doble: lock at 2, disable both buttons
+        if (countEl) { countEl.textContent = fixed; countEl.dataset.personas = fixed; countEl.dataset.min = fixed; countEl.dataset.max = fixed; }
         if (minusBtn) minusBtn.disabled = true;
         if (plusBtn) plusBtn.disabled = true;
       } else {
-        const current = Number(countEl?.dataset.personas || 1);
-        const clamped = Math.min(Math.max(current, min), max);
-        if (countEl) { countEl.textContent = clamped; countEl.dataset.personas = clamped; countEl.dataset.min = min; countEl.dataset.max = max; }
-        if (minusBtn) { minusBtn.disabled = (clamped <= min); }
-        if (plusBtn) { plusBtn.disabled = (clamped >= max); }
+        // Re-enable buttons (may be coming from a doble lock), reset count to min (1)
+        if (minusBtn) minusBtn.disabled = false;
+        if (plusBtn) plusBtn.disabled = false;
+        const count = min; // always reset to 1 on variant switch
+        if (countEl) { countEl.textContent = count; countEl.dataset.personas = count; countEl.dataset.min = min; countEl.dataset.max = max; }
+        if (minusBtn) minusBtn.disabled = (count <= min);
+        if (plusBtn) plusBtn.disabled = (count >= max);
       }
     }
 
@@ -258,6 +261,7 @@ function initVariantChips() {
 
     function updatePersonas(delta) {
       const current = Number(countEl.textContent);
+      if (delta < 0 && current <= 1) return; // never go below 1
       const min = Number(countEl.dataset.min || 1);
       const max = Number(countEl.dataset.max || 20);
       const next = Math.min(Math.max(min, current + delta), max);
@@ -309,16 +313,16 @@ function initVariantChips() {
       });
     }
 
-    const firstActive = card.querySelector('.pkg-variant-chip.active');
-    if (firstActive) {
-      applyChip(firstActive);
+    // Initialization: always use chips[0] as the default active chip
+    if (chips.length > 0) {
+      chips.forEach(c => c.classList.remove('active'));
+      chips[0].classList.add('active');
+      applyChip(chips[0]);
       const pkg = pkgs.find(p => String(p.id) === String(card.dataset.pkgId));
-      if (pkg) { pkg.precio = Number(firstActive.dataset.precio); pkg.monto_anticipo = Number(firstActive.dataset.anticipo); }
+      if (pkg) { pkg.precio = Number(chips[0].dataset.precio); pkg.monto_anticipo = Number(chips[0].dataset.anticipo); }
     } else {
       const pkg = pkgs.find(p => String(p.id) === String(card.dataset.pkgId));
-      if (pkg) {
-        recalcTotals(Number(pkg.precio) || 0, Number(pkg.monto_anticipo) || 0);
-      }
+      if (pkg) recalcTotals(Number(pkg.precio) || 0, Number(pkg.monto_anticipo) || 0);
     }
   });
 }
