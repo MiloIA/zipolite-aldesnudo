@@ -61,11 +61,7 @@ function switchAdminTab(tabId) {
   if (tabId === 'finanzas') loadFinanzas();
   if (tabId === 'comisiones') loadComisiones();
   if (tabId === 'analytics') loadAnalytics();
-  if (tabId === 'ano-nuevo') {
-    const token = sessionStorage.getItem('adminToken') || '';
-    const iframe = document.querySelector('#admin-section-ano-nuevo iframe');
-    if (iframe) iframe.src = '/ano-nuevo.html#token=' + encodeURIComponent(token);
-  }
+  if (tabId === 'ano-nuevo') loadAnoNuevo();
 }
 
 function openAdmin() {
@@ -2174,3 +2170,375 @@ window.switchAdminTab = function(tab) {
   if (tab === 'crm') crmCargar();
 };
 // ===================== FIN CRM =====================
+
+// ===================== AÑO NUEVO =====================
+let anRes = [], anVars = [], anExpandedId = null;
+const anFmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+
+function loadAnoNuevo() {
+  const container = document.getElementById('ano-nuevo-container');
+  if (!container) return;
+
+  // Inject styles and shell once
+  if (!document.getElementById('an-styles')) {
+    const s = document.createElement('style');
+    s.id = 'an-styles';
+    s.textContent = `
+      #ano-nuevo-container{font-family:'Segoe UI',Arial,sans-serif;font-size:14px;background:#f4f7f9;border-radius:8px;overflow:hidden;}
+      .an-header{background:#1A3A4A;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+      .an-header h2{margin:0;font-size:1.05rem;}
+      .an-summary{display:flex;flex-wrap:wrap;gap:10px;padding:14px 20px;background:#fff;border-bottom:1px solid #e0e0e0;}
+      .an-stat{background:#FFFBF2;border:1px solid #e0e0e0;border-radius:10px;padding:10px 14px;min-width:110px;flex:1;}
+      .an-stat .lbl{font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:.05em;}
+      .an-stat .val{font-size:1.2rem;font-weight:800;color:#1A3A4A;margin-top:2px;}
+      .an-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;flex-wrap:wrap;gap:8px;}
+      .an-toolbar h3{margin:0;font-size:.9rem;color:#1A3A4A;}
+      .an-tw{overflow-x:auto;padding:0 20px 24px;}
+      .an-tbl{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+      .an-tbl thead{background:#1A3A4A;color:#fff;}
+      .an-tbl thead th{padding:9px 12px;text-align:left;font-size:.78rem;font-weight:600;white-space:nowrap;}
+      .an-tbl tbody tr.an-rrow{cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background .1s;}
+      .an-tbl tbody tr.an-rrow:hover{background:#f0feff;}
+      .an-tbl tbody td{padding:9px 12px;font-size:.85rem;vertical-align:middle;}
+      .an-tbl tbody tr.an-drow td{padding:0;background:#fafafa;border-bottom:2px solid #e0e0e0;}
+      .an-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.73rem;font-weight:700;}
+      .an-badge-red{background:#fde8e8;color:#b71c1c;}
+      .an-badge-yellow{background:#fff9e6;color:#e65100;}
+      .an-badge-green{background:#e8f5e9;color:#1b5e20;}
+      .an-detail{padding:14px 20px;}
+      .an-detail h4{font-size:.83rem;font-weight:700;color:#1A3A4A;margin-bottom:10px;}
+      .an-ptbl{width:100%;border-collapse:collapse;margin-bottom:10px;}
+      .an-ptbl th{font-size:.74rem;color:#888;font-weight:600;padding:3px 8px;text-align:left;border-bottom:1px solid #e0e0e0;}
+      .an-ptbl td{font-size:.81rem;padding:5px 8px;border-bottom:1px solid #f0f0f0;}
+      .an-pform{background:#fff;border:1.5px solid #1a9fa0;border-radius:10px;padding:14px;margin-top:10px;}
+      .an-pform h4{font-size:.83rem;font-weight:700;color:#1a9fa0;margin-bottom:10px;}
+      .an-frow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+      .an-fg{display:flex;flex-direction:column;gap:3px;flex:1;min-width:110px;}
+      .an-fg label{font-size:.72rem;color:#666;font-weight:600;}
+      .an-fg input,.an-fg select,.an-fg textarea{padding:6px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:.85rem;outline:none;font-family:inherit;}
+      .an-fg input:focus,.an-fg select:focus{border-color:#1a9fa0;}
+      .an-btn{padding:7px 14px;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem;}
+      .an-btn-teal{background:#1a9fa0;color:#fff;}
+      .an-btn-teal:hover{background:#157f80;}
+      .an-btn-red{background:#E8312A;color:#fff;}
+      .an-btn-sm{padding:4px 9px;font-size:.77rem;border-radius:6px;}
+      .an-btn-outline{background:transparent;border:1.5px solid #1a9fa0;color:#1a9fa0;}
+      .an-modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;}
+      .an-modal-ov.open{display:flex;}
+      .an-modal-box{background:#fff;border-radius:14px;padding:24px;width:90%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18);}
+      .an-modal-box h2{font-size:1rem;color:#1A3A4A;margin-bottom:16px;}
+    `;
+    document.head.appendChild(s);
+  }
+
+  container.innerHTML = `
+    <div class="an-header">
+      <h2>🎆 Año Nuevo al Desnudo — Control de Viajeros</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="an-btn an-btn-teal an-btn-sm" onclick="an_reload()">↺ Actualizar</button>
+        <button class="an-btn an-btn-teal an-btn-sm" onclick="an_openReservaModal()">+ Nueva reserva</button>
+      </div>
+    </div>
+    <div class="an-summary">
+      <div class="an-stat"><div class="lbl">Total viajeros</div><div class="val" id="an-stat-viajeros">—</div></div>
+      <div class="an-stat"><div class="lbl">Glamping</div><div class="val" id="an-stat-glamping">—</div><div style="font-size:.78rem;color:#666;">lugares</div></div>
+      <div class="an-stat"><div class="lbl">Hab. individual</div><div class="val" id="an-stat-individual">—</div><div style="font-size:.78rem;color:#666;">habitaciones</div></div>
+      <div class="an-stat"><div class="lbl">Hab. doble</div><div class="val" id="an-stat-doble">—</div><div style="font-size:.78rem;color:#666;">habitaciones</div></div>
+      <div class="an-stat"><div class="lbl">Cobrado</div><div class="val" id="an-stat-cobrado">—</div></div>
+      <div class="an-stat"><div class="lbl">Pendiente</div><div class="val" id="an-stat-pendiente">—</div></div>
+    </div>
+    <div class="an-toolbar">
+      <h3 id="an-table-title">Cargando...</h3>
+    </div>
+    <div class="an-tw">
+      <table class="an-tbl">
+        <thead><tr>
+          <th>Nombre</th><th>Variante</th><th>Personas</th>
+          <th>Total</th><th>Pagado</th><th>Pendiente</th>
+          <th>Último pago</th><th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="an-tbody"><tr><td colspan="9" style="text-align:center;color:#aaa;padding:28px;">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+    <!-- Modal nueva reserva -->
+    <div class="an-modal-ov" id="an-reserva-modal" onclick="if(event.target===this)an_closeReservaModal()">
+      <div class="an-modal-box">
+        <h2>+ Nueva reserva manual</h2>
+        <div class="an-frow">
+          <div class="an-fg" style="flex:2"><label>Nombre *</label><input type="text" id="an-nr-nombre" placeholder="Nombre del viajero"></div>
+        </div>
+        <div class="an-frow">
+          <div class="an-fg"><label>Email *</label><input type="email" id="an-nr-email" placeholder="correo@ejemplo.com"></div>
+          <div class="an-fg"><label>WhatsApp</label><input type="tel" id="an-nr-whatsapp" placeholder="55 1234 5678"></div>
+        </div>
+        <div class="an-frow">
+          <div class="an-fg"><label>Variante</label><select id="an-nr-variante" onchange="an_recalcTotal()"></select></div>
+          <div class="an-fg"><label>Personas</label><input type="number" id="an-nr-personas" value="1" min="1" max="48" oninput="an_recalcTotal()"></div>
+        </div>
+        <div class="an-frow">
+          <div class="an-fg"><label>Total ($)</label><input type="number" id="an-nr-total" placeholder="0" readonly style="background:#f5f5f5;color:#555;"></div>
+        </div>
+        <div class="an-fg" style="margin-bottom:10px;"><label>Notas</label><textarea id="an-nr-notas" rows="2" placeholder="Notas internas..."></textarea></div>
+        <p id="an-nr-error" style="color:#E8312A;font-size:.8rem;min-height:16px;"></p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="an-btn an-btn-outline an-btn-sm" onclick="an_closeReservaModal()">Cancelar</button>
+          <button class="an-btn an-btn-teal an-btn-sm" onclick="an_guardarReserva()">Guardar reserva</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  an_loadData();
+}
+
+function an_getToken() { return sessionStorage.getItem('adminToken') || ''; }
+
+async function an_loadData() {
+  const r = await fetch('/api/pagos?all=1', { headers: { 'x-admin-token': an_getToken() } });
+  if (!r.ok) {
+    const el = document.getElementById('an-tbody');
+    if (el) el.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#E8312A;padding:24px;">Error al cargar datos — verifica que el token sea válido</td></tr>';
+    return;
+  }
+  const { data, variantes: variantesData } = await r.json();
+  anRes = data || [];
+  if (variantesData) {
+    anVars = variantesData;
+    const sel = document.getElementById('an-nr-variante');
+    if (sel) {
+      sel.innerHTML = '<option value="" data-precio="0">Sin variante</option>' +
+        anVars.map(v => `<option value="${v.id}" data-precio="${v.precio}">${v.nombre} — ${anFmt(v.precio)}</option>`).join('');
+    }
+  }
+  an_renderSummary();
+  an_renderTable();
+}
+
+function an_reload() { anExpandedId = null; an_loadData(); }
+
+function an_renderSummary() {
+  let viajeros = 0, cobrado = 0, pendiente = 0;
+  anRes.forEach(r => {
+    viajeros += Number(r.personas) || 0;
+    cobrado  += Number(r.total_pagado) || 0;
+    pendiente += Math.max(0, (Number(r.total) || 0) - (Number(r.total_pagado) || 0));
+  });
+  const fv = kw => anVars.find(v => (v.nombre || '').toLowerCase().includes(kw));
+  const gl = fv('glamping'), ind = fv('individual'), dob = fv('doble');
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('an-stat-viajeros', viajeros);
+  set('an-stat-glamping',  `${gl?.lugares_vendidos ?? 0}/${gl?.lugares_totales ?? 48}`);
+  set('an-stat-individual', `${ind?.lugares_vendidos ?? 0}/${ind?.lugares_totales ?? 6}`);
+  set('an-stat-doble',     `${dob?.lugares_vendidos ?? 0}/${dob?.lugares_totales ?? 6}`);
+  set('an-stat-cobrado',   anFmt(cobrado));
+  set('an-stat-pendiente', anFmt(pendiente));
+}
+
+function an_estadoBadge(r) {
+  const pagado = Number(r.total_pagado) || 0, total = Number(r.total) || 0;
+  if (pagado === 0) return '<span class="an-badge an-badge-red">Sin pago</span>';
+  if (total > 0 && pagado >= total) return '<span class="an-badge an-badge-green">Liquidado</span>';
+  return '<span class="an-badge an-badge-yellow">Parcial</span>';
+}
+
+function an_ultimoPago(r) {
+  const conf = (r.pagos || []).filter(p => p.confirmado).sort((a, b) => b.fecha > a.fecha ? 1 : -1);
+  return conf.length ? conf[0].fecha + '<br><small>' + conf[0].metodo + '</small>' : '—';
+}
+
+function an_renderTable() {
+  const tbody = document.getElementById('an-tbody');
+  const title = document.getElementById('an-table-title');
+  if (!tbody) return;
+  if (title) title.textContent = `${anRes.length} reservación${anRes.length !== 1 ? 'es' : ''}`;
+  if (!anRes.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:28px;">Sin reservaciones aún</td></tr>';
+    return;
+  }
+  tbody.innerHTML = anRes.map(r => {
+    const pagado = Number(r.total_pagado) || 0;
+    const total  = Number(r.total) || 0;
+    const pend   = Math.max(0, total - pagado);
+    const exp    = anExpandedId === r.id;
+    return `
+      <tr class="an-rrow" onclick="an_toggleDetail('${r.id}')">
+        <td><strong>${r.nombre}</strong><br><small style="color:#888;">${r.email}</small></td>
+        <td>${r.variantes_paquete?.nombre || '—'}</td>
+        <td style="text-align:center;">${r.personas}</td>
+        <td>${anFmt(total)}</td>
+        <td style="color:${pagado > 0 ? '#2e7d32' : '#888'};">${anFmt(pagado)}</td>
+        <td style="color:${pend > 0 ? '#e07b00' : '#2e7d32'};">${anFmt(pend)}</td>
+        <td style="font-size:.78rem;">${an_ultimoPago(r)}</td>
+        <td>${an_estadoBadge(r)}</td>
+        <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+          <button class="an-btn an-btn-teal an-btn-sm" onclick="an_showPagoForm('${r.id}')">+ Pago</button>
+          <button class="an-btn an-btn-red an-btn-sm" onclick="an_eliminarReservacion('${r.id}')" style="margin-left:4px;">Eliminar</button>
+        </td>
+      </tr>
+      <tr class="an-drow" id="an-detail-${r.id}" style="display:${exp ? 'table-row' : 'none'}">
+        <td colspan="9">${an_renderDetail(r)}</td>
+      </tr>`;
+  }).join('');
+}
+
+function an_renderDetail(r) {
+  const pagos = r.pagos || [];
+  const ptbl = pagos.length
+    ? `<table class="an-ptbl">
+        <thead><tr><th>Fecha</th><th>Método</th><th>Monto</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
+        <tbody>${pagos.map(p => `
+          <tr>
+            <td>${p.fecha || '—'}</td>
+            <td>${p.metodo || '—'}</td>
+            <td>${anFmt(p.monto)}</td>
+            <td>${p.confirmado
+              ? '<span class="an-badge an-badge-green">Confirmado</span>'
+              : '<span class="an-badge an-badge-yellow">Pendiente</span>'}</td>
+            <td style="color:#888;font-size:.78rem;">${p.notas || '—'}</td>
+            <td style="white-space:nowrap;">
+              ${!p.confirmado ? `<button class="an-btn an-btn-teal an-btn-sm" onclick="an_confirmarPago('${p.id}','${r.id}')">Confirmar</button> ` : ''}
+              <button class="an-btn an-btn-red an-btn-sm" onclick="an_eliminarPago('${p.id}','${r.id}')" title="Eliminar">✕</button>
+            </td>
+          </tr>`).join('')}
+        </tbody></table>`
+    : '<p style="font-size:.82rem;color:#aaa;margin-bottom:10px;">Sin pagos registrados aún.</p>';
+
+  return `<div class="an-detail">
+    <h4>📋 Historial de pagos — ${r.nombre}</h4>
+    ${ptbl}
+    <div id="an-pf-${r.id}" style="display:none;">
+      <div class="an-pform">
+        <h4>+ Registrar pago</h4>
+        <div class="an-frow">
+          <div class="an-fg"><label>Monto ($)</label><input type="number" id="an-monto-${r.id}" placeholder="0" step="0.01"></div>
+          <div class="an-fg"><label>Método</label>
+            <select id="an-metodo-${r.id}">
+              <option value="transfer">Transferencia</option>
+              <option value="clip">Clip</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="an-fg"><label>Fecha</label><input type="date" id="an-fecha-${r.id}" value="${new Date().toISOString().split('T')[0]}"></div>
+        </div>
+        <div class="an-frow">
+          <div class="an-fg" style="flex:3"><label>Notas</label><input type="text" id="an-notas-${r.id}" placeholder="Referencia, observaciones..."></div>
+          <div class="an-fg" style="justify-content:flex-end;padding-bottom:4px;">
+            <label>&nbsp;</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:.83rem;">
+              <input type="checkbox" id="an-conf-${r.id}" checked> Confirmado
+            </label>
+          </div>
+        </div>
+        <p id="an-pferr-${r.id}" style="color:#E8312A;font-size:.78rem;min-height:14px;"></p>
+        <div style="display:flex;gap:8px;">
+          <button class="an-btn an-btn-teal an-btn-sm" onclick="an_guardarPago('${r.id}')">Guardar pago</button>
+          <button class="an-btn an-btn-outline an-btn-sm" onclick="document.getElementById('an-pf-${r.id}').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function an_toggleDetail(id) {
+  anExpandedId = anExpandedId === id ? null : id;
+  an_renderTable();
+}
+
+function an_showPagoForm(id) {
+  if (anExpandedId !== id) { anExpandedId = id; an_renderTable(); }
+  setTimeout(() => {
+    const el = document.getElementById(`an-pf-${id}`);
+    if (el) { el.style.display = 'block'; el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  }, 50);
+}
+
+async function an_guardarPago(reservacionId) {
+  const errEl = document.getElementById(`an-pferr-${reservacionId}`);
+  const monto = Number(document.getElementById(`an-monto-${reservacionId}`)?.value);
+  if (!monto || monto <= 0) { errEl.textContent = 'Ingresa un monto válido'; return; }
+  errEl.textContent = '';
+  const r = await fetch('/api/pagos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': an_getToken() },
+    body: JSON.stringify({
+      reservacion_id: reservacionId,
+      monto,
+      metodo: document.getElementById(`an-metodo-${reservacionId}`)?.value,
+      fecha: document.getElementById(`an-fecha-${reservacionId}`)?.value,
+      notas: document.getElementById(`an-notas-${reservacionId}`)?.value,
+      confirmado: document.getElementById(`an-conf-${reservacionId}`)?.checked,
+    }),
+  });
+  if (!r.ok) { const { error } = await r.json().catch(() => ({})); errEl.textContent = error || 'Error al guardar'; return; }
+  anExpandedId = reservacionId;
+  await an_loadData();
+}
+
+async function an_confirmarPago(pagoId, reservacionId) {
+  const r = await fetch(`/api/pagos?id=${pagoId}`, { method: 'PATCH', headers: { 'x-admin-token': an_getToken() } });
+  if (!r.ok) { alert('Error al confirmar pago'); return; }
+  anExpandedId = reservacionId;
+  await an_loadData();
+}
+
+async function an_eliminarPago(pagoId, reservacionId) {
+  if (!confirm('¿Eliminar este pago?')) return;
+  const r = await fetch(`/api/pagos?pago_id=${pagoId}`, { method: 'DELETE', headers: { 'x-admin-token': an_getToken() } });
+  if (!r.ok) { alert('Error al eliminar pago'); return; }
+  anExpandedId = reservacionId;
+  await an_loadData();
+}
+
+async function an_eliminarReservacion(reservacionId) {
+  if (!confirm('¿Eliminar esta reservación y todos sus pagos? Esta acción no se puede deshacer.')) return;
+  const r = await fetch(`/api/pagos?reservacion_id=${reservacionId}&delete_reservacion=1`, { method: 'DELETE', headers: { 'x-admin-token': an_getToken() } });
+  if (!r.ok) { alert('Error al eliminar reservación'); return; }
+  anExpandedId = null;
+  await an_loadData();
+}
+
+function an_recalcTotal() {
+  const sel = document.getElementById('an-nr-variante');
+  const precio = Number(sel?.options[sel.selectedIndex]?.dataset.precio || 0);
+  const personas = Number(document.getElementById('an-nr-personas')?.value) || 1;
+  const el = document.getElementById('an-nr-total');
+  if (el) el.value = precio * personas;
+}
+
+function an_openReservaModal() {
+  ['an-nr-nombre','an-nr-email','an-nr-whatsapp','an-nr-notas'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const p = document.getElementById('an-nr-personas'); if (p) p.value = '1';
+  document.getElementById('an-nr-error').textContent = '';
+  an_recalcTotal();
+  document.getElementById('an-reserva-modal').classList.add('open');
+}
+
+function an_closeReservaModal() {
+  document.getElementById('an-reserva-modal').classList.remove('open');
+}
+
+async function an_guardarReserva() {
+  const errEl = document.getElementById('an-nr-error');
+  const nombre = document.getElementById('an-nr-nombre').value.trim();
+  const email  = document.getElementById('an-nr-email').value.trim();
+  if (!nombre || !email) { errEl.textContent = 'Nombre y email son requeridos'; return; }
+  errEl.textContent = '';
+  const r = await fetch('/api/pagos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': an_getToken() },
+    body: JSON.stringify({
+      action: 'reservacion',
+      nombre, email,
+      whatsapp: document.getElementById('an-nr-whatsapp').value.trim(),
+      variante_id: document.getElementById('an-nr-variante').value,
+      personas: document.getElementById('an-nr-personas').value,
+      total: document.getElementById('an-nr-total').value,
+      notas: document.getElementById('an-nr-notas').value.trim(),
+    }),
+  });
+  if (!r.ok) { const { error } = await r.json().catch(() => ({})); errEl.textContent = error || 'Error al guardar'; return; }
+  an_closeReservaModal();
+  await an_loadData();
+}
+// ===================== FIN AÑO NUEVO =====================

@@ -4,12 +4,20 @@ const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_K
 
 const ANO_NUEVO_PKG_ID = '05c33974-5f37-4cff-9ec4-bc60df160f69';
 
-function requireAuth(req) {
-  return req.headers['x-admin-token'] === process.env.ADMIN_PASSWORD;
+async function requireAuth(req) {
+  const token = req.headers['x-admin-token'] || '';
+  if (token === process.env.ADMIN_PASSWORD) return true;
+  // Also accept admin session tokens (64-char hex from admin-auth.js)
+  if (/^[a-f0-9]{64}$/.test(token)) {
+    const { data } = await sb.from('admin_sessions')
+      .select('expires_at').eq('token', token).single();
+    if (data && new Date(data.expires_at) > new Date()) return true;
+  }
+  return false;
 }
 
 export default async function handler(req, res) {
-  if (!requireAuth(req)) return res.status(401).json({ error: 'No autorizado' });
+  if (!await requireAuth(req)) return res.status(401).json({ error: 'No autorizado' });
 
   const { method } = req;
   const url = new URL(req.url, 'http://localhost');
