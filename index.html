@@ -530,11 +530,10 @@
 
     <!-- PASO 2: Formulario de reserva -->
     <div id="modal-step-2" style="display:none;">
-      <a href="#" onclick="document.getElementById('modal-step-2').style.display='none';document.getElementById('modal-step-0').style.display='block';return false;" style="font-size:0.82rem;color:var(--ocean);text-decoration:none;font-weight:600;display:inline-block;margin-bottom:14px;">← Ver detalles</a>
-      <div class="pkg-summary" style="margin-bottom:16px;">
-        <div><div class="sname" id="m-name">Paquete</div><div style="font-size:0.76rem;color:#888;" id="m-desc"></div><div class="m-lugares" id="m-lugares"></div></div>
-        <div class="stotal" id="m-price-base">$0</div>
-      </div>
+      <!-- Resumen de selección desde la tarjeta -->
+      <div id="checkout-summary" style="display:none;"></div>
+
+      <!-- Login banner -->
       <div id="login-suggest-banner" style="display:none">
         <div style="background:#f0fdf9;border:1px solid #1a9fa0;border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;">
           <span style="font-size:1.2rem">👤</span>
@@ -545,13 +544,14 @@
           <button onclick="signInGoogle()" style="background:#1a9fa0;color:white;border:none;border-radius:6px;padding:0.4rem 0.8rem;font-size:0.8rem;font-weight:600;cursor:pointer;">Google</button>
         </div>
       </div>
+
+      <!-- Datos de contacto -->
       <div class="fg"><label>Nombre completo</label><input type="text" id="r-nombre" placeholder="Tu nombre completo"></div>
       <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="tu@email.com"></div>
       <p id="login-hint" style="font-size:0.78rem;color:#888;margin-top:-8px;margin-bottom:4px;">¿Ya tienes cuenta? <a href="#" onclick="closePay();openRegister();return false;" style="color:var(--ocean);font-weight:600;">Inicia sesión para autocompletar</a></p>
       <div class="fg"><label>WhatsApp</label><input type="tel" id="r-whatsapp" placeholder="55 1234 5678"></div>
-      <div class="fg"><label>Número de personas</label>
-        <select id="m-personas" onchange="calcCotizador()"></select>
-      </div>
+
+      <!-- Pago -->
       <div class="fg"><label>¿Cuánto pagas hoy?</label>
         <select id="r-cuanto" onchange="calcCotizador()">
           <option value="anticipo" id="r-cuanto-anticipo-opt">Anticipo desde $1,500 — aparta tu lugar</option>
@@ -570,15 +570,21 @@
           <option value="24">Financiamiento 24 meses</option>
         </select>
       </div>
-      <div class="fg">
-        <label>Código de descuento</label>
-        <div class="disc-row">
-          <input type="text" id="m-disc-code" placeholder="Ingresa tu código" oninput="clearDiscountMsg()">
-          <button class="disc-btn" onclick="applyDiscount()">Aplicar</button>
-          <button class="disc-btn" id="disc-clear-btn" onclick="clearDiscount()" style="display:none;background:#888;" title="Quitar descuento">✕</button>
+
+      <!-- Descuento colapsado -->
+      <a href="#" class="disc-toggle-link" onclick="var s=document.getElementById('disc-section');s.style.display=s.style.display==='none'?'block':'none';return false;">¿Tienes un código de descuento?</a>
+      <div id="disc-section" style="display:none;">
+        <div class="fg" style="margin-top:8px;">
+          <div class="disc-row">
+            <input type="text" id="m-disc-code" placeholder="Ingresa tu código" oninput="clearDiscountMsg()">
+            <button class="disc-btn" onclick="applyDiscount()">Aplicar</button>
+            <button class="disc-btn" id="disc-clear-btn" onclick="clearDiscount()" style="display:none;background:#888;" title="Quitar descuento">✕</button>
+          </div>
+          <div id="m-disc-msg"></div>
         </div>
-        <div id="m-disc-msg"></div>
       </div>
+
+      <!-- Desglose de precio -->
       <div class="cot-result" id="cot-result"></div>
       <div class="bank-info" id="bank-info">
         <div class="bank-row"><span>Banco</span><strong id="bank-name-display">—</strong></div>
@@ -586,6 +592,10 @@
       </div>
       <div id="reserva-error" style="display:none;color:#c0241d;font-size:0.83rem;font-weight:600;margin-bottom:8px;text-align:center;"></div>
       <button id="confirm-btn" class="pay-btn" onclick="confirmarReserva()" style="margin-top:4px;">Confirmar reserva</button>
+
+      <!-- Elementos ocultos requeridos por JS -->
+      <select id="m-personas" onchange="calcCotizador()" style="display:none;"></select>
+      <div style="display:none;"><div class="sname" id="m-name"></div><div id="m-desc"></div><div id="m-lugares"></div><span id="m-price-base"></span></div>
     </div>
 
     <!-- PASO 3: Confirmación -->

@@ -305,6 +305,7 @@ function initVariantChips() {
           pkg.monto_anticipo = Number(activeChip.dataset.anticipo);
           pkg._varianteId = activeChip.dataset.varianteId;
           pkg._varianteNombre = activeChip.dataset.nombre;
+          pkg._varianteDescripcion = activeChip.dataset.nombre;
           pkg._anticipo_es_total = activeChip.dataset.anticipoTotal === 'true';
           pkg._selectedTours = selectedTours;
           pkg._personas = personas;
@@ -727,6 +728,10 @@ async function openPay(id) {
   document.getElementById('m-desc').textContent = curPkg.descripcion || '';
   document.getElementById('m-lugares').innerHTML = lugaresHtml;
   buildPersonasOptions(curPkg.nombre.toLowerCase().includes('camping') ? 48 : (curPkg.lugares_totales || 10));
+  if (curPkg._personas) {
+    const _sel = document.getElementById('m-personas');
+    if (_sel) _sel.value = String(curPkg._personas);
+  }
   document.getElementById('m-metodo').value = 'transfer';
   activeDiscount = null;
   document.getElementById('m-disc-code').value = '';
@@ -823,9 +828,23 @@ async function openPay(id) {
   const _isCustomizable = curPkg.tipo === 'secondary' || (curPkg.nombre||'').toLowerCase().includes('nuevo');
   if (_isCustomizable) generarPersonalizador();
 
-  document.getElementById('modal-step-0').style.display = 'block';
+  // Populate checkout summary from card selections and go straight to step-2
+  const _sumEl = document.getElementById('checkout-summary');
+  if (_sumEl) {
+    const _tours = curPkg._selectedTours || [];
+    const _np = curPkg._personas || 1;
+    _sumEl.innerHTML = `
+      <div class="checkout-pkg-nombre">${curPkg.nombre}</div>
+      ${curPkg._varianteNombre ? `<div class="checkout-variante">🏷️ ${curPkg._varianteNombre}</div>` : ''}
+      <div class="checkout-personas">👥 ${_np} ${_np === 1 ? 'persona' : 'personas'}</div>
+      ${_tours.map(t => `<div class="checkout-tour">🏄 ${t.nombre}</div>`).join('')}
+    `;
+    _sumEl.style.display = 'block';
+  }
+
+  document.getElementById('modal-step-0').style.display = 'none';
   document.getElementById('modal-step-1').style.display = 'none';
-  document.getElementById('modal-step-2').style.display = 'none';
+  document.getElementById('modal-step-2').style.display = 'block';
   document.getElementById('modal-step-3').style.display = 'none';
   document.getElementById('pay-modal').classList.add('open');
 }
@@ -1107,14 +1126,19 @@ function calcCotizador() {
   if (cuanto === 'anticipo' && financVals.includes(metodoSel.value)) metodoSel.value = 'transfer';
   const metodo = metodoSel.value;
   const precioBase = curPkg.precio;
-  const totalSinDesc = precioBase * p;
-  const base = applyDiscountToBase(precioBase, p);
+  const tourPorPersona = (curPkg._selectedTours || []).reduce((s, t) => s + (t.precio || 0), 0);
+  const tourTotal = tourPorPersona * p;
+  const totalSinDesc = precioBase * p + tourTotal;
+  const base = applyDiscountToBase(precioBase, p) + tourTotal;
   const descuento = totalSinDesc - base;
   const resultEl = document.getElementById('cot-result');
   const bankEl = document.getElementById('bank-info');
   document.getElementById('m-price-base').textContent = fmt(totalSinDesc);
 
-  let rows = `<div class="cot-row"><span>Precio base</span><strong>${fmt(precioBase)} × ${p} ${p === 1 ? 'persona' : 'personas'} = ${fmt(totalSinDesc)}</strong></div>`;
+  let rows = `<div class="cot-row"><span>Precio base</span><strong>${fmt(precioBase)} × ${p} ${p === 1 ? 'persona' : 'personas'} = ${fmt(precioBase * p)}</strong></div>`;
+  if (tourTotal > 0) {
+    rows += `<div class="cot-row"><span>Tour incluido</span><strong>+${fmt(tourTotal)}</strong></div>`;
+  }
   if (descuento > 0) {
     rows += `<div class="cot-row" style="color:#2e7d32;"><span>Descuento aplicado</span><strong>-${fmt(descuento)}</strong></div>`;
   }
