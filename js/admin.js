@@ -61,6 +61,11 @@ function switchAdminTab(tabId) {
   if (tabId === 'finanzas') loadFinanzas();
   if (tabId === 'comisiones') loadComisiones();
   if (tabId === 'analytics') loadAnalytics();
+  if (tabId === 'ano-nuevo') {
+    const token = sessionStorage.getItem('adminToken') || '';
+    const iframe = document.querySelector('#admin-section-ano-nuevo iframe');
+    if (iframe) iframe.src = '/ano-nuevo.html#token=' + encodeURIComponent(token);
+  }
 }
 
 function openAdmin() {

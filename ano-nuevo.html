@@ -270,6 +270,8 @@ const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
 const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
+const _hashToken = window.location.hash.match(/#token=([^&]+)/)?.[1];
+if (_hashToken) sessionStorage.setItem('adminToken', decodeURIComponent(_hashToken));
 let adminToken = sessionStorage.getItem('adminToken') || '';
 let reservaciones = [];
 let variantes = [];
