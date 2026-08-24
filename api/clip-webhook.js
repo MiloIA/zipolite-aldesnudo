@@ -28,7 +28,14 @@ export default async function handler(req, res) {
   }
 
   if (eventType === 'REQUEST_COMPLETED') {
-    // 1. Update reservation status
+    // 1. Fetch current state before updating (to detect first confirmation)
+    const { data: reservaAntes } = await supabase
+      .from('reservaciones')
+      .select('estado, variante_id, personas')
+      .eq('id', refId)
+      .single();
+
+    // 2. Update reservation status
     const { error: updateError } = await supabase
       .from('reservaciones')
       .update({
@@ -106,6 +113,20 @@ export default async function handler(req, res) {
           })
         }).catch(e => console.error('Telegram error:', e));
       }
+    }
+
+    // 3. Update variantes_paquete.lugares_vendidos on first confirmation only
+    if (reservaAntes && reservaAntes.estado !== 'confirmada' && reservaAntes.variante_id && reservaAntes.personas) {
+      const { data: varianteData } = await supabase
+        .from('variantes_paquete')
+        .select('lugares_vendidos')
+        .eq('id', reservaAntes.variante_id)
+        .single();
+
+      await supabase
+        .from('variantes_paquete')
+        .update({ lugares_vendidos: (varianteData?.lugares_vendidos || 0) + reservaAntes.personas })
+        .eq('id', reservaAntes.variante_id);
     }
 
     console.log(`Reservación ${refId} confirmada via Clip webhook`);
