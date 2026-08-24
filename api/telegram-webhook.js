@@ -16,21 +16,35 @@ const PKG_CACHE_MS = 10 * 60 * 1000; // 10 minutos
 async function getPaqueteData() {
   if (pkgCache && Date.now() - pkgCacheTime < PKG_CACHE_MS) return pkgCache;
   const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-  const [{ data: paquetes }, { data: variantes }, { data: tours }, resenaResult] = await Promise.all([
+
+  // Promise.resolve() converts the Supabase PromiseLike to a full Promise so .catch() is available
+  const [
+    { data: paquetes, error: ePaq },
+    { data: variantes, error: eVar },
+    { data: tours, error: eTours },
+    resenaResult
+  ] = await Promise.all([
     sb.from('paquetes').select('*').eq('activo', true).order('created_at'),
     sb.from('variantes_paquete').select('*').eq('activo', true).order('orden'),
     sb.from('tours_paquete').select('*').eq('activo', true).order('orden'),
-    sb.from('testimonios').select('nombre, texto, paquete').limit(5).catch(() => ({ data: null }))
+    Promise.resolve(sb.from('testimonios').select('nombre, texto, paquete').limit(5))
+      .catch(() => ({ data: null }))
   ]);
+
+  if (ePaq) console.error('getPaqueteData paquetes error:', ePaq.message);
+  if (eVar) console.error('getPaqueteData variantes error:', eVar.message);
+  if (eTours) console.error('getPaqueteData tours error:', eTours.message);
+
+  const paquetesMapped = (paquetes || []).map(p => ({
+    ...p,
+    variantes: (variantes || []).filter(v => v.paquete_id === p.id),
+    tours: (tours || []).filter(t => t.paquete_id === p.id)
+  }));
   const resenas = resenaResult?.data || null;
-  pkgCache = {
-    paquetes: (paquetes || []).map(p => ({
-      ...p,
-      variantes: (variantes || []).filter(v => v.paquete_id === p.id),
-      tours: (tours || []).filter(t => t.paquete_id === p.id)
-    })),
-    resenas
-  };
+
+  console.log('getPaqueteData OK — paquetes:', paquetesMapped.length, '| resenas:', resenas?.length ?? 'null');
+
+  pkgCache = { paquetes: paquetesMapped, resenas };
   pkgCacheTime = Date.now();
   return pkgCache;
 }
@@ -493,7 +507,10 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const body = req.body;
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const { paquetes = [], resenas = null } = await getPaqueteData().catch(() => ({}));
+  const { paquetes = [], resenas = null } = await getPaqueteData().catch(err => {
+    console.error('getPaqueteData failed:', err?.message);
+    return { paquetes: [], resenas: null };
+  });
   if (paquetes.length) refreshRespuestas(paquetes);
   const menuButtons = buildMenuButtons(paquetes);
 
