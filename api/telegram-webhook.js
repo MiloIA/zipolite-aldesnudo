@@ -16,16 +16,21 @@ const PKG_CACHE_MS = 10 * 60 * 1000; // 10 minutos
 async function getPaqueteData() {
   if (pkgCache && Date.now() - pkgCacheTime < PKG_CACHE_MS) return pkgCache;
   const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-  const [{ data: paquetes }, { data: variantes }, { data: tours }] = await Promise.all([
+  const [{ data: paquetes }, { data: variantes }, { data: tours }, resenaResult] = await Promise.all([
     sb.from('paquetes').select('*').eq('activo', true).order('created_at'),
     sb.from('variantes_paquete').select('*').eq('activo', true).order('orden'),
-    sb.from('tours_paquete').select('*').eq('activo', true).order('orden')
+    sb.from('tours_paquete').select('*').eq('activo', true).order('orden'),
+    sb.from('testimonios').select('nombre, texto, paquete').limit(5).catch(() => ({ data: null }))
   ]);
-  pkgCache = (paquetes || []).map(p => ({
-    ...p,
-    variantes: (variantes || []).filter(v => v.paquete_id === p.id),
-    tours: (tours || []).filter(t => t.paquete_id === p.id)
-  }));
+  const resenas = resenaResult?.data || null;
+  pkgCache = {
+    paquetes: (paquetes || []).map(p => ({
+      ...p,
+      variantes: (variantes || []).filter(v => v.paquete_id === p.id),
+      tours: (tours || []).filter(t => t.paquete_id === p.id)
+    })),
+    resenas
+  };
   pkgCacheTime = Date.now();
   return pkgCache;
 }
@@ -150,7 +155,7 @@ const RESPUESTAS = {
   },
 
   reservar_anonuevo: {
-    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Año Nuevo al Desnudo:\n👉 https://zipolitealdesnudo.com/?paquete=ano-nuevo-al-desnudo\n\nElige tu paquete y aparta con:\n• $1,500 por persona (camping)\n• $3,000 por persona (habitación)\n\nTu lugar queda confirmado desde el primer pago. ✅`,
+    text: `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Año Nuevo al Desnudo:\n👉 https://zipolitealdesnudo.com/?paquete=ano-nuevo-al-desnudo\n\nAparta con $1,500 por persona (glamping) o $3,000 por persona (habitación).\n\nTu lugar queda confirmado desde el primer pago. ✅`,
     buttons: [
       [{ text: '📞 Prefiero que me llamen', callback_data: 'agendar_dia' }],
       [{ text: '🙋 Tengo una duda', callback_data: 'asesor' }],
@@ -189,7 +194,11 @@ const SALUDOS = ['hola', 'hi', 'buenas', 'hey', 'inicio', 'start', 'info', 'ayud
 // ─── HELPERS DE MENSAJES DINÁMICOS ───────────────────────────
 
 function slugify(nombre) {
-  return (nombre || '').toLowerCase()
+  return (nombre || '')
+    .toLowerCase()
+    .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
+    .replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n')
+    .replace(/ü/g, 'u')
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '');
 }
@@ -218,14 +227,66 @@ function buildPaqueteMsg(p) {
   return msg;
 }
 
-function buildPaqueteButtons(p) {
+function varianteIcon(nombre) {
+  if (!nombre) return '🌴';
+  const n = nombre.toLowerCase();
+  if (n.includes('glamping') || n.includes('camping')) return '🏕️';
+  if (n.includes('individual')) return '🛏️';
+  if (n.includes('doble')) return '🛏️🛏️';
+  if (n.includes('transport') || n.includes('autobús') || n.includes('autobus')) return '🚌';
+  return '🌴';
+}
+
+function buildVarianteButtons(p) {
+  const varianteBtns = (p.variantes || []).map(v => ([{
+    text: `${varianteIcon(v.nombre)} ${v.nombre} — $${(v.precio || 0).toLocaleString('es-MX')}`,
+    callback_data: `var_${v.id}`
+  }]));
+  const tourBtns = (p.tours || []).map(t => ([{
+    text: `🗺 ${t.nombre} +$${(t.precio || 0).toLocaleString('es-MX')}`,
+    callback_data: 'tour_opcional'
+  }]));
   return [
-    [{ text: '✅ Reservar ahora', url: `https://zipolitealdesnudo.com/?paquete=${slugify(p.nombre)}` }],
-    [{ text: '💳 Formas de pago', callback_data: 'info_pagos' }],
+    ...varianteBtns,
+    ...tourBtns,
     [{ text: '📞 Agendar llamada', callback_data: 'agendar_dia' }],
-    [{ text: '🙋 Hablar con asesor', callback_data: 'asesor' }],
     [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
   ];
+}
+
+function refreshRespuestas(paquetes) {
+  const anoNuevo = paquetes.find(p => slugify(p.nombre).includes('ano-nuevo'));
+  const lunas = paquetes.find(p => slugify(p.nombre).includes('lunas'));
+
+  if (anoNuevo) {
+    const glamping = anoNuevo.variantes.find(v => v.nombre.toLowerCase().includes('glamping') || v.nombre.toLowerCase().includes('camping'));
+    const habDoble = anoNuevo.variantes.find(v => v.nombre.toLowerCase().includes('doble'));
+    const habIndiv = anoNuevo.variantes.find(v => v.nombre.toLowerCase().includes('individual'));
+
+    if (glamping || habDoble || habIndiv) {
+      const lines = [];
+      if (habIndiv) lines.push(`• 1 persona en habitación: $${(habIndiv.precio || 0).toLocaleString('es-MX')} — aparta con $${(habIndiv.anticipo || 0).toLocaleString('es-MX')}`);
+      if (habDoble) lines.push(`• 2 personas en habitación: $${(habDoble.precio || 0).toLocaleString('es-MX')} — aparta con $${(habDoble.anticipo || 0).toLocaleString('es-MX')} por persona`);
+      const dispHab = habIndiv?.lugares_totales
+        ? `\n⚠️ Solo ${habIndiv.lugares_totales - (habIndiv.lugares_vendidos || 0)} habitaciones disponibles — se agotan rápido`
+        : '\n⚠️ Habitaciones limitadas — se agotan rápido';
+
+      RESPUESTAS.habitacion_info.text = `🛏️ *Habitaciones — Año Nuevo al Desnudo*\n\nHotel rústico a 2 calles de la playa y a calle y media del adoquín:\n• Cama matrimonial\n• Baño privado\n• Ventilador de techo\n\n💰 *Precios por persona:*\n${lines.join('\n')}${dispHab}\n\n¿Apartamos la tuya?`;
+
+      if (glamping) {
+        const gAnt = glamping.anticipo || 1500;
+        const hAnt = habDoble?.anticipo || habIndiv?.anticipo || 3000;
+        RESPUESTAS.reservar_anonuevo.text = `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Año Nuevo al Desnudo:\n👉 https://zipolitealdesnudo.com/?paquete=ano-nuevo-al-desnudo\n\nAparta con $${gAnt.toLocaleString('es-MX')} por persona (glamping) o $${hAnt.toLocaleString('es-MX')} por persona (habitación).\n\nTu lugar queda confirmado desde el primer pago. ✅`;
+      }
+    }
+  }
+
+  if (lunas) {
+    const v = lunas.variantes[0];
+    if (v) {
+      RESPUESTAS.reservar_lunas.text = `🎉 *¡Excelente decisión!*\n\nPara reservar tu lugar en Lunas de Octubre:\n👉 https://zipolitealdesnudo.com/?paquete=${slugify(lunas.nombre)}\n\nAparta con $${(v.anticipo || 3500).toLocaleString('es-MX')} por persona y el resto lo pagas antes del viaje.\n\nTu lugar queda confirmado desde el primer pago. ✅`;
+    }
+  }
 }
 
 function buildMenuButtons(paquetes) {
@@ -244,7 +305,7 @@ function buildMenuButtons(paquetes) {
 
 // ─── SISTEMA PROMPT ──────────────────────────────────────────
 
-function buildSystemPrompt(paquetes) {
+function buildSystemPrompt(paquetes, resenas) {
   let pkgsInfo = '';
   (paquetes || []).forEach((p, i) => {
     pkgsInfo += `\n${i + 1}. ${p.nombre.toUpperCase()}\n`;
@@ -264,7 +325,7 @@ function buildSystemPrompt(paquetes) {
     if (p.nota) pkgsInfo += `   ⚠️ ${p.nota}\n`;
   });
 
-  return `Eres Mateo, asesor de ventas de Zipolite al Desnudo, agencia LGBT+ mexicana con más de 10 años de experiencia y +342 viajeros. Eres cálido, directo y experto en cerrar ventas. Tu objetivo principal es que el usuario reserve.
+  let prompt = `Eres Mateo, asesor de ventas de Zipolite al Desnudo, agencia LGBT+ mexicana con más de 10 años de experiencia y +342 viajeros. Eres cálido, directo y experto en cerrar ventas. Tu objetivo principal es que el usuario reserve.
 
 SOBRE LA AGENCIA:
 - Especialistas en viajes LGBT+ a Zipolite, Oaxaca
@@ -276,18 +337,59 @@ PAQUETES ACTUALES:${pkgsInfo}
 PAGOS: Transferencia/depósito (sin cargo extra) o tarjeta con financiamiento 3-24 meses (aplica cargo)
 RESERVAS: https://zipolitealdesnudo.com
 
+PERSONALIDAD Y ESTILO:
+- Eres un vendedor consultivo, cálido y con personalidad. No eres un catálogo de precios.
+- Antes de dar información, haz UNA pregunta para entender al cliente: ¿viaja solo o en grupo? ¿ya conoce Zipolite? ¿cuál es su presupuesto?
+- Nunca listes todas las variantes de golpe. Recomienda la más apropiada según lo que sabes del cliente.
+- Usa el nombre del cliente siempre que lo sepas.
+- Mensajes cortos — máximo 4 líneas por respuesta. Si necesitas dar más info, hazlo en dos mensajes o con botones.
+- Termina SIEMPRE con una pregunta que avance hacia el cierre o una CTA clara.
+
+FLUJO DE CIERRE (síguelo en orden):
+1. CALIFICAR → Pregunta: ¿solo o en grupo? ¿cuántas personas? ¿ya conoce Zipolite?
+2. RECOMENDAR → Basado en respuestas, sugiere UNA variante específica con precio y anticipo
+3. MANEJAR OBJECIONES → Si dice "está caro": habla de financiamiento y del valor. Si dice "voy solo": habla de la comunidad y de que muchos van solos.
+4. CERRAR → "¿Te aparto el lugar?" Si dice sí: pide su nombre completo para la reserva
+5. COBRAR → Da los datos de transferencia O el link de reserva con Clip
+6. CONFIRMAR → Avisa que recibirá confirmación por email y será agregado al grupo de WhatsApp del viaje
+
+MANEJO DE OBJECIONES:
+- "Está caro" → "Entiendo. ¿Sabías que puedes apartar tu lugar con solo $1,500 y el resto pagarlo en partes? Muchos viajeros lo hacen así."
+- "Voy solo" → "¡Perfecto! La mayoría llega solo. Al segundo día ya tienes nuevos amigos. ¿Quieres que te cuente cómo funciona el grupo?"
+- "No sé si puedo ir" → "Las fechas son 29 dic al 4 ene. ¿Qué te lo impediría? A veces encontramos solución."
+- "Lo pienso" → "Claro, tómate tu tiempo. Solo te digo que quedan [X] lugares en glamping y el año pasado se llenó. ¿Qué necesitas saber para decidirte?"
+
+SOBRE OPINIONES Y RESEÑAS:
+- Puedes mencionar que tenemos más de 342 viajeros satisfechos y reseñas de 5 estrellas
+- Algunos testimonios reales: "Fue una gran experiencia, les agradezco a cada uno" — Gonzalo; "Me la pasé increíble" — Isaac; "Un gusto conocerles" — Luis Ángel (Feb 2026)
+
+SOBRE EL DESTINO:
+- Zipolite es la única playa nudista legal de México, en Oaxaca. Ambiente relajado, sin juicios.
+- No es obligatorio el nudismo — cada quien a su ritmo
+- Ambiente LGBT+ friendly, comunidad real, seguro
+- Hotel Los Ángeles (glamping): 5 hectáreas, alberca, duchas, seguridad, wifi, a 2 calles de la playa
+- Hotel Juquila (habitaciones): rústico, a calle y media de la playa, sin asignación de compañero
+
 REGLAS ESTRICTAS:
 1. Responde SIEMPRE en español
-2. Sé breve — máximo 3 párrafos cortos
-3. NUNCA pidas WhatsApp — el usuario ya está en Telegram
-4. NUNCA pidas email a menos que el usuario lo ofrezca voluntariamente
-5. Si el usuario da su nombre, úsalo en todas las respuestas siguientes
-6. Siempre termina con una llamada a acción clara hacia reservar o agendar llamada
-7. Si el usuario quiere agendar una llamada o que lo llamen, responde ÚNICAMENTE con la palabra AGENDAR_LLAMADA sin ningún texto adicional antes ni después
-8. Si no puedes resolver algo o el usuario pide hablar con alguien, termina con ESCALAR_ASESOR
-9. Crea urgencia real cuando aplique: menciona cuántos lugares quedan si son pocos
-10. NUNCA inventes información que no esté en este prompt
-11. La cena del 31 de diciembre y TODOS los consumos (bar, restaurantes, bebidas) van por cuenta del viajero — NUNCA digas que están incluidos`;
+2. NUNCA pidas WhatsApp — el usuario ya está en Telegram
+3. NUNCA pidas email a menos que el usuario lo ofrezca
+4. NUNCA listes todas las opciones de golpe — recomienda UNA y pregunta
+5. NUNCA mandas al sitio web como primera respuesta — es el último recurso
+6. Si el usuario quiere agendar llamada: responde ÚNICAMENTE con AGENDAR_LLAMADA
+7. Si necesita asesor humano: termina con ESCALAR_ASESOR
+8. NUNCA digas que la cena del 31 o los consumos están incluidos — van por cuenta del viajero
+9. NUNCA inventes información que no esté en este prompt
+10. Crea urgencia real: menciona disponibilidad cuando sea relevante`;
+
+  if (resenas && resenas.length > 0) {
+    prompt += '\n\nRESEÑAS REALES DE VIAJEROS:\n';
+    resenas.slice(0, 3).forEach(r => {
+      prompt += `- "${r.texto}" — ${r.nombre}\n`;
+    });
+  }
+
+  return prompt;
 }
 
 // ─── FUNCIONES UTILITARIAS ───────────────────────────────────
@@ -389,7 +491,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const body = req.body;
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const paquetes = await getPaqueteData().catch(() => []);
+  const { paquetes = [], resenas = null } = await getPaqueteData().catch(() => ({}));
+  if (paquetes.length) refreshRespuestas(paquetes);
   const menuButtons = buildMenuButtons(paquetes);
 
   // ── CALLBACK QUERY (botones) ──
@@ -479,7 +582,34 @@ export default async function handler(req, res) {
     if (data.startsWith('pkg_') && !RESPUESTAS[data]) {
       const paq = paquetes.find(p => `pkg_${p.id}` === data);
       if (paq) {
-        await sendMessage(token, chatId, buildPaqueteMsg(paq), buildPaqueteButtons(paq));
+        await sendMessage(token, chatId, buildPaqueteMsg(paq), buildVarianteButtons(paq));
+      }
+      return res.status(200).end();
+    }
+
+    // Variante específica (var_{uuid})
+    if (data.startsWith('var_')) {
+      const varId = data.slice(4);
+      let foundVar = null;
+      let foundPaq = null;
+      for (const p of paquetes) {
+        const v = (p.variantes || []).find(v => v.id === varId);
+        if (v) { foundVar = v; foundPaq = p; break; }
+      }
+      if (foundVar && foundPaq) {
+        const disp = foundVar.lugares_totales
+          ? `\n${foundVar.lugares_totales - (foundVar.lugares_vendidos || 0)} lugares disponibles`
+          : '';
+        const ant = foundVar.anticipo_es_total
+          ? 'pago completo'
+          : `Anticipo $${(foundVar.anticipo || 0).toLocaleString('es-MX')}`;
+        const msg = `${varianteIcon(foundVar.nombre)} *${foundVar.nombre} — ${foundPaq.nombre}*\n$${(foundVar.precio || 0).toLocaleString('es-MX')} por persona · ${ant}${disp}\n\n¿Cuántas personas van?`;
+        const slug = slugify(foundPaq.nombre);
+        await sendMessage(token, chatId, msg, [
+          [{ text: '✅ Reservar esta opción', url: `https://zipolitealdesnudo.com/?paquete=${slug}` }],
+          [{ text: '💳 Formas de pago', callback_data: 'info_pagos' }],
+          [{ text: '⬅️ Ver otras opciones', callback_data: `pkg_${foundPaq.id}` }]
+        ]);
       }
       return res.status(200).end();
     }
@@ -551,7 +681,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 400,
-          system: buildSystemPrompt(paquetes) + (contextExtra ? `\n\nCONTEXTO: ${contextExtra}` : ''),
+          system: buildSystemPrompt(paquetes, resenas) + (contextExtra ? `\n\nCONTEXTO: ${contextExtra}` : ''),
           messages
         })
       });
