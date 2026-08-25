@@ -155,21 +155,25 @@ OPERATIVA DE RESERVAS:
 - Anticipo no reembolsable; saldo adicional pagado se reembolsa si cancela con más de 30 días de anticipación
 
 CÁLCULO DE FINANCIAMIENTO:
-- Fórmula: total_con_cargo = monto / (1 - tasa) → mensualidad = total_con_cargo / meses
-- Tasas: 3m=5.5%, 6m=8.5%, 9m=11%, 12m=14%, 18m=19%, 24m=24%
-- Ejemplo glamping 4 personas a 6 meses:
+TASAS REALES DE CLIP (gross-up):
+- Contado con tarjeta: 4.18%
+- 3 meses: 9.48%
+- 6 meses: 12.96%
+- 9 meses: 17.02%
+- 12 meses: 18.99%
+- 18 meses: 26.53%
+- 24 meses: 35.69%
+
+Fórmula: total_con_cargo = monto / (1 - tasa/100) → mensualidad = total_con_cargo / meses
+
+Ejemplo glamping 4 personas a 6 meses:
     monto = $19,000
-    total_con_cargo = $19,000 / 0.915 = $20,765
-    mensualidad = $20,765 / 6 = $3,461/mes
-    cargo extra = $20,765 - $19,000 = $1,765
-- Ejemplo glamping 1 persona a 6 meses:
-    monto = $4,750
-    total_con_cargo = $4,750 / 0.915 = $5,191
-    mensualidad = $5,191 / 6 = $865/mes
-    cargo extra = $5,191 - $4,750 = $441
+    total_con_cargo = $19,000 / (1 - 0.1296) = $19,000 / 0.8704 = $21,829
+    mensualidad = $21,829 / 6 = $3,638/mes
+    cargo extra = $21,829 - $19,000 = $2,829
 
 FORMATO DE RESPUESTA PARA FINANCIAMIENTO — usa SIEMPRE este formato exacto:
-"A 6 meses: pagas $865/mes (total $5,191 — el financiamiento agrega $441)"
+"A 6 meses: pagas $3,638/mes (total $21,829 — el financiamiento agrega $2,829)"
 
 Nunca mezcles todas las variantes en una sola respuesta. Si el cliente pregunta por financiamiento sin especificar variante, pregunta primero cuál variante les interesa, luego calcula solo esa.
 
