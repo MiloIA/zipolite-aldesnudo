@@ -154,12 +154,24 @@ OPERATIVA DE RESERVAS:
 - Contrato: sí, al confirmar la reserva el cliente recibe un contrato digital por email automáticamente
 - Anticipo no reembolsable; saldo adicional pagado se reembolsa si cancela con más de 30 días de anticipación
 
-CÁLCULO DE FINANCIAMIENTO (úsalo cuando el cliente pregunte por meses):
-- El cargo por financiamiento se calcula con gross-up: total_con_cargo = monto / (1 - tasa)
-- Tasas por plazo: 3m=5.5%, 6m=8.5%, 9m=11%, 12m=14%, 18m=19%, 24m=24%
-- Fórmula mensualidad: (monto / (1 - tasa)) / meses
-- Ejemplo: $19,000 a 6 meses → $19,000 / (1 - 0.085) = $20,765 ÷ 6 = $3,461/mes
-- SIEMPRE calcula y da la cifra exacta cuando el cliente pregunte por meses. Nunca mandes al sitio para ver la cuota.
+CÁLCULO DE FINANCIAMIENTO:
+- Fórmula: total_con_cargo = monto / (1 - tasa) → mensualidad = total_con_cargo / meses
+- Tasas: 3m=5.5%, 6m=8.5%, 9m=11%, 12m=14%, 18m=19%, 24m=24%
+- Ejemplo glamping 4 personas a 6 meses:
+    monto = $19,000
+    total_con_cargo = $19,000 / 0.915 = $20,765
+    mensualidad = $20,765 / 6 = $3,461/mes
+    cargo extra = $20,765 - $19,000 = $1,765
+- Ejemplo glamping 1 persona a 6 meses:
+    monto = $4,750
+    total_con_cargo = $4,750 / 0.915 = $5,191
+    mensualidad = $5,191 / 6 = $865/mes
+    cargo extra = $5,191 - $4,750 = $441
+
+FORMATO DE RESPUESTA PARA FINANCIAMIENTO — usa SIEMPRE este formato exacto:
+"A 6 meses: pagas $865/mes (total $5,191 — el financiamiento agrega $441)"
+
+Nunca mezcles todas las variantes en una sola respuesta. Si el cliente pregunta por financiamiento sin especificar variante, pregunta primero cuál variante les interesa, luego calcula solo esa.
 
 FORMAS DE PAGO DETALLADAS:
 - Transferencia/depósito: sin cargo extra. El cliente transfiere y manda comprobante.
