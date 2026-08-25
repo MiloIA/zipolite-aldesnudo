@@ -417,6 +417,23 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
   const baseUrl = 'https://zipolitealdesnudo.com';
   let checkoutUrl = null;
 
+  const clipBody = {
+    amount: montoClip,
+    purchase_description: ctx.paquete_nombre || 'Reservación Zipolite al Desnudo',
+    redirection_url: {
+      success: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=paid`,
+      error:   `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=error`,
+      default: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=pending`,
+    },
+    webhook_url: `${baseUrl}/api/clip-webhook`,
+    metadata: {
+      external_reference: reserva.id,
+      nombre: clienteNombre,
+      email
+    }
+  };
+  console.log('Clip request body:', JSON.stringify(clipBody));
+
   try {
     const clipRes = await fetch('https://api.payclip.com/v2/checkout', {
       method: 'POST',
@@ -425,30 +442,18 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({
-        amount: montoClip,
-        purchase_description: ctx.paquete_nombre || 'Reservación Zipolite al Desnudo',
-        redirection_url: {
-          success: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=paid`,
-          error:   `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=error`,
-          default: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=pending`,
-        },
-        webhook_url: `${baseUrl}/api/clip-webhook`,
-        metadata: {
-          external_reference: reserva.id,
-          nombre: clienteNombre,
-          email
-        }
-      })
+      body: JSON.stringify(clipBody)
     });
     const clipData = await clipRes.json();
     if (clipRes.ok) {
       checkoutUrl = clipData.payment_request_url;
     } else {
-      console.error('Clip error:', clipData);
+      console.error('Clip error response:', JSON.stringify(clipData));
+      console.error('Clip request body (on error):', JSON.stringify(clipBody));
     }
   } catch (clipErr) {
     console.error('Clip fetch error:', clipErr?.message);
+    console.error('Clip request body (on exception):', JSON.stringify(clipBody));
   }
 
   // 3. Limpiar estado_reserva + actualizar CRM
@@ -876,14 +881,32 @@ export default async function handler(req, res) {
   const estadoReserva = conv.estado_reserva;
 
   if (estadoReserva?.step === 'pidiendo_nombre') {
-    const nuevoNombre = userText.trim();
-    await saveHistorial(chatId, conv.historial, {
-      estado_reserva: { ...estadoReserva, step: 'pidiendo_email', nombre: nuevoNombre }
-    });
-    await actualizarContacto(chatId, { nombre: nuevoNombre });
-    await sendMessage(token, chatId,
-      `Perfecto, *${nuevoNombre}* 👋\n\n¿Cuál es tu email para enviarte la confirmación?`
-    );
+    const emailInMsg = userText.match(/[\w.-]+@[\w.-]+\.\w+/);
+    if (emailInMsg) {
+      // Name and email sent together in one message
+      const emailInput = emailInMsg[0].toLowerCase();
+      const nuevoNombre = userText.replace(emailInMsg[0], '').replace(/\s+/g, ' ').trim() || nombre;
+      await actualizarContacto(chatId, { nombre: nuevoNombre });
+      await sendMessage(token, chatId, `Un momento, estoy generando tu link de pago... ⏳`);
+      await crearReservaYPago(
+        chatId,
+        emailInput,
+        { ...estadoReserva, nombre: nuevoNombre, email: emailInput },
+        contacto,
+        token,
+        nombre,
+        conv.historial
+      );
+    } else {
+      const nuevoNombre = userText.trim();
+      await saveHistorial(chatId, conv.historial, {
+        estado_reserva: { ...estadoReserva, step: 'pidiendo_email', nombre: nuevoNombre }
+      });
+      await actualizarContacto(chatId, { nombre: nuevoNombre });
+      await sendMessage(token, chatId,
+        `Perfecto, *${nuevoNombre}* 👋\n\n¿Cuál es tu email para enviarte la confirmación?`
+      );
+    }
     return res.status(200).end();
   }
 
