@@ -332,10 +332,10 @@ async function actualizarContacto(chatId, updates) {
 async function getHistorial(chatId) {
   const { data } = await supabase
     .from('conversaciones_telegram')
-    .select('historial, nombre, email, whatsapp, estado_embudo, estado_reserva')
+    .select('historial, nombre, email, whatsapp, estado_embudo, estado_reserva, pkg_context')
     .eq('chat_id', chatId)
     .maybeSingle();
-  return data || { historial: [], nombre: null, email: null, whatsapp: null, estado_reserva: null };
+  return data || { historial: [], nombre: null, email: null, whatsapp: null, estado_reserva: null, pkg_context: null };
 }
 
 async function saveHistorial(chatId, historial, extras = {}) {
@@ -425,12 +425,172 @@ async function crearReservaYPago(token, chatId, estado) {
   console.log('=== crearReservaYPago CALLED ===');
   console.log('estado:', JSON.stringify(estado, null, 2));
 
-  const CLIP_API_KEY = process.env.CLIP_API_KEY;
-  const CLIP_SECRET_KEY = process.env.CLIP_SECRET_KEY;
-  console.log('CLIP_API_KEY exists:', !!CLIP_API_KEY);
-  console.log('CLIP_SECRET_KEY exists:', !!CLIP_SECRET_KEY);
+  // Validate required context before proceeding
+  if (!estado.precio || estado.precio === 0 || !estado.paquete_id || !estado.variante_id) {
+    console.error('crearReservaYPago: missing context', { precio: estado.precio, paquete_id: estado.paquete_id, variante_id: estado.variante_id });
+    await sendMessage(token, chatId,
+      '❌ Hubo un error con los datos de tu reserva. Por favor inicia de nuevo eligiendo tu paquete desde el menú.'
+    );
+    await supabase.from('conversaciones_telegram')
+      .update({ estado_reserva: null })
+      .eq('chat_id', chatId);
+    return;
+  }
 
-  await sendMessage(token, chatId, 'DEBUG: función llamada. Revisa logs de Vercel.');
+  const clienteNombre = estado.nombre || '';
+  const email = estado.email || '';
+  const personasNum = estado.personas || 1;
+  const precioTotal = (estado.precio || 0) * personasNum;
+  const montoBase = estado.tipo_pago === 'total'
+    ? precioTotal
+    : ((estado.anticipo || 0) > 0 ? (estado.anticipo || 0) * personasNum : precioTotal);
+  const metodo = estado.metodo || 'clip';
+  const meses = estado.meses ?? 0;
+
+  // 1. Crear reservación en Supabase
+  const { data: reserva, error: reservaErr } = await supabase
+    .from('reservaciones')
+    .insert({
+      paquete_id: estado.paquete_id,
+      paquete_nombre: estado.paquete_nombre || 'Zipolite al Desnudo',
+      nombre: clienteNombre,
+      email,
+      whatsapp: null,
+      personas: personasNum,
+      variante_id: estado.variante_id || null,
+      metodo_pago: metodo === 'transfer' ? 'transfer' : 'clip',
+      total: precioTotal,
+      anticipo_pagado: 0,
+      estado: 'pendiente',
+      notas: `Telegram chat_id:${chatId} tipo:${estado.tipo_pago||'?'} metodo:${metodo}${meses > 0 ? ` meses:${meses}` : ''}`
+    })
+    .select()
+    .single();
+
+  if (reservaErr || !reserva) {
+    console.error('Error creating reservacion:', reservaErr?.message);
+    await supabase.from('conversaciones_telegram').update({ estado_reserva: null }).eq('chat_id', chatId);
+    await sendMessage(token, chatId,
+      `Tuvimos un problema técnico al registrar tu reserva 😕\nPor favor escríbenos directo: wa.me/529582199953`
+    );
+    return;
+  }
+  console.log('=== RESERVACION CREADA ===', JSON.stringify(reserva, null, 2));
+
+  // 2. Limpiar estado + actualizar CRM
+  await supabase.from('conversaciones_telegram').update({ estado_reserva: null }).eq('chat_id', chatId);
+  await supabase.from('contactos').update({ estado_crm: 'reservado', temperatura: 'caliente' }).eq('telegram_chat_id', chatId);
+
+  // 3. Transferencia bancaria
+  if (metodo === 'transfer') {
+    const { data: config } = await supabase
+      .from('configuracion')
+      .select('bank_name, bank_clabe, bank_beneficiario')
+      .maybeSingle();
+    const banco = config?.bank_name || 'BBVA';
+    const clabe = config?.bank_clabe || '—';
+    const beneficiario = config?.bank_beneficiario || 'Zipolite al Desnudo';
+    const montoFmt = montoBase.toLocaleString('es-MX');
+
+    fetch('https://zipolitealdesnudo.com/api/send-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reservacion_id: reserva.id, paquete_nombre: estado.paquete_nombre,
+        nombre: clienteNombre, email, whatsapp: null, personas: personasNum,
+        metodo_pago: 'transfer', total: precioTotal,
+        anticipo: estado.tipo_pago === 'anticipo' ? montoBase : precioTotal,
+        fecha_inicio: '', fecha_fin: ''
+      })
+    }).catch(e => console.error('send-confirmation error:', e));
+
+    await sendMessage(token, chatId,
+      `✅ *¡Tu reserva está registrada, ${clienteNombre}!*\n\n` +
+      `🏦 *Datos para transferencia:*\n` +
+      `• Banco: *${banco}*\n` +
+      `• CLABE: \`${clabe}\`\n` +
+      `• Beneficiario: *${beneficiario}*\n` +
+      `• Monto: *$${montoFmt} MXN*\n\n` +
+      `📸 Manda tu comprobante aquí mismo y te confirmamos en minutos.\n` +
+      `📧 Recibirás confirmación en ${email}`
+    );
+    return;
+  }
+
+  // 4. Pago con tarjeta via Clip
+  const { total: montoClip } = calcFinanciamiento(montoBase, meses);
+  const clipToken = Buffer.from(
+    `${process.env.CLIP_API_KEY}:${process.env.CLIP_SECRET_KEY}`
+  ).toString('base64');
+  const baseUrl = 'https://zipolitealdesnudo.com';
+  let checkoutUrl = null;
+
+  const clipBody = {
+    amount: montoClip,
+    purchase_description: estado.paquete_nombre || 'Reservación Zipolite al Desnudo',
+    redirection_url: {
+      success: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=paid`,
+      error:   `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=error`,
+      default: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=pending`,
+    },
+    webhook_url: `${baseUrl}/api/clip-webhook`,
+    metadata: { external_reference: reserva.id, nombre: clienteNombre, email }
+  };
+  const clipUrl = 'https://api.payclip.com/v2/checkout';
+  console.log('=== CLIP REQUEST ===');
+  console.log('URL:', clipUrl);
+  console.log('Body:', JSON.stringify(clipBody, null, 2));
+
+  try {
+    const clipRes = await fetch(clipUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${clipToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(clipBody)
+    });
+    const clipText = await clipRes.text();
+    console.log('=== CLIP RESPONSE ===');
+    console.log('Status:', clipRes.status);
+    console.log('Body:', clipText);
+    const clipData = JSON.parse(clipText);
+    if (clipRes.ok) {
+      checkoutUrl = clipData.payment_request_url;
+    } else {
+      console.error('Clip error response:', JSON.stringify(clipData));
+      console.error('Clip request body (on error):', JSON.stringify(clipBody));
+    }
+  } catch (clipErr) {
+    console.error('Clip fetch error:', clipErr?.message);
+    console.error('Clip request body (on exception):', JSON.stringify(clipBody));
+  }
+
+  if (!checkoutUrl) {
+    await sendMessage(token, chatId,
+      `Hubo un problema al generar tu link de pago 😕\n\nNo te preocupes, tu lugar está guardado.\nEscríbenos a wa.me/529582199953 y te lo resolvemos en minutos.`
+    );
+    return;
+  }
+
+  fetch('https://zipolitealdesnudo.com/api/send-confirmation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      reservacion_id: reserva.id, paquete_nombre: estado.paquete_nombre,
+      nombre: clienteNombre, email, whatsapp: null, personas: personasNum,
+      metodo_pago: 'clip', total: precioTotal,
+      anticipo: estado.tipo_pago === 'anticipo' ? montoBase : precioTotal,
+      fecha_inicio: '', fecha_fin: ''
+    })
+  }).catch(e => console.error('send-confirmation error:', e));
+
+  const montoFmt = montoClip.toLocaleString('es-MX');
+  const mesesInfo = meses > 0 ? ` · ${meses} meses` : ' · contado';
+  await sendMessage(token, chatId,
+    `✅ *¡Listo, ${clienteNombre}!* Tu lugar está apartado.\n\n🔗 *Completa tu pago aquí:*\n${checkoutUrl}\n\n💰 Tarjeta${mesesInfo}: *$${montoFmt} MXN*\n📧 Recibirás confirmación en ${email}\n\nEl link es válido por 24 horas. ¿Alguna duda?`
+  );
 }
 // ─── HANDLER DE IA UNIFICADO ─────────────────────────────────
 
@@ -649,15 +809,19 @@ export default async function handler(req, res) {
 
       // Persist variant context for the reservation flow
       if (foundVar && foundPaq) {
+        const pkgCtx = {
+          paquete_id: foundPaq.id,
+          paquete_nombre: foundPaq.nombre,
+          variante_id: foundVar.id,
+          variante_nombre: foundVar.nombre,
+          precio: foundVar.precio,
+          anticipo: foundVar.anticipo,
+        };
         await saveHistorial(chatId, conv.historial, {
+          pkg_context: pkgCtx,
           estado_reserva: {
             step: null,
-            paquete_id: foundPaq.id,
-            paquete_nombre: foundPaq.nombre,
-            variante_id: foundVar.id,
-            variante_nombre: foundVar.nombre,
-            precio: foundVar.precio,
-            anticipo: foundVar.anticipo,
+            ...pkgCtx,
             personas: null,
             nombre: null,
             email: null
@@ -684,16 +848,22 @@ export default async function handler(req, res) {
       const slug = data.slice(9);
       const paq = paquetes.find(p => slugify(p.nombre) === slug);
       const existingCtx = conv.estado_reserva || {};
+      const pkgCtx = conv.pkg_context || {};
+
+      // Enrich with pkg_context if direct context is missing
+      const enriquecido = {
+        paquete_id: existingCtx.paquete_id || pkgCtx.paquete_id || paq?.id || null,
+        paquete_nombre: existingCtx.paquete_nombre || pkgCtx.paquete_nombre || paq?.nombre || slug.replace(/-/g, ' '),
+        variante_id: existingCtx.variante_id || pkgCtx.variante_id || null,
+        variante_nombre: existingCtx.variante_nombre || pkgCtx.variante_nombre || null,
+        precio: existingCtx.precio || pkgCtx.precio || null,
+        anticipo: existingCtx.anticipo || pkgCtx.anticipo || null,
+      };
 
       await saveHistorial(chatId, conv.historial, {
         estado_reserva: {
           step: 'pidiendo_tipo_pago',
-          paquete_id: existingCtx.paquete_id || paq?.id || null,
-          paquete_nombre: existingCtx.paquete_nombre || paq?.nombre || slug.replace(/-/g, ' '),
-          variante_id: existingCtx.variante_id || null,
-          variante_nombre: existingCtx.variante_nombre || null,
-          precio: existingCtx.precio || null,
-          anticipo: existingCtx.anticipo || null,
+          ...enriquecido,
           personas: existingCtx.personas || 1,
           tipo_pago: null,
           metodo: null,
@@ -716,8 +886,15 @@ export default async function handler(req, res) {
 
     if (data === 'tipo_anticipo' || data === 'tipo_total') {
       const conv = await getHistorial(chatId);
-      const ctx = conv.estado_reserva || {};
+      let ctx = conv.estado_reserva || {};
       const tipoPago = data === 'tipo_anticipo' ? 'anticipo' : 'total';
+      // Enrich from pkg_context if precio is missing
+      if (!ctx.precio && conv.pkg_context) {
+        ctx = { ...ctx, ...conv.pkg_context };
+        await supabase.from('conversaciones_telegram')
+          .update({ estado_reserva: ctx })
+          .eq('chat_id', chatId);
+      }
       await saveHistorial(chatId, conv.historial, {
         estado_reserva: { ...ctx, step: 'pidiendo_metodo', tipo_pago: tipoPago }
       });
@@ -851,6 +1028,14 @@ export default async function handler(req, res) {
   const estadoReserva = conv.estado_reserva;
 
   if (estadoReserva?.step === 'pidiendo_tipo_pago') {
+    // Enrich estado from pkg_context if precio is missing
+    let estadoEnriquecido = estadoReserva;
+    if (!estadoReserva.precio && conv.pkg_context) {
+      estadoEnriquecido = { ...estadoReserva, ...conv.pkg_context };
+      await supabase.from('conversaciones_telegram')
+        .update({ estado_reserva: estadoEnriquecido })
+        .eq('chat_id', chatId);
+    }
     const lower = userText.toLowerCase();
     const esAnticipo = lower.includes('anticipo') || lower.includes('apart') || lower.includes('solo');
     const esTotal = lower.includes('complet') || lower.includes('total') || lower.includes('todo');
@@ -866,7 +1051,7 @@ export default async function handler(req, res) {
     }
     const tipoPago = esAnticipo ? 'anticipo' : 'total';
     await saveHistorial(chatId, conv.historial, {
-      estado_reserva: { ...estadoReserva, step: 'pidiendo_metodo', tipo_pago: tipoPago }
+      estado_reserva: { ...estadoEnriquecido, step: 'pidiendo_metodo', tipo_pago: tipoPago }
     });
     await sendMessage(token, chatId,
       `¿Cómo quieres pagar?\n\n🏦 *Transferencia* — sin cargo extra\n💳 *Tarjeta* — con o sin meses`,
