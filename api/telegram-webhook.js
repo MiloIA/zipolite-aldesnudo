@@ -409,6 +409,7 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
     );
     return;
   }
+  console.log('=== RESERVACION CREADA ===', JSON.stringify(reserva, null, 2));
 
   // 2. Generar link Clip directamente
   const clipToken = Buffer.from(
@@ -432,10 +433,13 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
       email
     }
   };
-  console.log('Clip request body:', JSON.stringify(clipBody));
+  const clipUrl = 'https://api.payclip.com/v2/checkout';
+  console.log('=== CLIP REQUEST ===');
+  console.log('URL:', clipUrl);
+  console.log('Body:', JSON.stringify(clipBody, null, 2));
 
   try {
-    const clipRes = await fetch('https://api.payclip.com/v2/checkout', {
+    const clipRes = await fetch(clipUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${clipToken}`,
@@ -444,7 +448,11 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
       },
       body: JSON.stringify(clipBody)
     });
-    const clipData = await clipRes.json();
+    const clipText = await clipRes.text();
+    console.log('=== CLIP RESPONSE ===');
+    console.log('Status:', clipRes.status);
+    console.log('Body:', clipText);
+    const clipData = JSON.parse(clipText);
     if (clipRes.ok) {
       checkoutUrl = clipData.payment_request_url;
     } else {
