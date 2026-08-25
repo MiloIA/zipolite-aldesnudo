@@ -421,177 +421,17 @@ async function handleMesesSelection(chatId, meses, ctx, conv, token) {
 
 // ─── CREAR RESERVA + PAGO ────────────────────────────────────
 
-async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFallback, historialActual) {
-  const clienteNombre = ctx.nombre || nombreFallback;
-  const personasNum = ctx.personas || 1;
-  const precioTotal = (ctx.precio || 0) * personasNum;
-  const montoBase = ctx.tipo_pago === 'total'
-    ? precioTotal
-    : ((ctx.anticipo || 0) > 0 ? (ctx.anticipo || 0) * personasNum : precioTotal);
-  const metodo = ctx.metodo || 'clip';
-  const meses = ctx.meses ?? 0;
+async function crearReservaYPago(token, chatId, estado) {
+  console.log('=== crearReservaYPago CALLED ===');
+  console.log('estado:', JSON.stringify(estado, null, 2));
 
-  // 1. Crear reservación en Supabase
-  const { data: reserva, error: reservaErr } = await supabase
-    .from('reservaciones')
-    .insert({
-      paquete_id: ctx.paquete_id,
-      paquete_nombre: ctx.paquete_nombre || 'Zipolite al Desnudo',
-      nombre: clienteNombre,
-      email,
-      whatsapp: null,
-      personas: personasNum,
-      variante_id: ctx.variante_id || null,
-      metodo_pago: metodo === 'transfer' ? 'transfer' : 'clip',
-      total: precioTotal,
-      anticipo_pagado: 0,
-      estado: 'pendiente',
-      notas: `Telegram chat_id:${chatId} tipo:${ctx.tipo_pago||'?'} metodo:${metodo}${meses > 0 ? ` meses:${meses}` : ''}`
-    })
-    .select()
-    .single();
+  const CLIP_API_KEY = process.env.CLIP_API_KEY;
+  const CLIP_SECRET_KEY = process.env.CLIP_SECRET_KEY;
+  console.log('CLIP_API_KEY exists:', !!CLIP_API_KEY);
+  console.log('CLIP_SECRET_KEY exists:', !!CLIP_SECRET_KEY);
 
-  if (reservaErr || !reserva) {
-    console.error('Error creating reservacion:', reservaErr?.message);
-    await saveHistorial(chatId, historialActual, { estado_reserva: null });
-    await sendMessage(token, chatId,
-      `Tuvimos un problema técnico al registrar tu reserva 😕\nPor favor escríbenos directo: wa.me/529582199953`
-    );
-    return;
-  }
-  console.log('=== RESERVACION CREADA ===', JSON.stringify(reserva, null, 2));
-
-  // 2. Limpiar estado + actualizar CRM
-  await saveHistorial(chatId, historialActual, { estado_reserva: null });
-  await actualizarContacto(chatId, { estado_crm: 'reservado', temperatura: 'caliente' });
-  await registrarInteraccion(contacto?.id, 'reserva',
-    `Reserva creada: ${ctx.paquete_nombre}, monto $${montoBase}`
-  );
-
-  // 3. Transferencia bancaria
-  if (metodo === 'transfer') {
-    const { data: config } = await supabase
-      .from('configuracion')
-      .select('bank_name, bank_clabe, bank_beneficiario')
-      .maybeSingle();
-    const banco = config?.bank_name || 'BBVA';
-    const clabe = config?.bank_clabe || '—';
-    const beneficiario = config?.bank_beneficiario || 'Zipolite al Desnudo';
-    const montoFmt = montoBase.toLocaleString('es-MX');
-
-    fetch('https://zipolitealdesnudo.com/api/send-confirmation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        reservacion_id: reserva.id,
-        paquete_nombre: ctx.paquete_nombre,
-        nombre: clienteNombre,
-        email,
-        whatsapp: null,
-        personas: personasNum,
-        metodo_pago: 'transfer',
-        total: precioTotal,
-        anticipo: ctx.tipo_pago === 'anticipo' ? montoBase : precioTotal,
-        fecha_inicio: '',
-        fecha_fin: ''
-      })
-    }).catch(e => console.error('send-confirmation error:', e));
-
-    await sendMessage(token, chatId,
-      `✅ *¡Tu reserva está registrada, ${clienteNombre}!*\n\n` +
-      `🏦 *Datos para transferencia:*\n` +
-      `• Banco: *${banco}*\n` +
-      `• CLABE: \`${clabe}\`\n` +
-      `• Beneficiario: *${beneficiario}*\n` +
-      `• Monto: *$${montoFmt} MXN*\n\n` +
-      `📸 Manda tu comprobante aquí mismo y te confirmamos en minutos.\n` +
-      `📧 Recibirás confirmación en ${email}`
-    );
-    return;
-  }
-
-  // 4. Pago con tarjeta via Clip
-  const { total: montoClip } = calcFinanciamiento(montoBase, meses);
-  const clipToken = Buffer.from(
-    `${process.env.CLIP_API_KEY}:${process.env.CLIP_SECRET_KEY}`
-  ).toString('base64');
-  const baseUrl = 'https://zipolitealdesnudo.com';
-  let checkoutUrl = null;
-
-  const clipBody = {
-    amount: montoClip,
-    purchase_description: ctx.paquete_nombre || 'Reservación Zipolite al Desnudo',
-    redirection_url: {
-      success: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=paid`,
-      error:   `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=error`,
-      default: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=pending`,
-    },
-    webhook_url: `${baseUrl}/api/clip-webhook`,
-    metadata: { external_reference: reserva.id, nombre: clienteNombre, email }
-  };
-  const clipUrl = 'https://api.payclip.com/v2/checkout';
-  console.log('=== CLIP REQUEST ===');
-  console.log('URL:', clipUrl);
-  console.log('Body:', JSON.stringify(clipBody, null, 2));
-
-  try {
-    const clipRes = await fetch(clipUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${clipToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(clipBody)
-    });
-    const clipText = await clipRes.text();
-    console.log('=== CLIP RESPONSE ===');
-    console.log('Status:', clipRes.status);
-    console.log('Body:', clipText);
-    const clipData = JSON.parse(clipText);
-    if (clipRes.ok) {
-      checkoutUrl = clipData.payment_request_url;
-    } else {
-      console.error('Clip error response:', JSON.stringify(clipData));
-      console.error('Clip request body (on error):', JSON.stringify(clipBody));
-    }
-  } catch (clipErr) {
-    console.error('Clip fetch error:', clipErr?.message);
-    console.error('Clip request body (on exception):', JSON.stringify(clipBody));
-  }
-
-  if (!checkoutUrl) {
-    await sendMessage(token, chatId,
-      `Hubo un problema al generar tu link de pago 😕\n\nNo te preocupes, tu lugar está guardado.\nEscríbenos a wa.me/529582199953 y te lo resolvemos en minutos.`
-    );
-    return;
-  }
-
-  fetch('https://zipolitealdesnudo.com/api/send-confirmation', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      reservacion_id: reserva.id,
-      paquete_nombre: ctx.paquete_nombre,
-      nombre: clienteNombre,
-      email,
-      whatsapp: null,
-      personas: personasNum,
-      metodo_pago: 'clip',
-      total: precioTotal,
-      anticipo: ctx.tipo_pago === 'anticipo' ? montoBase : precioTotal,
-      fecha_inicio: '',
-      fecha_fin: ''
-    })
-  }).catch(e => console.error('send-confirmation error:', e));
-
-  const montoFmt = montoClip.toLocaleString('es-MX');
-  const mesesInfo = meses > 0 ? ` · ${meses} meses` : ' · contado';
-  await sendMessage(token, chatId,
-    `✅ *¡Listo, ${clienteNombre}!* Tu lugar está apartado.\n\n🔗 *Completa tu pago aquí:*\n${checkoutUrl}\n\n💰 Tarjeta${mesesInfo}: *$${montoFmt} MXN*\n📧 Recibirás confirmación en ${email}\n\nEl link es válido por 24 horas. ¿Alguna duda?`
-  );
+  await sendMessage(token, chatId, 'DEBUG: función llamada. Revisa logs de Vercel.');
 }
-
 // ─── HANDLER DE IA UNIFICADO ─────────────────────────────────
 
 async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, resenas, token, nombre, inlineButtons = null) {
@@ -1099,15 +939,7 @@ export default async function handler(req, res) {
       const nuevoNombre = userText.replace(emailInMsg[0], '').replace(/\s+/g, ' ').trim() || nombre;
       await actualizarContacto(chatId, { nombre: nuevoNombre });
       await sendMessage(token, chatId, `Un momento, estoy generando tu link de pago... ⏳`);
-      await crearReservaYPago(
-        chatId,
-        emailInput,
-        { ...estadoReserva, nombre: nuevoNombre, email: emailInput },
-        contacto,
-        token,
-        nombre,
-        conv.historial
-      );
+      await crearReservaYPago(token, chatId, { ...estadoReserva, nombre: nuevoNombre, email: emailInput });
     } else {
       const nuevoNombre = userText.trim();
       await saveHistorial(chatId, conv.historial, {
@@ -1128,15 +960,7 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
     await sendMessage(token, chatId, `Un momento, estoy generando tu link de pago... ⏳`);
-    await crearReservaYPago(
-      chatId,
-      emailInput,
-      { ...estadoReserva, email: emailInput },
-      contacto,
-      token,
-      nombre,
-      conv.historial
-    );
+    await crearReservaYPago(token, chatId, { ...estadoReserva, email: emailInput });
     return res.status(200).end();
   }
 
