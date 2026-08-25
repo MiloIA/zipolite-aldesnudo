@@ -425,16 +425,34 @@ async function crearReservaYPago(token, chatId, estado) {
   console.log('=== crearReservaYPago CALLED ===');
   console.log('estado:', JSON.stringify(estado, null, 2));
 
-  // Validate required context before proceeding
+  // If precio is missing, try fetching pkg_context from DB as fallback
   if (!estado.precio || estado.precio === 0 || !estado.paquete_id || !estado.variante_id) {
-    console.error('crearReservaYPago: missing context', { precio: estado.precio, paquete_id: estado.paquete_id, variante_id: estado.variante_id });
-    await sendMessage(token, chatId,
-      '❌ Hubo un error con los datos de tu reserva. Por favor inicia de nuevo eligiendo tu paquete desde el menú.'
-    );
-    await supabase.from('conversaciones_telegram')
-      .update({ estado_reserva: null })
-      .eq('chat_id', chatId);
-    return;
+    const { data: row } = await supabase
+      .from('conversaciones_telegram')
+      .select('pkg_context')
+      .eq('chat_id', chatId)
+      .maybeSingle();
+    const pkgCtx = row?.pkg_context;
+    if (pkgCtx?.precio && pkgCtx.precio > 0 && pkgCtx.paquete_id && pkgCtx.variante_id) {
+      console.log('crearReservaYPago: using pkg_context fallback', pkgCtx);
+      estado = {
+        ...pkgCtx,
+        ...estado,
+        precio: pkgCtx.precio,
+        variante_id: pkgCtx.variante_id,
+        paquete_id: pkgCtx.paquete_id,
+        paquete_nombre: estado.paquete_nombre || pkgCtx.paquete_nombre,
+        anticipo: estado.anticipo || pkgCtx.anticipo,
+        personas: estado.personas || pkgCtx.personas || 1,
+      };
+    } else {
+      console.error('crearReservaYPago: missing context, no fallback', { precio: estado.precio, paquete_id: estado.paquete_id, variante_id: estado.variante_id });
+      await sendMessage(token, chatId,
+        '❌ Hubo un error con los datos de tu reserva. Por favor inicia de nuevo eligiendo tu paquete desde el menú.'
+      );
+      await supabase.from('conversaciones_telegram').update({ estado_reserva: null }).eq('chat_id', chatId);
+      return;
+    }
   }
 
   const clienteNombre = estado.nombre || '';
@@ -592,6 +610,44 @@ async function crearReservaYPago(token, chatId, estado) {
     `✅ *¡Listo, ${clienteNombre}!* Tu lugar está apartado.\n\n🔗 *Completa tu pago aquí:*\n${checkoutUrl}\n\n💰 Tarjeta${mesesInfo}: *$${montoFmt} MXN*\n📧 Recibirás confirmación en ${email}\n\nEl link es válido por 24 horas. ¿Alguna duda?`
   );
 }
+// ─── EXTRACCIÓN DE CONTEXTO DESDE RESPUESTA ─────────────────
+
+function extractContextFromResponse(text, paquetes) {
+  const textLower = text.toLowerCase();
+  for (const p of paquetes) {
+    for (const v of (p.variantes || [])) {
+      if (!v.precio) continue;
+      const precioStr = v.precio.toLocaleString('es-MX');
+      const nombreLower = (v.nombre || '').toLowerCase();
+      if (
+        (nombreLower.length > 3 && textLower.includes(nombreLower)) ||
+        text.includes(precioStr) ||
+        text.includes('$' + v.precio)
+      ) {
+        return {
+          paquete_id: p.id,
+          paquete_nombre: p.nombre,
+          variante_id: v.id,
+          variante_nombre: v.nombre,
+          precio: v.precio,
+          anticipo: v.anticipo,
+          anticipo_es_total: v.anticipo_es_total || false,
+          personas: 1
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function extractPersonas(userMessage, replyText) {
+  const allText = `${userMessage} ${replyText}`;
+  const soloMatch = /(voy solo|viajo solo|soy solo|solo yo|\bsola\b)/i.test(allText);
+  if (soloMatch) return 1;
+  const numMatch = allText.match(/(?:somos|vamos|van|para|seré)\s*(\d+)/i)
+    || allText.match(/(\d+)\s*(?:persona|viajero|lugar)/i);
+  return numMatch ? Math.max(1, parseInt(numMatch[1])) : null;
+}
 // ─── HANDLER DE IA UNIFICADO ─────────────────────────────────
 
 async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, resenas, token, nombre, inlineButtons = null) {
@@ -626,6 +682,23 @@ async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, r
   const escalar = reply.includes('ESCALAR_ASESOR');
   const agendar = reply.includes('AGENDAR_LLAMADA');
   reply = reply.replace('ESCALAR_ASESOR', '').replace('AGENDAR_LLAMADA', '').trim();
+
+  // Extract package context from Claude's response and persist as pkg_context
+  const extractedCtx = extractContextFromResponse(reply, paquetes);
+  const personasDetected = extractPersonas(userMessage, reply);
+  if (extractedCtx || personasDetected) {
+    const existingPkg = conv.pkg_context || {};
+    let newPkg = extractedCtx
+      ? { ...extractedCtx, personas: personasDetected || existingPkg.personas || 1 }
+      : { ...existingPkg, personas: personasDetected };
+    if (newPkg.precio || existingPkg.precio) {
+      if (!newPkg.precio) newPkg = { ...existingPkg, ...newPkg };
+      supabase.from('conversaciones_telegram')
+        .update({ pkg_context: newPkg })
+        .eq('chat_id', chatId)
+        .then(() => {}).catch(e => console.error('pkg_context update error:', e));
+    }
+  }
 
   const nombreMatch = reply.match(/NOMBRE:([^\n]+)/);
   const newHistorial = [
