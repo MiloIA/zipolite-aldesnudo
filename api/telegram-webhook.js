@@ -640,12 +640,11 @@ function extractContextFromResponse(text, paquetes) {
   return null;
 }
 
-function extractPersonas(userMessage, replyText) {
-  const allText = `${userMessage} ${replyText}`;
-  const soloMatch = /(voy solo|viajo solo|soy solo|solo yo|\bsola\b)/i.test(allText);
+function extractPersonas(replyText) {
+  const soloMatch = /(va solo|viaja solo|va sola|\bsolo\b|\bsola\b)/i.test(replyText);
   if (soloMatch) return 1;
-  const numMatch = allText.match(/(?:somos|vamos|van|para|seré)\s*(\d+)/i)
-    || allText.match(/(\d+)\s*(?:persona|viajero|lugar)/i);
+  const numMatch = replyText.match(/(?:somos|vamos|van|para|seré)\s*(\d+)/i)
+    || replyText.match(/(\d+)\s*(?:persona|viajero|lugar)/i);
   return numMatch ? Math.max(1, parseInt(numMatch[1])) : null;
 }
 // ─── HANDLER DE IA UNIFICADO ─────────────────────────────────
@@ -684,8 +683,8 @@ async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, r
   reply = reply.replace('ESCALAR_ASESOR', '').replace('AGENDAR_LLAMADA', '').trim();
 
   // Extract package context from Claude's response and persist as pkg_context
-  const extractedCtx = extractContextFromResponse(reply, paquetes);
-  const personasDetected = extractPersonas(userMessage, reply);
+  const extractedCtx = extractContextFromResponse(reply, paquetes); // only Claude's reply, never userMessage
+  const personasDetected = extractPersonas(reply); // only scan Claude's text, never user input
   if (extractedCtx || personasDetected) {
     const existingPkg = conv.pkg_context || {};
     let newPkg = extractedCtx
@@ -726,7 +725,8 @@ async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, r
     let finalButtons = inlineButtons;
     const closingPhrases = ['¿te aparto', '¿apartamos', '¿reservamos'];
     const isClosingButton = closingPhrases.some(ph => reply.toLowerCase().includes(ph));
-    if (isClosingButton && paquetes.length > 0) {
+    // Require >= 3 prior exchanges (6 historial items) before showing reservation buttons
+    if (isClosingButton && paquetes.length > 0 && historial.length >= 6) {
       const allText = [...historial.map(m => m.content), userMessage].join(' ').toLowerCase();
       const relevantPaq = paquetes.find(p => allText.includes(p.nombre.toLowerCase())) || paquetes[0];
       const pkgSlug = slugify(relevantPaq.nombre);
