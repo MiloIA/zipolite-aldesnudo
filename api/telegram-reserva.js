@@ -1,0 +1,402 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+
+const REPLY_KEYBOARD = {
+  keyboard: [
+    [{ text: '🏠 Menú principal' }, { text: '📞 Agendar llamada' }, { text: '🙋 Hablar con asesor' }]
+  ],
+  resize_keyboard: true,
+  persistent: true,
+  input_field_placeholder: 'Escribe tu mensaje...'
+};
+
+// Private helpers
+async function sendMessage(token, chatId, text, inlineButtons = null) {
+  const body = {
+    chat_id: chatId,
+    text,
+    parse_mode: 'Markdown',
+    reply_markup: inlineButtons ? { inline_keyboard: inlineButtons } : REPLY_KEYBOARD
+  };
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+}
+
+async function saveHistorial(chatId, historial, extras = {}) {
+  await supabase
+    .from('conversaciones_telegram')
+    .upsert({ chat_id: chatId, historial, ...extras }, { onConflict: 'chat_id' });
+}
+
+async function actualizarContacto(chatId, updates) {
+  await supabase.from('contactos').update(updates).eq('telegram_chat_id', chatId);
+}
+
+// ─── TASAS Y CÁLCULO DE FINANCIAMIENTO ──────────────────────
+
+export const CLIP_RATES = { 0: 4.18, 3: 9.48, 6: 12.96, 9: 17.02, 12: 18.99, 18: 26.53, 24: 35.69 };
+
+export function calcFinanciamiento(monto, meses) {
+  const tasa = CLIP_RATES[meses] ?? 4.18;
+  const total = Math.round(monto / (1 - tasa / 100));
+  const cargo = total - monto;
+  const mensualidad = meses > 0 ? Math.round(total / meses) : null;
+  return { total, cargo, mensualidad, tasa };
+}
+
+export async function handleMesesSelection(chatId, meses, ctx, conv, token) {
+  const personasNum = ctx.personas || 1;
+  const montoBase = ctx.tipo_pago === 'total'
+    ? (ctx.precio || 0) * personasNum
+    : ((ctx.anticipo || 0) > 0 ? (ctx.anticipo || 0) * personasNum : (ctx.precio || 0) * personasNum);
+  const { total, cargo, mensualidad } = calcFinanciamiento(montoBase, meses);
+  const varEmoji = (ctx.variante_nombre || '').toLowerCase().includes('glamping') ? '🏕️'
+    : (ctx.variante_nombre || '').toLowerCase().includes('habitaci') ? '🛏️'
+    : (ctx.variante_nombre || '').toLowerCase().includes('transport') ? '🚌' : '💳';
+  const label = ctx.variante_nombre || ctx.paquete_nombre || 'Paquete';
+  const personas = `${personasNum} persona${personasNum > 1 ? 's' : ''}`;
+  let resumenMsg;
+  if (meses === 0) {
+    resumenMsg =
+      `${varEmoji} *${label} · ${personas} · Contado*\n\n` +
+      `• Precio base: *$${montoBase.toLocaleString('es-MX')}*\n` +
+      `• Cargo por tarjeta: +*$${cargo.toLocaleString('es-MX')}*\n` +
+      `• *Total a pagar: $${total.toLocaleString('es-MX')} MXN*\n\n` +
+      `¿Cuál es tu *nombre completo* para la reserva? 👇`;
+  } else {
+    resumenMsg =
+      `${varEmoji} *${label} · ${personas} · ${meses} meses*\n\n` +
+      `💰 *$${mensualidad.toLocaleString('es-MX')}/mes* — cómodo y sin estrés\n\n` +
+      `• Precio base: $${montoBase.toLocaleString('es-MX')}\n` +
+      `• Costo de financiamiento: +$${cargo.toLocaleString('es-MX')}\n` +
+      `• Total: $${total.toLocaleString('es-MX')}\n` +
+      `• Mensualidad: *$${mensualidad.toLocaleString('es-MX')}* × ${meses} meses\n\n` +
+      `¿Cuál es tu *nombre completo* para la reserva? 👇`;
+  }
+  await saveHistorial(chatId, conv.historial, {
+    estado_reserva: { ...ctx, step: 'pidiendo_nombre', meses }
+  });
+  await sendMessage(token, chatId, resumenMsg);
+}
+
+// ─── CREAR RESERVA + PAGO ────────────────────────────────────
+
+export async function crearReservaYPago(token, chatId, estado) {
+  console.log('=== crearReservaYPago CALLED ===');
+  console.log('estado:', JSON.stringify(estado, null, 2));
+
+  // If precio is missing, try fetching pkg_context from DB as fallback
+  if (!estado.precio || estado.precio === 0 || !estado.paquete_id || !estado.variante_id) {
+    const { data: row } = await supabase
+      .from('conversaciones_telegram')
+      .select('pkg_context')
+      .eq('chat_id', chatId)
+      .maybeSingle();
+    const pkgCtx = row?.pkg_context;
+    if (pkgCtx?.precio && pkgCtx.precio > 0 && pkgCtx.paquete_id && pkgCtx.variante_id) {
+      console.log('crearReservaYPago: using pkg_context fallback', pkgCtx);
+      estado = {
+        ...pkgCtx,
+        ...estado,
+        precio: pkgCtx.precio,
+        variante_id: pkgCtx.variante_id,
+        paquete_id: pkgCtx.paquete_id,
+        paquete_nombre: estado.paquete_nombre || pkgCtx.paquete_nombre,
+        anticipo: estado.anticipo || pkgCtx.anticipo,
+        personas: estado.personas || pkgCtx.personas || 1,
+      };
+    } else {
+      console.error('crearReservaYPago: missing context, no fallback', { precio: estado.precio, paquete_id: estado.paquete_id, variante_id: estado.variante_id });
+      await sendMessage(token, chatId,
+        '❌ Hubo un error con los datos de tu reserva. Por favor inicia de nuevo eligiendo tu paquete desde el menú.'
+      );
+      await supabase.from('conversaciones_telegram').update({ estado_reserva: null }).eq('chat_id', chatId);
+      return;
+    }
+  }
+
+  const clienteNombre = estado.nombre || '';
+  const email = estado.email || '';
+  const personasNum = estado.personas || 1;
+  const precioTotal = (estado.precio || 0) * personasNum;
+  const montoBase = estado.tipo_pago === 'total'
+    ? precioTotal
+    : ((estado.anticipo || 0) > 0 ? (estado.anticipo || 0) * personasNum : precioTotal);
+  const metodo = estado.metodo || 'clip';
+  const meses = estado.meses ?? 0;
+
+  // 1. Crear reservación en Supabase
+  const { data: reserva, error: reservaErr } = await supabase
+    .from('reservaciones')
+    .insert({
+      paquete_id: estado.paquete_id,
+      paquete_nombre: estado.paquete_nombre || 'Zipolite al Desnudo',
+      nombre: clienteNombre,
+      email,
+      whatsapp: null,
+      personas: personasNum,
+      variante_id: estado.variante_id || null,
+      metodo_pago: metodo === 'transfer' ? 'transfer' : 'clip',
+      total: precioTotal,
+      anticipo_pagado: 0,
+      estado: 'pendiente',
+      notas: `Telegram chat_id:${chatId} tipo:${estado.tipo_pago||'?'} metodo:${metodo}${meses > 0 ? ` meses:${meses}` : ''}`
+    })
+    .select()
+    .single();
+
+  if (reservaErr || !reserva) {
+    console.error('Error creating reservacion:', reservaErr?.message);
+    await supabase.from('conversaciones_telegram').update({ estado_reserva: null }).eq('chat_id', chatId);
+    await sendMessage(token, chatId,
+      `Tuvimos un problema técnico al registrar tu reserva 😕\nPor favor escríbenos directo: wa.me/529582199953`
+    );
+    return;
+  }
+  console.log('=== RESERVACION CREADA ===', JSON.stringify(reserva, null, 2));
+
+  // 2. Limpiar estado + actualizar CRM
+  await supabase.from('conversaciones_telegram').update({ estado_reserva: null }).eq('chat_id', chatId);
+  await supabase.from('contactos').update({ estado_crm: 'reservado', temperatura: 'caliente' }).eq('telegram_chat_id', chatId);
+
+  // 3. Transferencia bancaria
+  if (metodo === 'transfer') {
+    const { data: config } = await supabase
+      .from('configuracion')
+      .select('bank_name, bank_clabe, bank_beneficiario')
+      .maybeSingle();
+    const banco = config?.bank_name || 'BBVA';
+    const clabe = config?.bank_clabe || '—';
+    const beneficiario = config?.bank_beneficiario || 'Zipolite al Desnudo';
+    const montoFmt = montoBase.toLocaleString('es-MX');
+
+    fetch('https://zipolitealdesnudo.com/api/send-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reservacion_id: reserva.id, paquete_nombre: estado.paquete_nombre,
+        nombre: clienteNombre, email, whatsapp: null, personas: personasNum,
+        metodo_pago: 'transfer', total: precioTotal,
+        anticipo: estado.tipo_pago === 'anticipo' ? montoBase : precioTotal,
+        fecha_inicio: '', fecha_fin: ''
+      })
+    }).catch(e => console.error('send-confirmation error:', e));
+
+    await sendMessage(token, chatId,
+      `✅ *¡Tu reserva está registrada, ${clienteNombre}!*\n\n` +
+      `🏦 *Datos para transferencia:*\n` +
+      `• Banco: *${banco}*\n` +
+      `• CLABE: \`${clabe}\`\n` +
+      `• Beneficiario: *${beneficiario}*\n` +
+      `• Monto: *$${montoFmt} MXN*\n\n` +
+      `📸 Manda tu comprobante aquí mismo y te confirmamos en minutos.\n` +
+      `📧 Recibirás confirmación en ${email}`
+    );
+    return;
+  }
+
+  // 4. Pago con tarjeta via Clip
+  const { total: montoClip } = calcFinanciamiento(montoBase, meses);
+  const clipToken = Buffer.from(
+    `${process.env.CLIP_API_KEY}:${process.env.CLIP_SECRET_KEY}`
+  ).toString('base64');
+  const baseUrl = 'https://zipolitealdesnudo.com';
+  let checkoutUrl = null;
+
+  const clipBody = {
+    amount: montoClip,
+    purchase_description: estado.paquete_nombre || 'Reservación Zipolite al Desnudo',
+    redirection_url: {
+      success: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=paid`,
+      error:   `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=error`,
+      default: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=pending`,
+    },
+    webhook_url: `${baseUrl}/api/clip-webhook`,
+    metadata: { external_reference: reserva.id, nombre: clienteNombre, email }
+  };
+  const clipUrl = 'https://api.payclip.com/v2/checkout';
+  console.log('=== CLIP REQUEST ===');
+  console.log('URL:', clipUrl);
+  console.log('Body:', JSON.stringify(clipBody, null, 2));
+
+  try {
+    const clipRes = await fetch(clipUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${clipToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(clipBody)
+    });
+    const clipText = await clipRes.text();
+    console.log('=== CLIP RESPONSE ===');
+    console.log('Status:', clipRes.status);
+    console.log('Body:', clipText);
+    const clipData = JSON.parse(clipText);
+    if (clipRes.ok) {
+      checkoutUrl = clipData.payment_request_url;
+    } else {
+      console.error('Clip error response:', JSON.stringify(clipData));
+      console.error('Clip request body (on error):', JSON.stringify(clipBody));
+    }
+  } catch (clipErr) {
+    console.error('Clip fetch error:', clipErr?.message);
+    console.error('Clip request body (on exception):', JSON.stringify(clipBody));
+  }
+
+  if (!checkoutUrl) {
+    await sendMessage(token, chatId,
+      `Hubo un problema al generar tu link de pago 😕\n\nNo te preocupes, tu lugar está guardado.\nEscríbenos a wa.me/529582199953 y te lo resolvemos en minutos.`
+    );
+    return;
+  }
+
+  fetch('https://zipolitealdesnudo.com/api/send-confirmation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      reservacion_id: reserva.id, paquete_nombre: estado.paquete_nombre,
+      nombre: clienteNombre, email, whatsapp: null, personas: personasNum,
+      metodo_pago: 'clip', total: precioTotal,
+      anticipo: estado.tipo_pago === 'anticipo' ? montoBase : precioTotal,
+      fecha_inicio: '', fecha_fin: ''
+    })
+  }).catch(e => console.error('send-confirmation error:', e));
+
+  const montoFmt = montoClip.toLocaleString('es-MX');
+  const mesesInfo = meses > 0 ? ` · ${meses} meses` : ' · contado';
+  await sendMessage(token, chatId,
+    `✅ *¡Listo, ${clienteNombre}!* Tu lugar está apartado.\n\n🔗 *Completa tu pago aquí:*\n${checkoutUrl}\n\n💰 Tarjeta${mesesInfo}: *$${montoFmt} MXN*\n📧 Recibirás confirmación en ${email}\n\nEl link es válido por 24 horas. ¿Alguna duda?`
+  );
+}
+
+// ─── MANEJADOR DE PASOS DE RESERVA (mensajes de texto) ──────
+
+export async function handleReservaStep(token, chatId, msgText, estadoReserva, conv, nombre) {
+  if (estadoReserva?.step === 'pidiendo_tipo_pago') {
+    let estadoEnriquecido = estadoReserva;
+    if (!estadoReserva.precio && conv.pkg_context) {
+      estadoEnriquecido = { ...estadoReserva, ...conv.pkg_context };
+      await supabase.from('conversaciones_telegram')
+        .update({ estado_reserva: estadoEnriquecido })
+        .eq('chat_id', chatId);
+    }
+    const lower = msgText.toLowerCase();
+    const esAnticipo = lower.includes('anticipo') || lower.includes('apart') || lower.includes('solo');
+    const esTotal = lower.includes('complet') || lower.includes('total') || lower.includes('todo');
+    if (!esAnticipo && !esTotal) {
+      await sendMessage(token, chatId,
+        `¿Solo anticipo o pago completo? 👇`,
+        [[
+          { text: '💰 Solo anticipo', callback_data: 'tipo_anticipo' },
+          { text: '✅ Pago completo', callback_data: 'tipo_total' }
+        ]]
+      );
+      return true;
+    }
+    const tipoPago = esAnticipo ? 'anticipo' : 'total';
+    await saveHistorial(chatId, conv.historial, {
+      estado_reserva: { ...estadoEnriquecido, step: 'pidiendo_metodo', tipo_pago: tipoPago }
+    });
+    await sendMessage(token, chatId,
+      `¿Cómo quieres pagar?\n\n🏦 *Transferencia* — sin cargo extra\n💳 *Tarjeta* — con o sin meses`,
+      [[
+        { text: '🏦 Transferencia', callback_data: 'metodo_transfer' },
+        { text: '💳 Tarjeta', callback_data: 'metodo_tarjeta' }
+      ]]
+    );
+    return true;
+  }
+
+  if (estadoReserva?.step === 'pidiendo_metodo') {
+    const lower = msgText.toLowerCase();
+    const esTransfer = lower.includes('transfer') || lower.includes('deposito') || lower.includes('depósito') || lower.includes('banco');
+    const esTarjeta = lower.includes('tarjeta') || lower.includes('card') || lower.includes('credito') || lower.includes('crédito');
+    if (!esTransfer && !esTarjeta) {
+      await sendMessage(token, chatId,
+        `¿Transferencia o tarjeta? 👇`,
+        [[
+          { text: '🏦 Transferencia', callback_data: 'metodo_transfer' },
+          { text: '💳 Tarjeta', callback_data: 'metodo_tarjeta' }
+        ]]
+      );
+      return true;
+    }
+    if (esTransfer) {
+      await saveHistorial(chatId, conv.historial, {
+        estado_reserva: { ...estadoReserva, step: 'pidiendo_nombre', metodo: 'transfer' }
+      });
+      await sendMessage(token, chatId,
+        `Perfecto, transferencia sin cargos extra 🏦\n\n¿Cuál es tu *nombre completo* para la reserva? 👇`
+      );
+    } else {
+      await saveHistorial(chatId, conv.historial, {
+        estado_reserva: { ...estadoReserva, step: 'pidiendo_meses', metodo: 'tarjeta' }
+      });
+      await sendMessage(token, chatId,
+        `¿A cuántos meses?`,
+        [
+          [{ text: 'Contado', callback_data: 'meses_0' }, { text: '3 meses', callback_data: 'meses_3' }, { text: '6 meses', callback_data: 'meses_6' }],
+          [{ text: '9 meses', callback_data: 'meses_9' }, { text: '12 meses', callback_data: 'meses_12' }, { text: '18 meses', callback_data: 'meses_18' }, { text: '24 meses', callback_data: 'meses_24' }]
+        ]
+      );
+    }
+    return true;
+  }
+
+  if (estadoReserva?.step === 'pidiendo_meses') {
+    const mesesMatch = msgText.match(/\b(contado|0|3|6|9|12|18|24)\b/i);
+    if (!mesesMatch) {
+      await sendMessage(token, chatId,
+        `Selecciona el plazo 👇`,
+        [
+          [{ text: 'Contado', callback_data: 'meses_0' }, { text: '3 meses', callback_data: 'meses_3' }, { text: '6 meses', callback_data: 'meses_6' }],
+          [{ text: '9 meses', callback_data: 'meses_9' }, { text: '12 meses', callback_data: 'meses_12' }, { text: '18 meses', callback_data: 'meses_18' }, { text: '24 meses', callback_data: 'meses_24' }]
+        ]
+      );
+      return true;
+    }
+    const meses = mesesMatch[1].toLowerCase() === 'contado' ? 0 : parseInt(mesesMatch[1]);
+    await handleMesesSelection(chatId, meses, estadoReserva, conv, token);
+    return true;
+  }
+
+  if (estadoReserva?.step === 'pidiendo_nombre') {
+    const emailInMsg = msgText.match(/[\w.-]+@[\w.-]+\.\w+/);
+    if (emailInMsg) {
+      const emailInput = emailInMsg[0].toLowerCase();
+      const nuevoNombre = msgText.replace(emailInMsg[0], '').replace(/\s+/g, ' ').trim() || nombre;
+      await actualizarContacto(chatId, { nombre: nuevoNombre });
+      await sendMessage(token, chatId, `Un momento, estoy generando tu link de pago... ⏳`);
+      await crearReservaYPago(token, chatId, { ...estadoReserva, nombre: nuevoNombre, email: emailInput });
+    } else {
+      const nuevoNombre = msgText.trim();
+      await saveHistorial(chatId, conv.historial, {
+        estado_reserva: { ...estadoReserva, step: 'pidiendo_email', nombre: nuevoNombre }
+      });
+      await actualizarContacto(chatId, { nombre: nuevoNombre });
+      await sendMessage(token, chatId,
+        `Perfecto, *${nuevoNombre}* 👋\n\n¿Cuál es tu email para enviarte la confirmación?`
+      );
+    }
+    return true;
+  }
+
+  if (estadoReserva?.step === 'pidiendo_email') {
+    const emailInput = msgText.trim().toLowerCase();
+    if (!emailInput.includes('@') || !emailInput.includes('.')) {
+      await sendMessage(token, chatId, `Ese email no parece válido, ¿puedes verificarlo? 🙏`);
+      return true;
+    }
+    await sendMessage(token, chatId, `Un momento, estoy generando tu link de pago... ⏳`);
+    await crearReservaYPago(token, chatId, { ...estadoReserva, email: emailInput });
+    return true;
+  }
+
+  return false;
+}
