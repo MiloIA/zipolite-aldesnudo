@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -234,8 +234,8 @@ FLUJO DE CIERRE (síguelo en orden):
 1. CALIFICAR → Pregunta: ¿solo o en grupo? ¿cuántas personas? ¿ya conoce Zipolite?
 2. RECOMENDAR → Basado en respuestas, sugiere UNA variante específica con precio y anticipo
 3. MANEJAR OBJECIONES → Si dice "está caro": habla de financiamiento y del valor. Si dice "voy solo": habla de la comunidad.
-4. CERRAR → "¿Te aparto el lugar?" Si dice sí: pide su *nombre completo* para la reserva (el sistema procesará el pago automáticamente)
-5. COBRAR → NUNCA des links de pago manualmente — el sistema los genera tras recopilar nombre y email
+4. CERRAR → "¿Te aparto el lugar?" — si el usuario confirma, di "¡Perfecto! Usa el botón de abajo 👇" — el sistema guiará el proceso de pago paso a paso
+5. COBRAR → NUNCA pidas nombre, email ni datos bancarios — el sistema los recopila automáticamente con los botones
 6. CONFIRMAR → Avisa que recibirá confirmación por email
 
 MANEJO DE OBJECIONES:
@@ -372,14 +372,64 @@ function generarSlotsHorario(dia) {
   return slots;
 }
 
-// ─── CREAR RESERVA + PAGO CLIP ───────────────────────────────
+// ─── TASAS Y CÁLCULO DE FINANCIAMIENTO ──────────────────────
+
+const CLIP_RATES = { 0: 4.18, 3: 9.48, 6: 12.96, 9: 17.02, 12: 18.99, 18: 26.53, 24: 35.69 };
+
+function calcFinanciamiento(monto, meses) {
+  const tasa = CLIP_RATES[meses] ?? 4.18;
+  const total = Math.round(monto / (1 - tasa / 100));
+  const cargo = total - monto;
+  const mensualidad = meses > 0 ? Math.round(total / meses) : null;
+  return { total, cargo, mensualidad, tasa };
+}
+
+async function handleMesesSelection(chatId, meses, ctx, conv, token) {
+  const personasNum = ctx.personas || 1;
+  const montoBase = ctx.tipo_pago === 'total'
+    ? (ctx.precio || 0) * personasNum
+    : ((ctx.anticipo || 0) > 0 ? (ctx.anticipo || 0) * personasNum : (ctx.precio || 0) * personasNum);
+  const { total, cargo, mensualidad } = calcFinanciamiento(montoBase, meses);
+  const varEmoji = (ctx.variante_nombre || '').toLowerCase().includes('glamping') ? '🏕️'
+    : (ctx.variante_nombre || '').toLowerCase().includes('habitaci') ? '🛏️'
+    : (ctx.variante_nombre || '').toLowerCase().includes('transport') ? '🚌' : '💳';
+  const label = ctx.variante_nombre || ctx.paquete_nombre || 'Paquete';
+  const personas = `${personasNum} persona${personasNum > 1 ? 's' : ''}`;
+  let resumenMsg;
+  if (meses === 0) {
+    resumenMsg =
+      `${varEmoji} *${label} · ${personas} · Contado*\n\n` +
+      `• Precio base: *$${montoBase.toLocaleString('es-MX')}*\n` +
+      `• Cargo por tarjeta: +*$${cargo.toLocaleString('es-MX')}*\n` +
+      `• *Total a pagar: $${total.toLocaleString('es-MX')} MXN*\n\n` +
+      `¿Cuál es tu *nombre completo* para la reserva? 👇`;
+  } else {
+    resumenMsg =
+      `${varEmoji} *${label} · ${personas} · ${meses} meses*\n\n` +
+      `💰 *$${mensualidad.toLocaleString('es-MX')}/mes* — cómodo y sin estrés\n\n` +
+      `• Precio base: $${montoBase.toLocaleString('es-MX')}\n` +
+      `• Costo de financiamiento: +$${cargo.toLocaleString('es-MX')}\n` +
+      `• Total: $${total.toLocaleString('es-MX')}\n` +
+      `• Mensualidad: *$${mensualidad.toLocaleString('es-MX')}* × ${meses} meses\n\n` +
+      `¿Cuál es tu *nombre completo* para la reserva? 👇`;
+  }
+  await saveHistorial(chatId, conv.historial, {
+    estado_reserva: { ...ctx, step: 'pidiendo_nombre', meses }
+  });
+  await sendMessage(token, chatId, resumenMsg);
+}
+
+// ─── CREAR RESERVA + PAGO ────────────────────────────────────
 
 async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFallback, historialActual) {
   const clienteNombre = ctx.nombre || nombreFallback;
   const personasNum = ctx.personas || 1;
   const precioTotal = (ctx.precio || 0) * personasNum;
-  const anticipoTotal = (ctx.anticipo || 0) * personasNum;
-  const montoClip = anticipoTotal > 0 ? anticipoTotal : precioTotal;
+  const montoBase = ctx.tipo_pago === 'total'
+    ? precioTotal
+    : ((ctx.anticipo || 0) > 0 ? (ctx.anticipo || 0) * personasNum : precioTotal);
+  const metodo = ctx.metodo || 'clip';
+  const meses = ctx.meses ?? 0;
 
   // 1. Crear reservación en Supabase
   const { data: reserva, error: reservaErr } = await supabase
@@ -392,11 +442,11 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
       whatsapp: null,
       personas: personasNum,
       variante_id: ctx.variante_id || null,
-      metodo_pago: 'clip',
+      metodo_pago: metodo === 'transfer' ? 'transfer' : 'clip',
       total: precioTotal,
       anticipo_pagado: 0,
       estado: 'pendiente',
-      notas: `Reserva desde Telegram. chat_id: ${chatId}`
+      notas: `Telegram chat_id:${chatId} tipo:${ctx.tipo_pago||'?'} metodo:${metodo}${meses > 0 ? ` meses:${meses}` : ''}`
     })
     .select()
     .single();
@@ -411,7 +461,57 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
   }
   console.log('=== RESERVACION CREADA ===', JSON.stringify(reserva, null, 2));
 
-  // 2. Generar link Clip directamente
+  // 2. Limpiar estado + actualizar CRM
+  await saveHistorial(chatId, historialActual, { estado_reserva: null });
+  await actualizarContacto(chatId, { estado_crm: 'reservado', temperatura: 'caliente' });
+  await registrarInteraccion(contacto?.id, 'reserva',
+    `Reserva creada: ${ctx.paquete_nombre}, monto $${montoBase}`
+  );
+
+  // 3. Transferencia bancaria
+  if (metodo === 'transfer') {
+    const { data: config } = await supabase
+      .from('configuracion')
+      .select('bank_name, bank_clabe, bank_beneficiario')
+      .maybeSingle();
+    const banco = config?.bank_name || 'BBVA';
+    const clabe = config?.bank_clabe || '—';
+    const beneficiario = config?.bank_beneficiario || 'Zipolite al Desnudo';
+    const montoFmt = montoBase.toLocaleString('es-MX');
+
+    fetch('https://zipolitealdesnudo.com/api/send-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reservacion_id: reserva.id,
+        paquete_nombre: ctx.paquete_nombre,
+        nombre: clienteNombre,
+        email,
+        whatsapp: null,
+        personas: personasNum,
+        metodo_pago: 'transfer',
+        total: precioTotal,
+        anticipo: ctx.tipo_pago === 'anticipo' ? montoBase : precioTotal,
+        fecha_inicio: '',
+        fecha_fin: ''
+      })
+    }).catch(e => console.error('send-confirmation error:', e));
+
+    await sendMessage(token, chatId,
+      `✅ *¡Tu reserva está registrada, ${clienteNombre}!*\n\n` +
+      `🏦 *Datos para transferencia:*\n` +
+      `• Banco: *${banco}*\n` +
+      `• CLABE: \`${clabe}\`\n` +
+      `• Beneficiario: *${beneficiario}*\n` +
+      `• Monto: *$${montoFmt} MXN*\n\n` +
+      `📸 Manda tu comprobante aquí mismo y te confirmamos en minutos.\n` +
+      `📧 Recibirás confirmación en ${email}`
+    );
+    return;
+  }
+
+  // 4. Pago con tarjeta via Clip
+  const { total: montoClip } = calcFinanciamiento(montoBase, meses);
   const clipToken = Buffer.from(
     `${process.env.CLIP_API_KEY}:${process.env.CLIP_SECRET_KEY}`
   ).toString('base64');
@@ -427,11 +527,7 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
       default: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=pending`,
     },
     webhook_url: `${baseUrl}/api/clip-webhook`,
-    metadata: {
-      external_reference: reserva.id,
-      nombre: clienteNombre,
-      email
-    }
+    metadata: { external_reference: reserva.id, nombre: clienteNombre, email }
   };
   const clipUrl = 'https://api.payclip.com/v2/checkout';
   console.log('=== CLIP REQUEST ===');
@@ -464,14 +560,6 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
     console.error('Clip request body (on exception):', JSON.stringify(clipBody));
   }
 
-  // 3. Limpiar estado_reserva + actualizar CRM
-  await saveHistorial(chatId, historialActual, { estado_reserva: null });
-  await actualizarContacto(chatId, { estado_crm: 'reservado', temperatura: 'caliente' });
-  await registrarInteraccion(contacto?.id, 'reserva',
-    `Reserva creada: ${ctx.paquete_nombre}, anticipo $${montoClip}`
-  );
-
-  // 4. Enviar resultado
   if (!checkoutUrl) {
     await sendMessage(token, chatId,
       `Hubo un problema al generar tu link de pago 😕\n\nNo te preocupes, tu lugar está guardado.\nEscríbenos a wa.me/529582199953 y te lo resolvemos en minutos.`
@@ -479,7 +567,6 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
     return;
   }
 
-  // Email de confirmación (fire-and-forget)
   fetch('https://zipolitealdesnudo.com/api/send-confirmation', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -492,15 +579,16 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
       personas: personasNum,
       metodo_pago: 'clip',
       total: precioTotal,
-      anticipo: anticipoTotal,
+      anticipo: ctx.tipo_pago === 'anticipo' ? montoBase : precioTotal,
       fecha_inicio: '',
       fecha_fin: ''
     })
   }).catch(e => console.error('send-confirmation error:', e));
 
   const montoFmt = montoClip.toLocaleString('es-MX');
+  const mesesInfo = meses > 0 ? ` · ${meses} meses` : ' · contado';
   await sendMessage(token, chatId,
-    `✅ *¡Listo, ${clienteNombre}!* Tu lugar está apartado.\n\n🔗 *Completa tu pago aquí:*\n${checkoutUrl}\n\n💰 Anticipo: *$${montoFmt} MXN*\n📧 Recibirás confirmación en ${email}\n\nEl link es válido por 24 horas. ¿Alguna duda?`
+    `✅ *¡Listo, ${clienteNombre}!* Tu lugar está apartado.\n\n🔗 *Completa tu pago aquí:*\n${checkoutUrl}\n\n💰 Tarjeta${mesesInfo}: *$${montoFmt} MXN*\n📧 Recibirás confirmación en ${email}\n\nEl link es válido por 24 horas. ¿Alguna duda?`
   );
 }
 
@@ -539,37 +627,6 @@ async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, r
   const agendar = reply.includes('AGENDAR_LLAMADA');
   reply = reply.replace('ESCALAR_ASESOR', '').replace('AGENDAR_LLAMADA', '').trim();
 
-  // Detect if Claude is asking for the user's name to begin the reservation flow
-  const aiAskingForName = !agendar && [
-    'nombre completo', 'nombre para la reserva', '¿cómo te llamas'
-  ].some(ph => reply.toLowerCase().includes(ph));
-
-  // Build estado_reserva update when name collection starts
-  let estadoReservaUpdate = null;
-  if (aiAskingForName) {
-    const existingCtx = conv.estado_reserva || {};
-    const allText = [...historial.map(m => m.content), userMessage].join(' ');
-    const personasMatch = allText.match(/(\d+)\s*(?:persona|viajero)/i)
-      || allText.match(/(?:somos|vamos|van)\s*(\d+)/i);
-    const personasCount = personasMatch ? parseInt(personasMatch[1]) : (existingCtx.personas || null);
-    const relevantPaq = paquetes.find(p =>
-      allText.toLowerCase().includes(p.nombre.toLowerCase())
-    ) || paquetes[0];
-
-    estadoReservaUpdate = {
-      step: 'pidiendo_nombre',
-      paquete_id: existingCtx.paquete_id || relevantPaq?.id || null,
-      paquete_nombre: existingCtx.paquete_nombre || relevantPaq?.nombre || null,
-      variante_id: existingCtx.variante_id || null,
-      variante_nombre: existingCtx.variante_nombre || null,
-      precio: existingCtx.precio || null,
-      anticipo: existingCtx.anticipo || null,
-      personas: personasCount,
-      nombre: null,
-      email: null
-    };
-  }
-
   const nombreMatch = reply.match(/NOMBRE:([^\n]+)/);
   const newHistorial = [
     ...historial.slice(-MAX_HISTORIAL),
@@ -581,14 +638,9 @@ async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, r
     const nuevoNombre = nombreMatch[1].trim();
     reply = reply.replace(/NOMBRE:[^\n]+/, '').trim();
     await actualizarContacto(chatId, { nombre: nuevoNombre, estado_crm: 'contactado', temperatura: 'tibio' });
-    await saveHistorial(chatId, newHistorial, {
-      nombre: nuevoNombre,
-      ...(estadoReservaUpdate ? { estado_reserva: estadoReservaUpdate } : {})
-    });
+    await saveHistorial(chatId, newHistorial, { nombre: nuevoNombre });
   } else {
-    await saveHistorial(chatId, newHistorial,
-      estadoReservaUpdate ? { estado_reserva: estadoReservaUpdate } : {}
-    );
+    await saveHistorial(chatId, newHistorial, {});
   }
 
   if (agendar) {
@@ -599,27 +651,19 @@ async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, r
     ]);
   } else {
     let finalButtons = inlineButtons;
-
-    if (aiAskingForName) {
-      // No buttons while collecting name — reply keyboard is sufficient
-      finalButtons = null;
-    } else {
-      // Show reservation buttons when Claude proposes to close
-      const closingPhrases = ['¿te aparto', '¿apartamos', '¿reservamos'];
-      const isClosingButton = closingPhrases.some(ph => reply.toLowerCase().includes(ph));
-      if (isClosingButton && paquetes.length > 0) {
-        const allText = [...historial.map(m => m.content), userMessage].join(' ').toLowerCase();
-        const relevantPaq = paquetes.find(p => allText.includes(p.nombre.toLowerCase())) || paquetes[0];
-        const pkgSlug = slugify(relevantPaq.nombre);
-        finalButtons = [
-          [
-            { text: '✅ Confirmar reserva', callback_data: `reservar_${pkgSlug}` },
-            { text: '💳 Ver formas de pago', callback_data: 'info_pagos' }
-          ]
-        ];
-      }
+    const closingPhrases = ['¿te aparto', '¿apartamos', '¿reservamos'];
+    const isClosingButton = closingPhrases.some(ph => reply.toLowerCase().includes(ph));
+    if (isClosingButton && paquetes.length > 0) {
+      const allText = [...historial.map(m => m.content), userMessage].join(' ').toLowerCase();
+      const relevantPaq = paquetes.find(p => allText.includes(p.nombre.toLowerCase())) || paquetes[0];
+      const pkgSlug = slugify(relevantPaq.nombre);
+      finalButtons = [
+        [
+          { text: '✅ Confirmar reserva', callback_data: `reservar_${pkgSlug}` },
+          { text: '💳 Ver formas de pago', callback_data: 'info_pagos' }
+        ]
+      ];
     }
-
     await sendMessage(token, chatId, reply, finalButtons);
   }
 
@@ -784,7 +828,7 @@ export default async function handler(req, res) {
       const slug = slugify(foundPaq?.nombre || '');
       const varButtons = slug ? [
         [
-          { text: '✅ Confirmar reserva', url: `https://zipolitealdesnudo.com/?paquete=${slug}` },
+          { text: '✅ Reservar ahora', callback_data: `reservar_${slug}` },
           { text: '💳 Ver formas de pago', callback_data: 'info_pagos' }
         ]
       ] : null;
@@ -803,7 +847,7 @@ export default async function handler(req, res) {
 
       await saveHistorial(chatId, conv.historial, {
         estado_reserva: {
-          step: 'pidiendo_nombre',
+          step: 'pidiendo_tipo_pago',
           paquete_id: existingCtx.paquete_id || paq?.id || null,
           paquete_nombre: existingCtx.paquete_nombre || paq?.nombre || slug.replace(/-/g, ' '),
           variante_id: existingCtx.variante_id || null,
@@ -811,6 +855,9 @@ export default async function handler(req, res) {
           precio: existingCtx.precio || null,
           anticipo: existingCtx.anticipo || null,
           personas: existingCtx.personas || 1,
+          tipo_pago: null,
+          metodo: null,
+          meses: null,
           nombre: null,
           email: null
         }
@@ -818,8 +865,64 @@ export default async function handler(req, res) {
 
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
       await sendMessage(token, chatId,
-        `¡Perfecto! Para apartar tu lugar necesito tu *nombre completo* 👇`
+        `¡Perfecto! Vamos a apartar tu lugar 🎉\n\n¿Cómo quieres manejarlo?\n\n💰 *Solo anticipo* — aparta ahora, el resto lo pagas 15 días antes\n✅ *Pago completo* — paga todo hoy y olvídate`,
+        [[
+          { text: '💰 Solo anticipo', callback_data: 'tipo_anticipo' },
+          { text: '✅ Pago completo', callback_data: 'tipo_total' }
+        ]]
       );
+      return res.status(200).end();
+    }
+
+    if (data === 'tipo_anticipo' || data === 'tipo_total') {
+      const conv = await getHistorial(chatId);
+      const ctx = conv.estado_reserva || {};
+      const tipoPago = data === 'tipo_anticipo' ? 'anticipo' : 'total';
+      await saveHistorial(chatId, conv.historial, {
+        estado_reserva: { ...ctx, step: 'pidiendo_metodo', tipo_pago: tipoPago }
+      });
+      await sendMessage(token, chatId,
+        `¿Cómo quieres pagar?\n\n🏦 *Transferencia* — sin cargo extra, manda el comprobante\n💳 *Tarjeta* — pago con o sin meses`,
+        [[
+          { text: '🏦 Transferencia', callback_data: 'metodo_transfer' },
+          { text: '💳 Tarjeta', callback_data: 'metodo_tarjeta' }
+        ]]
+      );
+      return res.status(200).end();
+    }
+
+    if (data === 'metodo_transfer' || data === 'metodo_tarjeta') {
+      const conv = await getHistorial(chatId);
+      const ctx = conv.estado_reserva || {};
+      if (data === 'metodo_transfer') {
+        await saveHistorial(chatId, conv.historial, {
+          estado_reserva: { ...ctx, step: 'pidiendo_nombre', metodo: 'transfer' }
+        });
+        await sendMessage(token, chatId,
+          `Perfecto, transferencia sin cargos extra 🏦\n\n¿Cuál es tu *nombre completo* para la reserva? 👇`
+        );
+      } else {
+        await saveHistorial(chatId, conv.historial, {
+          estado_reserva: { ...ctx, step: 'pidiendo_meses', metodo: 'tarjeta' }
+        });
+        await sendMessage(token, chatId,
+          `¿A cuántos meses?`,
+          [
+            [{ text: 'Contado', callback_data: 'meses_0' }, { text: '3 meses', callback_data: 'meses_3' }, { text: '6 meses', callback_data: 'meses_6' }],
+            [{ text: '9 meses', callback_data: 'meses_9' }, { text: '12 meses', callback_data: 'meses_12' }, { text: '18 meses', callback_data: 'meses_18' }, { text: '24 meses', callback_data: 'meses_24' }]
+          ]
+        );
+      }
+      return res.status(200).end();
+    }
+
+    if (data.startsWith('meses_')) {
+      const conv = await getHistorial(chatId);
+      const ctx = conv.estado_reserva || {};
+      const validMeses = [0, 3, 6, 9, 12, 18, 24];
+      const rawMeses = parseInt(data.slice(6));
+      const meses = validMeses.includes(rawMeses) ? rawMeses : 0;
+      await handleMesesSelection(chatId, meses, ctx, conv, token);
       return res.status(200).end();
     }
 
@@ -904,8 +1007,89 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // ── Flujo de reserva: recopilar nombre o email ──
+  // ── Flujo de reserva: multi-step ──
   const estadoReserva = conv.estado_reserva;
+
+  if (estadoReserva?.step === 'pidiendo_tipo_pago') {
+    const lower = userText.toLowerCase();
+    const esAnticipo = lower.includes('anticipo') || lower.includes('apart') || lower.includes('solo');
+    const esTotal = lower.includes('complet') || lower.includes('total') || lower.includes('todo');
+    if (!esAnticipo && !esTotal) {
+      await sendMessage(token, chatId,
+        `¿Solo anticipo o pago completo? 👇`,
+        [[
+          { text: '💰 Solo anticipo', callback_data: 'tipo_anticipo' },
+          { text: '✅ Pago completo', callback_data: 'tipo_total' }
+        ]]
+      );
+      return res.status(200).end();
+    }
+    const tipoPago = esAnticipo ? 'anticipo' : 'total';
+    await saveHistorial(chatId, conv.historial, {
+      estado_reserva: { ...estadoReserva, step: 'pidiendo_metodo', tipo_pago: tipoPago }
+    });
+    await sendMessage(token, chatId,
+      `¿Cómo quieres pagar?\n\n🏦 *Transferencia* — sin cargo extra\n💳 *Tarjeta* — con o sin meses`,
+      [[
+        { text: '🏦 Transferencia', callback_data: 'metodo_transfer' },
+        { text: '💳 Tarjeta', callback_data: 'metodo_tarjeta' }
+      ]]
+    );
+    return res.status(200).end();
+  }
+
+  if (estadoReserva?.step === 'pidiendo_metodo') {
+    const lower = userText.toLowerCase();
+    const esTransfer = lower.includes('transfer') || lower.includes('deposito') || lower.includes('depósito') || lower.includes('banco');
+    const esTarjeta = lower.includes('tarjeta') || lower.includes('card') || lower.includes('credito') || lower.includes('crédito');
+    if (!esTransfer && !esTarjeta) {
+      await sendMessage(token, chatId,
+        `¿Transferencia o tarjeta? 👇`,
+        [[
+          { text: '🏦 Transferencia', callback_data: 'metodo_transfer' },
+          { text: '💳 Tarjeta', callback_data: 'metodo_tarjeta' }
+        ]]
+      );
+      return res.status(200).end();
+    }
+    if (esTransfer) {
+      await saveHistorial(chatId, conv.historial, {
+        estado_reserva: { ...estadoReserva, step: 'pidiendo_nombre', metodo: 'transfer' }
+      });
+      await sendMessage(token, chatId,
+        `Perfecto, transferencia sin cargos extra 🏦\n\n¿Cuál es tu *nombre completo* para la reserva? 👇`
+      );
+    } else {
+      await saveHistorial(chatId, conv.historial, {
+        estado_reserva: { ...estadoReserva, step: 'pidiendo_meses', metodo: 'tarjeta' }
+      });
+      await sendMessage(token, chatId,
+        `¿A cuántos meses?`,
+        [
+          [{ text: 'Contado', callback_data: 'meses_0' }, { text: '3 meses', callback_data: 'meses_3' }, { text: '6 meses', callback_data: 'meses_6' }],
+          [{ text: '9 meses', callback_data: 'meses_9' }, { text: '12 meses', callback_data: 'meses_12' }, { text: '18 meses', callback_data: 'meses_18' }, { text: '24 meses', callback_data: 'meses_24' }]
+        ]
+      );
+    }
+    return res.status(200).end();
+  }
+
+  if (estadoReserva?.step === 'pidiendo_meses') {
+    const mesesMatch = userText.match(/\b(contado|0|3|6|9|12|18|24)\b/i);
+    if (!mesesMatch) {
+      await sendMessage(token, chatId,
+        `Selecciona el plazo 👇`,
+        [
+          [{ text: 'Contado', callback_data: 'meses_0' }, { text: '3 meses', callback_data: 'meses_3' }, { text: '6 meses', callback_data: 'meses_6' }],
+          [{ text: '9 meses', callback_data: 'meses_9' }, { text: '12 meses', callback_data: 'meses_12' }, { text: '18 meses', callback_data: 'meses_18' }, { text: '24 meses', callback_data: 'meses_24' }]
+        ]
+      );
+      return res.status(200).end();
+    }
+    const meses = mesesMatch[1].toLowerCase() === 'contado' ? 0 : parseInt(mesesMatch[1]);
+    await handleMesesSelection(chatId, meses, estadoReserva, conv, token);
+    return res.status(200).end();
+  }
 
   if (estadoReserva?.step === 'pidiendo_nombre') {
     const emailInMsg = userText.match(/[\w.-]+@[\w.-]+\.\w+/);
