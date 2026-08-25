@@ -2,10 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import {
   MENU_PRINCIPAL_TEXT, RESPUESTAS, SALUDOS, REPLY_KEYBOARD, REPLY_KB_ACTIONS,
   slugify, buildMenuButtons, getPaqueteData, handleWithClaude
-} from './telegram-mateo.js';
+} from '../lib/telegram-mateo.js';
 import {
   handleMesesSelection, crearReservaYPago, handleReservaStep
-} from './telegram-reserva.js';
+} from '../lib/telegram-reserva.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
