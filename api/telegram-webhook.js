@@ -234,8 +234,8 @@ FLUJO DE CIERRE (síguelo en orden):
 1. CALIFICAR → Pregunta: ¿solo o en grupo? ¿cuántas personas? ¿ya conoce Zipolite?
 2. RECOMENDAR → Basado en respuestas, sugiere UNA variante específica con precio y anticipo
 3. MANEJAR OBJECIONES → Si dice "está caro": habla de financiamiento y del valor. Si dice "voy solo": habla de la comunidad.
-4. CERRAR → "¿Te aparto el lugar?" Si dice sí: pide su nombre completo para la reserva
-5. COBRAR → Da el link de reserva: https://zipolitealdesnudo.com/?paquete=[slug]
+4. CERRAR → "¿Te aparto el lugar?" Si dice sí: pide su *nombre completo* para la reserva (el sistema procesará el pago automáticamente)
+5. COBRAR → NUNCA des links de pago manualmente — el sistema los genera tras recopilar nombre y email
 6. CONFIRMAR → Avisa que recibirá confirmación por email
 
 MANEJO DE OBJECIONES:
@@ -332,10 +332,10 @@ async function actualizarContacto(chatId, updates) {
 async function getHistorial(chatId) {
   const { data } = await supabase
     .from('conversaciones_telegram')
-    .select('historial, nombre, email, whatsapp, estado_embudo')
+    .select('historial, nombre, email, whatsapp, estado_embudo, estado_reserva')
     .eq('chat_id', chatId)
     .maybeSingle();
-  return data || { historial: [], nombre: null, email: null, whatsapp: null };
+  return data || { historial: [], nombre: null, email: null, whatsapp: null, estado_reserva: null };
 }
 
 async function saveHistorial(chatId, historial, extras = {}) {
@@ -370,6 +370,106 @@ function generarSlotsHorario(dia) {
     }
   }
   return slots;
+}
+
+// ─── CREAR RESERVA + PAGO CLIP ───────────────────────────────
+
+async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFallback, historialActual) {
+  const clienteNombre = ctx.nombre || nombreFallback;
+  const personasNum = ctx.personas || 1;
+  const precioTotal = (ctx.precio || 0) * personasNum;
+  const anticipoTotal = (ctx.anticipo || 0) * personasNum;
+  const montoClip = anticipoTotal > 0 ? anticipoTotal : precioTotal;
+
+  // 1. Crear reservación en Supabase
+  const { data: reserva, error: reservaErr } = await supabase
+    .from('reservaciones')
+    .insert({
+      paquete_id: ctx.paquete_id,
+      paquete_nombre: ctx.paquete_nombre || 'Zipolite al Desnudo',
+      nombre: clienteNombre,
+      email,
+      whatsapp: null,
+      personas: personasNum,
+      variante_id: ctx.variante_id || null,
+      metodo_pago: 'clip',
+      total: precioTotal,
+      anticipo_pagado: 0,
+      estado: 'pendiente',
+      notas: `Reserva desde Telegram. chat_id: ${chatId}`
+    })
+    .select()
+    .single();
+
+  if (reservaErr || !reserva) {
+    console.error('Error creating reservacion:', reservaErr?.message);
+    await saveHistorial(chatId, historialActual, { estado_reserva: null });
+    await sendMessage(token, chatId,
+      `Tuvimos un problema técnico al registrar tu reserva 😕\nPor favor escríbenos directo: wa.me/529582199953`
+    );
+    return;
+  }
+
+  // 2. Generar link Clip directamente
+  const clipToken = Buffer.from(
+    `${process.env.CLIP_API_KEY}:${process.env.CLIP_SECRET_KEY}`
+  ).toString('base64');
+  const baseUrl = 'https://zipolitealdesnudo.com';
+  let checkoutUrl = null;
+
+  try {
+    const clipRes = await fetch('https://api.payclip.com/v2/checkout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${clipToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        amount: montoClip,
+        purchase_description: ctx.paquete_nombre || 'Reservación Zipolite al Desnudo',
+        redirection_url: {
+          success: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=paid`,
+          error:   `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=error`,
+          default: `${baseUrl}/pago-confirmado.html?reservacion_id=${reserva.id}&status=pending`,
+        },
+        webhook_url: `${baseUrl}/api/clip-webhook`,
+        metadata: {
+          external_reference: reserva.id,
+          nombre: clienteNombre,
+          email
+        }
+      })
+    });
+    const clipData = await clipRes.json();
+    if (clipRes.ok) {
+      checkoutUrl = clipData.payment_request_url;
+    } else {
+      console.error('Clip error:', clipData);
+    }
+  } catch (clipErr) {
+    console.error('Clip fetch error:', clipErr?.message);
+  }
+
+  // 3. Limpiar estado_reserva + actualizar CRM
+  await saveHistorial(chatId, historialActual, { estado_reserva: null });
+  await actualizarContacto(chatId, { estado_crm: 'reservado', temperatura: 'caliente' });
+  await registrarInteraccion(contacto?.id, 'reserva',
+    `Reserva creada: ${ctx.paquete_nombre}, anticipo $${montoClip}`
+  );
+
+  // 4. Enviar resultado
+  if (!checkoutUrl) {
+    await sendMessage(token, chatId,
+      `Hubo un problema al generar tu link de pago 😕\n\nNo te preocupes, tu lugar está guardado.\nEscríbenos a wa.me/529582199953 y te lo resolvemos en minutos.`
+    );
+    return;
+  }
+
+  const montoFmt = montoClip.toLocaleString('es-MX');
+  await sendMessage(token, chatId,
+    `✅ *¡Listo, ${clienteNombre}!* Tu lugar está apartado.\n\n🔗 *Completa tu pago aquí:*\n${checkoutUrl}\n\n💰 Anticipo: *$${montoFmt} MXN*\n📧 Recibirás confirmación en ${email}\n\nEl link es válido por 24 horas. ¿Alguna duda?`
+  );
 }
 
 // ─── HANDLER DE IA UNIFICADO ─────────────────────────────────
@@ -407,22 +507,56 @@ async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, r
   const agendar = reply.includes('AGENDAR_LLAMADA');
   reply = reply.replace('ESCALAR_ASESOR', '').replace('AGENDAR_LLAMADA', '').trim();
 
+  // Detect if Claude is asking for the user's name to begin the reservation flow
+  const aiAskingForName = !agendar && [
+    'nombre completo', 'nombre para la reserva', '¿cómo te llamas'
+  ].some(ph => reply.toLowerCase().includes(ph));
+
+  // Build estado_reserva update when name collection starts
+  let estadoReservaUpdate = null;
+  if (aiAskingForName) {
+    const existingCtx = conv.estado_reserva || {};
+    const allText = [...historial.map(m => m.content), userMessage].join(' ');
+    const personasMatch = allText.match(/(\d+)\s*(?:persona|viajero)/i)
+      || allText.match(/(?:somos|vamos|van)\s*(\d+)/i);
+    const personasCount = personasMatch ? parseInt(personasMatch[1]) : (existingCtx.personas || null);
+    const relevantPaq = paquetes.find(p =>
+      allText.toLowerCase().includes(p.nombre.toLowerCase())
+    ) || paquetes[0];
+
+    estadoReservaUpdate = {
+      step: 'pidiendo_nombre',
+      paquete_id: existingCtx.paquete_id || relevantPaq?.id || null,
+      paquete_nombre: existingCtx.paquete_nombre || relevantPaq?.nombre || null,
+      variante_id: existingCtx.variante_id || null,
+      variante_nombre: existingCtx.variante_nombre || null,
+      precio: existingCtx.precio || null,
+      anticipo: existingCtx.anticipo || null,
+      personas: personasCount,
+      nombre: null,
+      email: null
+    };
+  }
+
   const nombreMatch = reply.match(/NOMBRE:([^\n]+)/);
+  const newHistorial = [
+    ...historial.slice(-MAX_HISTORIAL),
+    { role: 'user', content: userMessage },
+    { role: 'assistant', content: reply }
+  ];
+
   if (nombreMatch) {
     const nuevoNombre = nombreMatch[1].trim();
     reply = reply.replace(/NOMBRE:[^\n]+/, '').trim();
     await actualizarContacto(chatId, { nombre: nuevoNombre, estado_crm: 'contactado', temperatura: 'tibio' });
-    await saveHistorial(chatId, [
-      ...historial.slice(-MAX_HISTORIAL),
-      { role: 'user', content: userMessage },
-      { role: 'assistant', content: reply }
-    ], { nombre: nuevoNombre });
+    await saveHistorial(chatId, newHistorial, {
+      nombre: nuevoNombre,
+      ...(estadoReservaUpdate ? { estado_reserva: estadoReservaUpdate } : {})
+    });
   } else {
-    await saveHistorial(chatId, [
-      ...historial.slice(-MAX_HISTORIAL),
-      { role: 'user', content: userMessage },
-      { role: 'assistant', content: reply }
-    ]);
+    await saveHistorial(chatId, newHistorial,
+      estadoReservaUpdate ? { estado_reserva: estadoReservaUpdate } : {}
+    );
   }
 
   if (agendar) {
@@ -432,21 +566,26 @@ async function handleWithClaude(chatId, userMessage, conv, contacto, paquetes, r
       [{ text: '⬅️ Menú principal', callback_data: 'menu' }]
     ]);
   } else {
-    // Show closing buttons when AI signals a reservation moment
-    const closingPhrases = ['¿te aparto', '¿apartamos', '¿reservamos'];
-    const isClosing = closingPhrases.some(ph => reply.toLowerCase().includes(ph));
-
     let finalButtons = inlineButtons;
-    if (isClosing && paquetes.length > 0) {
-      const allText = [...historial.map(m => m.content), userMessage].join(' ').toLowerCase();
-      const relevantPaq = paquetes.find(p => allText.includes(p.nombre.toLowerCase())) || paquetes[0];
-      const pkgSlug = slugify(relevantPaq.nombre);
-      finalButtons = [
-        [
-          { text: '✅ Confirmar reserva', callback_data: `reservar_${pkgSlug}` },
-          { text: '💳 Ver formas de pago', callback_data: 'info_pagos' }
-        ]
-      ];
+
+    if (aiAskingForName) {
+      // No buttons while collecting name — reply keyboard is sufficient
+      finalButtons = null;
+    } else {
+      // Show reservation buttons when Claude proposes to close
+      const closingPhrases = ['¿te aparto', '¿apartamos', '¿reservamos'];
+      const isClosingButton = closingPhrases.some(ph => reply.toLowerCase().includes(ph));
+      if (isClosingButton && paquetes.length > 0) {
+        const allText = [...historial.map(m => m.content), userMessage].join(' ').toLowerCase();
+        const relevantPaq = paquetes.find(p => allText.includes(p.nombre.toLowerCase())) || paquetes[0];
+        const pkgSlug = slugify(relevantPaq.nombre);
+        finalButtons = [
+          [
+            { text: '✅ Confirmar reserva', callback_data: `reservar_${pkgSlug}` },
+            { text: '💳 Ver formas de pago', callback_data: 'info_pagos' }
+          ]
+        ];
+      }
     }
 
     await sendMessage(token, chatId, reply, finalButtons);
@@ -592,6 +731,24 @@ export default async function handler(req, res) {
         ? `[CONTEXTO: El usuario seleccionó la variante "${foundVar.nombre}" del paquete "${foundPaq?.nombre}" a $${(foundVar.precio || 0).toLocaleString('es-MX')}/persona con anticipo de $${(foundVar.anticipo || 0).toLocaleString('es-MX')}${disponibles !== null ? `. Hay ${disponibles} lugares disponibles` : ''}. Pregúntale cuántas personas van y avanza hacia el cierre.]`
         : `[CONTEXTO: El usuario seleccionó una variante de paquete. Pregúntale cuántas personas van y avanza hacia el cierre.]`;
 
+      // Persist variant context for the reservation flow
+      if (foundVar && foundPaq) {
+        await saveHistorial(chatId, conv.historial, {
+          estado_reserva: {
+            step: null,
+            paquete_id: foundPaq.id,
+            paquete_nombre: foundPaq.nombre,
+            variante_id: foundVar.id,
+            variante_nombre: foundVar.nombre,
+            precio: foundVar.precio,
+            anticipo: foundVar.anticipo,
+            personas: null,
+            nombre: null,
+            email: null
+          }
+        });
+      }
+
       const slug = slugify(foundPaq?.nombre || '');
       const varButtons = slug ? [
         [
@@ -605,14 +762,32 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
+    // ── Confirmar reserva → iniciar flujo de nombre/email ──
     if (data.startsWith('reservar_')) {
       const conv = await getHistorial(chatId);
       const slug = data.slice(9);
       const paq = paquetes.find(p => slugify(p.nombre) === slug);
-      const pkgNombre = paq?.nombre || slug.replace(/-/g, ' ');
-      const context = `[CONTEXTO: El usuario quiere reservar ${pkgNombre}. Pídele su nombre completo para registrar la reserva. Una vez que lo dé, dale el link: https://zipolitealdesnudo.com/?paquete=${slug}]`;
+      const existingCtx = conv.estado_reserva || {};
+
+      await saveHistorial(chatId, conv.historial, {
+        estado_reserva: {
+          step: 'pidiendo_nombre',
+          paquete_id: existingCtx.paquete_id || paq?.id || null,
+          paquete_nombre: existingCtx.paquete_nombre || paq?.nombre || slug.replace(/-/g, ' '),
+          variante_id: existingCtx.variante_id || null,
+          variante_nombre: existingCtx.variante_nombre || null,
+          precio: existingCtx.precio || null,
+          anticipo: existingCtx.anticipo || null,
+          personas: existingCtx.personas || 1,
+          nombre: null,
+          email: null
+        }
+      });
+
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
-      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
+      await sendMessage(token, chatId,
+        `¡Perfecto! Para apartar tu lugar necesito tu *nombre completo* 👇`
+      );
       return res.status(200).end();
     }
 
@@ -672,9 +847,12 @@ export default async function handler(req, res) {
 
   await registrarInteraccion(contacto?.id, 'mensaje_entrante', userText);
 
-  // ── Reply keyboard taps → route as equivalent callback ──
+  // ── Reply keyboard taps → cancel flow + route ──
   const rkAction = REPLY_KB_ACTIONS[userText];
   if (rkAction) {
+    if (conv.estado_reserva?.step) {
+      await saveHistorial(chatId, conv.historial, { estado_reserva: null });
+    }
     if (rkAction === 'menu') {
       const saludo = nombre ? `${MENU_PRINCIPAL_TEXT}\n\n¡Hola de nuevo, ${nombre}! 👋` : MENU_PRINCIPAL_TEXT;
       await sendMessage(token, chatId, saludo, menuButtons);
@@ -694,6 +872,40 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // ── Flujo de reserva: recopilar nombre o email ──
+  const estadoReserva = conv.estado_reserva;
+
+  if (estadoReserva?.step === 'pidiendo_nombre') {
+    const nuevoNombre = userText.trim();
+    await saveHistorial(chatId, conv.historial, {
+      estado_reserva: { ...estadoReserva, step: 'pidiendo_email', nombre: nuevoNombre }
+    });
+    await actualizarContacto(chatId, { nombre: nuevoNombre });
+    await sendMessage(token, chatId,
+      `Perfecto, *${nuevoNombre}* 👋\n\n¿Cuál es tu email para enviarte la confirmación?`
+    );
+    return res.status(200).end();
+  }
+
+  if (estadoReserva?.step === 'pidiendo_email') {
+    const emailInput = userText.trim().toLowerCase();
+    if (!emailInput.includes('@') || !emailInput.includes('.')) {
+      await sendMessage(token, chatId, `Ese email no parece válido, ¿puedes verificarlo? 🙏`);
+      return res.status(200).end();
+    }
+    await sendMessage(token, chatId, `Un momento, estoy generando tu link de pago... ⏳`);
+    await crearReservaYPago(
+      chatId,
+      emailInput,
+      { ...estadoReserva, email: emailInput },
+      contacto,
+      token,
+      nombre,
+      conv.historial
+    );
+    return res.status(200).end();
+  }
+
   // ── Saludo → menú (sin AI, respuesta rápida) ──
   const esSaludo = SALUDOS.some(s => userText.toLowerCase().includes(s)) || userText === '/start';
   if (esSaludo) {
@@ -701,7 +913,6 @@ export default async function handler(req, res) {
       ? `🌊 ¡Hola de nuevo, *${nombre}*! Me alegra verte por aquí 🌈\n\n¿En qué te puedo ayudar hoy?`
       : MENU_PRINCIPAL_TEXT;
     if (userText === '/start') {
-      // First message: set reply keyboard, then show inline menu
       await sendMessage(token, chatId, saludo);
       await sendMessage(token, chatId, '¿Qué paquete te interesa? 👇', menuButtons);
     } else {
