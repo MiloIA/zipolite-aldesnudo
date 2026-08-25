@@ -210,10 +210,24 @@ export default async function handler(req, res) {
       const paq = paquetes.find(p => `pkg_${p.id}` === data)
         || paquetes.find(p => data.includes(slugify(p.nombre).slice(0, 6)));
       const context = paq
-        ? `[CONTEXTO: El usuario quiere información sobre el paquete "${paq.nombre}". Sigue el flujo consultivo: haz UNA pregunta para calificar (¿solo o en grupo? ¿cuántas personas?). NO listes todas las variantes todavía.]`
+        ? `[CONTEXTO: El usuario seleccionó el paquete "${paq.nombre}". Haz UNA pregunta consultiva: ¿solo o en grupo? ¿cuántas personas?]`
         : `[CONTEXTO: El usuario toca el botón de un paquete de viaje. Pregúntale cuál le interesa y cuántas personas van.]`;
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
       await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
+
+      if (paq && (paq.variantes || []).length > 0) {
+        const varianteMsgs = (paq.variantes || []).map(v => {
+          const disp = v.lugares_totales ? ` (${v.lugares_totales - (v.lugares_vendidos || 0)} disp.)` : '';
+          const vn = (v.nombre || '').toLowerCase();
+          const emoji = vn.includes('glamping') ? '🏕️'
+            : vn.includes('doble') ? '🛏️🛏️'
+            : vn.includes('individual') || vn.includes('habitaci') ? '🛏️'
+            : vn.includes('transport') ? '🚌' : '🌴';
+          return [{ text: `${emoji} ${v.nombre} — $${(v.precio || 0).toLocaleString('es-MX')}${disp}`, callback_data: `var_${v.id}` }];
+        });
+        await sendMessage(token, chatId, '¿Qué modalidad te interesa?', varianteMsgs);
+      }
+
       return res.status(200).end();
     }
 
