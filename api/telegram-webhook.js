@@ -479,6 +479,25 @@ async function crearReservaYPago(chatId, email, ctx, contacto, token, nombreFall
     return;
   }
 
+  // Email de confirmación (fire-and-forget)
+  fetch('https://zipolitealdesnudo.com/api/send-confirmation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      reservacion_id: reserva.id,
+      paquete_nombre: ctx.paquete_nombre,
+      nombre: clienteNombre,
+      email,
+      whatsapp: null,
+      personas: personasNum,
+      metodo_pago: 'clip',
+      total: precioTotal,
+      anticipo: anticipoTotal,
+      fecha_inicio: '',
+      fecha_fin: ''
+    })
+  }).catch(e => console.error('send-confirmation error:', e));
+
   const montoFmt = montoClip.toLocaleString('es-MX');
   await sendMessage(token, chatId,
     `✅ *¡Listo, ${clienteNombre}!* Tu lugar está apartado.\n\n🔗 *Completa tu pago aquí:*\n${checkoutUrl}\n\n💰 Anticipo: *$${montoFmt} MXN*\n📧 Recibirás confirmación en ${email}\n\nEl link es válido por 24 horas. ¿Alguna duda?`
