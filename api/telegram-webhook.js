@@ -286,12 +286,50 @@ export default async function handler(req, res) {
       const conv = await getHistorial(chatId);
       const pkgId = data.slice(9);
       const p = paquetes.find(p => p.id === pkgId);
-      const varianteName = conv.pkg_context?.variante_nombre || '';
-      const context = p
-        ? `[CONTEXTO: El usuario quiere información detallada del paquete ${p.nombre}${varianteName ? ` variante ${varianteName}` : ''}. Describe qué incluye, el itinerario, el lugar de hospedaje y el ambiente. Sé entusiasta pero conciso.]`
-        : `[CONTEXTO: El usuario quiere información detallada del paquete. Describe qué incluye, el itinerario, el lugar de hospedaje y el ambiente. Sé entusiasta pero conciso.]`;
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
-      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
+
+      if (pkgId === '05c33974-5f37-4cff-9ec4-bc60df160f69') {
+        const infoMsg = `🎆 *Año Nuevo al Desnudo*
+📅 29 dic – 4 ene (6 noches en destino)
+
+🚌 *Itinerario:*
+- *Mar 29 dic* — Salida CDMX 10:00 PM en autobús
+- *Mié 30 dic* — Llegada Zipolite ~10 AM. Instalación y primer día de playa
+- *Jue 31 dic* — Día libre. Noche de Año Nuevo (consumo por tu cuenta)
+- *Vie 1 ene* — Año Nuevo en la playa más libre de México ☀️
+- *Sáb 2 ene* — Tour opcional: Carrizalillo + Bioluminiscencia (+$1,000)
+- *Dom 3 ene* — Último día. Salida 6:00 PM en autobús
+- *Lun 4 ene* — Llegada CDMX (madrugada)
+
+🏕️ *Glamping — Hotel Los Ángeles (Rancho Los Mangos):*
+- 5 hectáreas, alberca, duchas, sanitarios, seguridad 24/7
+- A 2 calles de la playa nudista
+- Tienda de acampar + colchón inflable en préstamo *(por promoción, hasta agotar)*
+- Wifi, asadores, ambiente LGBT+ friendly
+
+🛏️ *Habitaciones — Hotel Juquila:*
+- Hotel rústico a calle y media de la playa
+- 1 o 2 camas por habitación
+- Sin asignación de compañero/a — tú decides con quién compartes
+
+⚠️ *No incluye:* cena del 31 y consumo en destino van por tu cuenta
+
+💰 *Precios:*
+- Glamping: $4,750/persona (anticipo $1,500)
+- Hab. individual: $10,300/persona (anticipo $3,000)
+- Hab. doble: $7,900/persona (anticipo $3,000)
+- Transporte redondo: $3,000 (pago completo)`;
+        await sendMessage(token, chatId, infoMsg, [
+          [{ text: '✅ Reservar ahora', callback_data: `reservar_${slugify(p.nombre)}` }],
+          [{ text: '⬅️ Ver modalidades', callback_data: `pkg_${p.id}` }]
+        ]);
+      } else {
+        const varianteName = conv.pkg_context?.variante_nombre || '';
+        const context = p
+          ? `[CONTEXTO: El usuario quiere información detallada del paquete ${p.nombre}${varianteName ? ` variante ${varianteName}` : ''}. Describe qué incluye, el itinerario, el lugar de hospedaje y el ambiente. Sé entusiasta pero conciso.]`
+          : `[CONTEXTO: El usuario quiere información detallada del paquete. Describe qué incluye, el itinerario, el lugar de hospedaje y el ambiente. Sé entusiasta pero conciso.]`;
+        await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
+      }
       return res.status(200).end();
     }
 
