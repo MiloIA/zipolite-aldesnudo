@@ -268,15 +268,29 @@ export default async function handler(req, res) {
       }
 
       const slug = slugify(foundPaq?.nombre || '');
-      const varButtons = slug ? [
+      const varButtons = (slug && foundPaq) ? [
         [
-          { text: '✅ Reservar ahora', callback_data: `reservar_${slug}` },
-          { text: '💳 Ver formas de pago', callback_data: 'info_pagos' }
-        ]
+          { text: 'ℹ️ Información del viaje', callback_data: `info_pkg_${foundPaq.id}` },
+          { text: '❓ Preguntas frecuentes', callback_data: 'faq_menu' }
+        ],
+        [{ text: '✅ Reservar ahora', callback_data: `reservar_${slug}` }]
       ] : null;
 
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
       await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre, varButtons);
+      return res.status(200).end();
+    }
+
+    if (data.startsWith('info_pkg_')) {
+      const conv = await getHistorial(chatId);
+      const pkgId = data.slice(9);
+      const p = paquetes.find(p => p.id === pkgId);
+      const varianteName = conv.pkg_context?.variante_nombre || '';
+      const context = p
+        ? `[CONTEXTO: El usuario quiere información detallada del paquete ${p.nombre}${varianteName ? ` variante ${varianteName}` : ''}. Describe qué incluye, el itinerario, el lugar de hospedaje y el ambiente. Sé entusiasta pero conciso.]`
+        : `[CONTEXTO: El usuario quiere información detallada del paquete. Describe qué incluye, el itinerario, el lugar de hospedaje y el ambiente. Sé entusiasta pero conciso.]`;
+      await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
+      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre);
       return res.status(200).end();
     }
 
