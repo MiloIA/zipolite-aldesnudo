@@ -999,8 +999,8 @@ async function loadConfig() {
   if (data) {
     if (data.openai_api_key) { oaiKey = data.openai_api_key; document.getElementById('cfg-openai').value = data.openai_api_key; localStorage.setItem('oai_key', data.openai_api_key); }
     if (data.whatsapp_agencia) { document.getElementById('cfg-wa').value = data.whatsapp_agencia; localStorage.setItem('cfg_wa', data.whatsapp_agencia); }
-    if (data.banco) { document.getElementById('cfg-banco').value = data.banco; localStorage.setItem('bank_name', data.banco); }
-    if (data.clabe_interbancaria) { document.getElementById('cfg-clabe').value = data.clabe_interbancaria; localStorage.setItem('bank_clabe', data.clabe_interbancaria); }
+    if (data.banco_nombre) { document.getElementById('cfg-banco').value = data.banco_nombre; localStorage.setItem('bank_name', data.banco_nombre); }
+    if (data.banco_clabe) { document.getElementById('cfg-clabe').value = data.banco_clabe; localStorage.setItem('bank_clabe', data.banco_clabe); }
   } else {
     const savedKey = localStorage.getItem('oai_key'); if (savedKey) document.getElementById('cfg-openai').value = savedKey;
     const savedWa = localStorage.getItem('cfg_wa'); if (savedWa) document.getElementById('cfg-wa').value = savedWa;
@@ -1022,8 +1022,8 @@ async function saveCfg() {
     id: 1,
     openai_api_key: key || null,
     whatsapp_agencia: wa || null,
-    banco: banco || null,
-    clabe_interbancaria: clabe || null,
+    banco_nombre: banco || null,
+    banco_clabe: clabe || null,
     updated_at: new Date().toISOString()
   }, { onConflict: 'id' });
   if (error) { alert('Error al guardar en Supabase: ' + error.message); return; }
