@@ -304,7 +304,7 @@ export default async function handler(req, res) {
 🏕️ *Glamping — Hotel Los Ángeles (Rancho Los Mangos):*
 - 5 hectáreas, alberca, duchas, sanitarios, seguridad 24/7
 - A 2 calles de la playa nudista
-- Tienda de acampar + colchón inflable en préstamo *(por promoción, hasta agotar)*
+- Tienda de acampar + colchón inflable en préstamo — _por promoción, hasta agotar_
 - Wifi, asadores, ambiente LGBT+ friendly
 
 🛏️ *Habitaciones — Hotel Juquila:*
