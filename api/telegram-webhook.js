@@ -1,3 +1,4 @@
+// deploy: 2026-08-25
 import { createClient } from '@supabase/supabase-js';
 import {
   MENU_PRINCIPAL_TEXT, RESPUESTAS, SALUDOS, REPLY_KEYBOARD, REPLY_KB_ACTIONS,
