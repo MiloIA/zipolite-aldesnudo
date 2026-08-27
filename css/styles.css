@@ -1192,7 +1192,7 @@ nav {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 48px;
-  align-items: center;
+  align-items: flex-start;
   position: relative;
   z-index: 1;
   padding: 0;
@@ -1329,6 +1329,8 @@ nav {
   display: flex;
   justify-content: center;
   align-items: center;
+  align-self: flex-start;
+  padding-top: 0;
 }
 
 .hero-logo-wrap {
