@@ -1128,6 +1128,7 @@ nav {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255,255,255,0.08);
+  height: 56px;
 }
 
 .nav-logo-text {
@@ -1137,9 +1138,13 @@ nav {
   color: white;
 }
 
-.nav-logo-text span {
+.nav-logo-text span,
+.brand-sub {
   font-family: var(--font-body);
   color: var(--teal);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 .nav-links a {
@@ -1161,12 +1166,13 @@ nav {
 /* PART 5 — HERO */
 .hero {
   background: linear-gradient(160deg, var(--ocean) 0%, #0d3a4d 50%, #1a5a6e 100%);
-  min-height: 88vh;
+  min-height: calc(100vh - 56px);
+  max-height: calc(100vh - 56px);
   display: flex;
   align-items: center;
   position: relative;
   overflow: hidden;
-  padding: 80px 24px 60px;
+  padding: 48px 24px 40px;
 }
 
 .hero::before {
@@ -1210,11 +1216,11 @@ nav {
 
 .hero h1 {
   font-family: var(--font-display);
-  font-size: clamp(3.5rem, 5vw, 5.5rem);
+  font-size: clamp(2.8rem, 4.5vw, 4.5rem);
   font-weight: 900;
   color: white;
   line-height: 1.08;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   letter-spacing: -0.02em;
 }
 
@@ -1224,10 +1230,10 @@ nav {
 }
 
 .hero-sub {
-  font-size: 1.15rem;
+  font-size: 1rem;
   color: rgba(255,255,255,0.70);
   line-height: 1.7;
-  margin-bottom: 40px;
+  margin-bottom: 28px;
   max-width: 440px;
 }
 
@@ -1235,6 +1241,7 @@ nav {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  margin-bottom: 0;
 }
 
 .btn-primary {
@@ -1288,7 +1295,7 @@ nav {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  margin-top: 40px;
+  margin-top: 28px;
   max-width: 440px;
 }
 
@@ -1296,13 +1303,13 @@ nav {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: var(--radius-md);
-  padding: 20px;
+  padding: 14px;
   text-align: center;
 }
 
 .hero-stat-num {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 900;
   color: white;
   line-height: 1;
@@ -1324,8 +1331,8 @@ nav {
 }
 
 .hero-logo-wrap {
-  width: 420px;
-  height: 420px;
+  width: 340px;
+  height: 340px;
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 50%;
@@ -1336,7 +1343,7 @@ nav {
 }
 
 .hero-logo-wrap img {
-  width: 320px;
+  width: 260px;
   filter: drop-shadow(0 8px 32px rgba(26,159,160,0.3));
   max-width: none;
   height: auto;
