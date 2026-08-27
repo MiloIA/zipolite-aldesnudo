@@ -471,6 +471,22 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
+    if (data === 'opt_out') {
+      await supabase.from('contactos').update({ opt_out: true }).eq('telegram_chat_id', chatId);
+      await supabase.from('conversaciones_telegram').update({ estado_embudo: 'opt_out' }).eq('chat_id', chatId);
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: '✅ Listo, te damos de baja. No recibirás más mensajes de nuestra parte.\n\nSi algún día quieres saber de nuestros viajes, escríbenos cuando quieras. 🌊',
+          parse_mode: 'Markdown',
+          reply_markup: { remove_keyboard: true }
+        })
+      });
+      return res.status(200).end();
+    }
+
     return res.status(200).end();
   }
 
@@ -508,6 +524,19 @@ export default async function handler(req, res) {
       });
     } else if (rkAction === 'agendar_dia') {
       await sendMessage(token, chatId, RESPUESTAS.agendar_dia.text, RESPUESTAS.agendar_dia.buttons);
+    } else if (rkAction === 'opt_out') {
+      await supabase.from('contactos').update({ opt_out: true }).eq('telegram_chat_id', chatId);
+      await supabase.from('conversaciones_telegram').update({ estado_embudo: 'opt_out' }).eq('chat_id', chatId);
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: '✅ Listo, te damos de baja. No recibirás más mensajes de nuestra parte.\n\nSi algún día quieres saber de nuestros viajes, escríbenos cuando quieras. 🌊',
+          parse_mode: 'Markdown',
+          reply_markup: { remove_keyboard: true }
+        })
+      });
     }
     return res.status(200).end();
   }
