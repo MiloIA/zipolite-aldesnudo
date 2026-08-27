@@ -1,10 +1,11 @@
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
+
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const MAX_DAILY = 40;
 const DELAY_MS = 3000;
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const authHeader = req.headers['authorization'];
   const cronSecret = process.env.CRON_SECRET || 'zipolite-crm-2026';
   if (req.method !== 'GET') return res.status(405).end();
@@ -129,4 +130,4 @@ module.exports = async (req, res) => {
   }
 
   return res.json({ sent, total: leads.length, results });
-};
+}
