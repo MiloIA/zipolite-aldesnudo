@@ -288,7 +288,42 @@ export default async function handler(req, res) {
       const p = paquetes.find(p => p.id === pkgId);
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
 
-      if (pkgId === '05c33974-5f37-4cff-9ec4-bc60df160f69') {
+      if (pkgId === '0019de4d-e877-4d0c-af90-e5af22b9f6ab') {
+        const lunasMsgInfo = `✈️ Lunas de Octubre
+📅 22 – 27 oct (6 días · 5 noches)
+
+✈️ Vuelos:
+- Jue 22 oct — Salida AICM 12:00 PM · Llegada Puerto Escondido 1:10 PM (directo)
+- Mar 27 oct — Salida Puerto Escondido 10:32 PM · Llegada AICM 11:50 PM (directo)
+
+🗓 Itinerario:
+- Jue 22 oct — Llegada a Puerto Escondido. Traslado al hotel en Zipolite. Tarde de playa
+- Vie 23 oct — Día libre en Zipolite. Visita a Playa del Amor
+- Sáb 24 oct — Día libre. Vida nocturna de Zipolite
+- Dom 25 oct — Día libre. Excursión opcional a Mazunte y Punta Cometa (transporte local, según el grupo)
+- Lun 26 oct — Último día en Zipolite. Playa y despedida
+- Mar 27 oct — Traslado al aeropuerto. Vuelo de regreso 10:32 PM
+
+🏨 Hospedaje:
+- Hotel en línea de playa en Zipolite
+- Habitación doble: 2 camas, 1 persona por cama
+- Opción de habitación privada disponible (+$2,500)
+
+✅ Incluye:
+- Vuelo redondo AICM → PXM → AICM (directo ambos tramos)
+- 5 noches en hotel línea de playa
+- Traslado aeropuerto-hotel-aeropuerto
+
+⚠️ No incluye: TUA
+
+💰 Precios:
+- Habitación compartida: $8,854/persona (anticipo $3,500)
+- Habitación privada: $11,354/persona (anticipo $3,500)`;
+        await sendMessage(token, chatId, lunasMsgInfo, [
+          [{ text: '✅ Reservar ahora', callback_data: 'reservar_lunas-de-octubre' }],
+          [{ text: '⬅️ Ver modalidades', callback_data: 'pkg_0019de4d-e877-4d0c-af90-e5af22b9f6ab' }]
+        ]);
+      } else if (pkgId === '05c33974-5f37-4cff-9ec4-bc60df160f69') {
         const infoMsg = `🎆 *Año Nuevo al Desnudo*
 📅 29 dic – 4 ene (6 noches en destino)
 
