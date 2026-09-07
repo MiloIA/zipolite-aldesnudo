@@ -305,7 +305,7 @@ export default async function handler(req, res) {
 - Mar 27 oct — Traslado al aeropuerto. Vuelo de regreso 10:32 PM
 
 🏨 Hospedaje:
-- Hotel en línea de playa en Zipolite
+- Hotel Paraíso — frente al mar, en línea de playa en Zipolite
 - Habitación doble: 2 camas, 1 persona por cama
 - Opción de habitación privada disponible (+$2,500)
 
@@ -313,8 +313,7 @@ export default async function handler(req, res) {
 - Vuelo redondo AICM → PXM → AICM (directo ambos tramos)
 - 5 noches en hotel línea de playa
 - Traslado aeropuerto-hotel-aeropuerto
-
-⚠️ No incluye: TUA
+- TUA incluido en el precio del vuelo
 
 💰 Precios:
 - Habitación compartida: $8,854/persona (anticipo $3,500)
