@@ -17,11 +17,56 @@ async function requireAuth(req) {
 }
 
 export default async function handler(req, res) {
-  if (!await requireAuth(req)) return res.status(401).json({ error: 'No autorizado' });
-
   const { method } = req;
   const url = new URL(req.url, 'http://localhost');
   const params = url.searchParams;
+
+  // ── PUBLIC: client reads own reservacion by UUID (no auth needed) ─────────
+  if (method === 'GET' && params.get('reservacion_id') && !params.get('all') && !params.get('variantes')) {
+    const reservacionId = params.get('reservacion_id');
+    const [{ data: reserva, error: rErr }, { data: pagos }] = await Promise.all([
+      sb.from('reservaciones').select('*').eq('id', reservacionId).single(),
+      sb.from('pagos').select('*').eq('reservacion_id', reservacionId).order('fecha', { ascending: true }),
+    ]);
+    if (rErr || !reserva) return res.status(404).json({ error: 'Reservación no encontrada' });
+    return res.status(200).json({ reserva, pagos: pagos || [] });
+  }
+
+  // ── PUBLIC: client submits comprobante de transferencia ───────────────────
+  if (method === 'POST' && (req.body || {}).action === 'comprobante') {
+    const { reservacion_id, monto, file_base64, file_name, file_type } = req.body || {};
+    if (!reservacion_id || !monto) return res.status(400).json({ error: 'Faltan datos' });
+
+    const { data: reservaCheck } = await sb.from('reservaciones').select('id').eq('id', reservacion_id).single();
+    if (!reservaCheck) return res.status(404).json({ error: 'Reservación no encontrada' });
+
+    let comprobanteNota = 'Comprobante subido por cliente — pendiente confirmación';
+    if (file_base64 && file_name) {
+      try {
+        const buffer = Buffer.from(file_base64, 'base64');
+        const ext = (file_name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const path = `${reservacion_id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await sb.storage
+          .from('comprobantes')
+          .upload(path, buffer, { contentType: file_type || 'image/jpeg', upsert: true });
+        if (!upErr) comprobanteNota += ` — archivo: ${path}`;
+      } catch (_) {}
+    }
+
+    const { error: pagoErr } = await sb.from('pagos').insert([{
+      reservacion_id,
+      monto: Number(monto),
+      metodo: 'transferencia',
+      fecha: new Date().toISOString().split('T')[0],
+      notas: comprobanteNota,
+      confirmado: false,
+    }]);
+    if (pagoErr) return res.status(500).json({ error: pagoErr.message });
+    return res.status(201).json({ ok: true });
+  }
+
+  // ── Auth required for all other routes ────────────────────────────────────
+  if (!await requireAuth(req)) return res.status(401).json({ error: 'No autorizado' });
 
   // ── GET ──────────────────────────────────────────────────────────────────
   if (method === 'GET') {
@@ -78,17 +123,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ data: data || [] });
     }
 
-    // GET ?reservacion_id=XXX → pagos for one reservacion
-    const reservacionId = params.get('reservacion_id');
-    if (!reservacionId) return res.status(400).json({ error: 'Falta reservacion_id o parámetro all/variantes' });
-
-    const [{ data: reserva, error: rErr }, { data: pagos }] = await Promise.all([
-      sb.from('reservaciones').select('*').eq('id', reservacionId).single(),
-      sb.from('pagos').select('*').eq('reservacion_id', reservacionId).order('fecha', { ascending: true }),
-    ]);
-
-    if (rErr) return res.status(404).json({ error: 'Reservación no encontrada' });
-    return res.status(200).json({ reserva, pagos: pagos || [] });
+    return res.status(400).json({ error: 'Falta parámetro all o variantes' });
   }
 
   // ── POST ─────────────────────────────────────────────────────────────────

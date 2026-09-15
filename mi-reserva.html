@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Reserva — Zipolite al Desnudo</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --ocean:  #0d3a4d;
+      --teal:   #1a9fa0;
+      --teal2:  #157f80;
+      --sand:   #FFFBF2;
+      --dark:   #1A3A4A;
+      --red:    #E8312A;
+      --border: #e8edf0;
+      --text:   #374151;
+      --muted:  #6b7280;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #f0f4f7;
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    /* ── TOP BAR ── */
+    .top-bar {
+      background: var(--ocean);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .top-bar-logo {
+      height: 36px;
+      width: auto;
+    }
+    .top-bar-wordmark {
+      color: #fff;
+      font-family: 'Fraunces', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      margin-left: 10px;
+    }
+
+    /* ── LAYOUT ── */
+    .main-wrap {
+      min-height: calc(100vh - 60px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+
+    /* ── STATES ── */
+    .loading-state, .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-icon { font-size: 3rem; }
+    .error-state h2 { font-family: 'Fraunces', serif; color: var(--dark); font-size: 1.4rem; }
+    .error-state p { font-size: 0.92rem; line-height: 1.6; }
+
+    /* ── CARD ── */
+    .reserva-card {
+      width: 100%;
+      max-width: 500px;
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    }
+
+    /* ── CARD HEADER ── */
+    .reserva-header {
+      background: linear-gradient(160deg, var(--ocean) 0%, #1a5a6e 100%);
+      padding: 28px 24px 24px;
+      color: #fff;
+    }
+    .reserva-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 99px;
+      margin-bottom: 14px;
+    }
+    .reserva-header h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .reserva-sub {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.78);
+      margin-bottom: 12px;
+    }
+    .estado-badge {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+
+    /* ── PROGRESS ── */
+    .progress-section {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .progress-bar {
+      height: 10px;
+      background: #e8edf0;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), #2dd4bf);
+      border-radius: 99px;
+      transition: width 0.6s ease;
+      min-width: 4px;
+    }
+    .progress-amounts {
+      display: flex;
+      justify-content: space-between;
+    }
+    .amount-item { display: flex; flex-direction: column; gap: 2px; }
+    .amount-item.center { text-align: center; }
+    .amount-item.right { text-align: right; }
+    .amount-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .amount-value { font-size: 0.98rem; font-weight: 700; color: var(--dark); }
+    .amount-value.paid { color: #1b5e20; }
+    .amount-value.pending { color: #b45309; }
+
+    /* ── SECTIONS ── */
+    .section { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+    .section-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── PAGOS LIST ── */
+    .pago-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid #f3f4f6;
+      gap: 12px;
+    }
+    .pago-item:last-child { border-bottom: none; }
+    .pago-left { display: flex; flex-direction: column; gap: 2px; }
+    .pago-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .pago-fecha { font-size: 0.82rem; color: var(--dark); font-weight: 600; }
+    .pago-metodo { font-size: 0.76rem; color: var(--muted); text-transform: capitalize; }
+    .pago-monto { font-size: 0.92rem; font-weight: 700; color: var(--dark); }
+    .pago-estado { font-size: 0.75rem; font-weight: 600; }
+    .pago-estado.confirmado { color: #15803d; }
+    .pago-estado.pendiente-estado { color: #d97706; }
+    .empty-pagos { font-size: 0.85rem; color: var(--muted); padding: 8px 0; }
+
+    /* ── PAGO OPCIONES ── */
+    .pago-opcion {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    .pago-opcion:last-child { margin-bottom: 0; }
+    .opcion-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 10px;
+    }
+    .opcion-hint { font-size: 0.82rem; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+
+    /* monto selector */
+    .monto-opciones { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .monto-btn {
+      flex: 1;
+      min-width: 130px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .monto-btn:hover { border-color: var(--teal); background: #f0fefe; }
+    .monto-btn.active { border-color: var(--teal); background: #e6f7f7; box-shadow: 0 0 0 3px rgba(26,159,160,0.12); }
+    .monto-btn-label { font-size: 0.74rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+    .monto-btn-price { font-size: 1.05rem; font-weight: 800; color: var(--teal); }
+
+    .custom-monto-wrap { margin-bottom: 12px; }
+    .input-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+    .monto-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      color: var(--dark);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .monto-input:focus { border-color: var(--teal); }
+    .monto-seleccionado {
+      font-size: 0.85rem;
+      color: var(--teal);
+      font-weight: 600;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      background: #f0fefe;
+      border-radius: 8px;
+    }
+
+    /* ── BUTTONS ── */
+    .btn-primary-wide {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      background: var(--teal);
+      color: #fff;
+      border: none;
+      border-radius: 99px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-align: center;
+      text-decoration: none;
+      margin-top: 4px;
+    }
+    .btn-primary-wide:hover { background: var(--teal2); }
+    .btn-primary-wide:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secondary-wide {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      background: transparent;
+      color: var(--teal);
+      border: 2px solid var(--teal);
+      border-radius: 99px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      margin-top: 4px;
+    }
+    .btn-secondary-wide:hover { background: #f0fefe; }
+    .btn-secondary-wide:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── CLIP RESULT ── */
+    .clip-result {
+      margin-top: 14px;
+      padding: 14px;
+      background: #f0fefe;
+      border-radius: 12px;
+      border: 1px solid #b2e8e8;
+      text-align: center;
+    }
+    .clip-result-text { font-size: 0.85rem; color: var(--teal2); font-weight: 600; margin-bottom: 10px; }
+    .clip-link-btn {
+      display: inline-block;
+      background: var(--teal);
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 99px;
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .clip-link-btn:hover { background: var(--teal2); }
+
+    /* ── DATOS BANCARIOS ── */
+    .datos-bancarios {
+      background: var(--sand);
+      border-radius: 10px;
+      padding: 4px 0;
+      border: 1px solid #ede8d8;
+    }
+    .dato-banco {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid #ede8d8;
+      gap: 8px;
+    }
+    .dato-banco.last { border-bottom: none; }
+    .dato-label { font-size: 0.78rem; color: var(--muted); flex-shrink: 0; }
+    .dato-value { font-size: 0.88rem; font-weight: 700; color: var(--dark); }
+    .btn-copy {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--teal);
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-copy:hover { background: #f0fefe; }
+
+    /* ── FILE INPUT ── */
+    .file-upload-wrap { margin-bottom: 12px; }
+    .file-input {
+      width: 100%;
+      padding: 8px;
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: #fafafa;
+    }
+
+    /* ── MESSAGES ── */
+    .error-msg { font-size: 0.82rem; color: var(--red); margin-top: 8px; }
+    .success-msg {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #15803d;
+    }
+
+    /* ── LIQUIDADO ── */
+    .liquidado-msg { text-align: center; padding: 16px 0; }
+    .liquidado-icon { font-size: 3rem; margin-bottom: 12px; }
+    .liquidado-msg h3 { font-family: 'Fraunces', serif; font-size: 1.3rem; color: var(--dark); margin-bottom: 8px; }
+    .liquidado-msg p { font-size: 0.9rem; color: var(--muted); }
+
+    /* ── CONTACTO ── */
+    .contacto-section {
+      padding: 20px 24px 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+    .contacto-text { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+    .btn-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #25D366;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 99px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-whatsapp:hover { background: #1ebe5a; }
+
+    /* ── NOTFOUND BTN ── */
+    .btn-go-home {
+      display: inline-block;
+      background: var(--teal);
+      color: #fff;
+      padding: 11px 24px;
+      border-radius: 99px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-decoration: none;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 540px) {
+      .reserva-header h1 { font-size: 1.35rem; }
+      .monto-btn { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <img src="/logo.png" alt="Zipolite al Desnudo" class="top-bar-logo">
+  <span class="top-bar-wordmark">Zipolite al Desnudo</span>
+</header>
+
+<main class="main-wrap">
+  <div id="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando tu reserva...</p>
+  </div>
+
+  <div id="error-state" style="display:none;" class="error-state">
+    <div class="error-icon">😕</div>
+    <h2>Reserva no encontrada</h2>
+    <p>El enlace puede estar incorrecto o haber expirado.<br>Escríbenos si necesitas ayuda.</p>
+    <a href="https://wa.me/529582199953" class="btn-go-home" target="_blank">💬 Contactar soporte</a>
+  </div>
+
+  <div id="reserva-card" style="display:none;" class="reserva-card"></div>
+</main>
+
+<script>
+const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
+const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
+const _sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+let _reserva = null;
+let _pagos   = [];
+let _monto   = 0;
+
+function fmt(n) {
+  return '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y, m, day] = d.split('-');
+  const M = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(day)} ${M[parseInt(m)-1]} ${y}`;
+}
+
+async function init() {
+  const id = new URLSearchParams(window.location.search).get('id');
+  if (!id) { showError(); return; }
+  try {
+    const res = await fetch(`/api/pagos?reservacion_id=${encodeURIComponent(id)}`);
+    if (!res.ok) { showError(); return; }
+    const { reserva, pagos } = await res.json();
+    if (!reserva) { showError(); return; }
+    _reserva = reserva;
+    _pagos   = pagos || [];
+    await render();
+  } catch {
+    showError();
+  }
+}
+
+function showError() {
+  document.getElementById('loading').style.display   = 'none';
+  document.getElementById('error-state').style.display = 'flex';
+}
+
+async function render() {
+  const r       = _reserva;
+  const pagos   = _pagos;
+  const total   = Number(r.total) || 0;
+  const pagado  = pagos.filter(p => p.confirmado).reduce((s, p) => s + (Number(p.monto) || 0), 0);
+  const pend    = Math.max(0, total - pagado);
+  const pct     = total > 0 ? Math.min(100, Math.round(pagado / total * 100)) : 0;
+
+  // Fetch variante for name + anticipo
+  let anticipo = 0, varNombre = r.variante_id ? '—' : 'Sin variante';
+  if (r.variante_id) {
+    const { data: v } = await _sb.from('variantes_paquete').select('nombre, anticipo').eq('id', r.variante_id).single();
+    if (v) { varNombre = v.nombre || varNombre; anticipo = Number(v.anticipo) || 0; }
+  }
+
+  // Estado badge
+  const estadoStyles = {
+    confirmada: 'background:#e8f5e9;color:#1b5e20;',
+    cancelada:  'background:#fde8e8;color:#b71c1c;',
+    parcial:    'background:#fff9e6;color:#d97706;',
+  };
+  const estadoLabels = {
+    confirmada: '✅ Confirmada',
+    cancelada:  '❌ Cancelada',
+    parcial:    '⏳ Pago parcial',
+  };
+  const estS = estadoStyles[r.estado] || 'background:#fff9e6;color:#d97706;';
+  const estL = estadoLabels[r.estado] || '⏳ Pendiente';
+
+  // Pagos history
+  const pagosHtml = pagos.length
+    ? pagos.map(p => `
+      <div class="pago-item">
+        <div class="pago-left">
+          <span class="pago-fecha">${fmtDate(p.fecha)}</span>
+          <span class="pago-metodo">${p.metodo || '—'}</span>
+        </div>
+        <div class="pago-right">
+          <span class="pago-monto">${fmt(p.monto)}</span>
+          <span class="pago-estado ${p.confirmado ? 'confirmado' : 'pendiente-estado'}">
+            ${p.confirmado ? '✅ Confirmado' : '⏳ En revisión'}
+          </span>
+        </div>
+      </div>`).join('')
+    : '<p class="empty-pagos">Sin pagos registrados aún.</p>';
+
+  // Monto buttons
+  const antBtn = (anticipo > 0 && anticipo < pend)
+    ? `<button class="monto-btn" onclick="selMonto(${anticipo})" data-m="${anticipo}">
+        <span class="monto-btn-label">Anticipo</span>
+        <span class="monto-btn-price">${fmt(anticipo)}</span>
+       </button>` : '';
+  const saldoBtn = pend > 0
+    ? `<button class="monto-btn" onclick="selMonto(${pend})" data-m="${pend}">
+        <span class="monto-btn-label">Saldo completo</span>
+        <span class="monto-btn-price">${fmt(pend)}</span>
+       </button>` : '';
+
+  // WhatsApp message
+  const waMsg = encodeURIComponent(`Hola, tengo una pregunta sobre mi reserva: ${r.nombre}`);
+
+  document.getElementById('loading').style.display = 'none';
+  const card = document.getElementById('reserva-card');
+  card.style.display = 'block';
+  card.innerHTML = `
+    <div class="reserva-header">
+      <div class="reserva-badge">${r.paquete_nombre || 'Reserva'}</div>
+      <h1>${r.nombre}</h1>
+      <p class="reserva-sub">${varNombre} · ${r.personas || 1} persona${(r.personas||1) > 1 ? 's' : ''}</p>
+      <span class="estado-badge" style="${estS}">${estL}</span>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="progress-amounts">
+        <div class="amount-item">
+          <span class="amount-label">Pagado</span>
+          <strong class="amount-value paid">${fmt(pagado)}</strong>
+        </div>
+        <div class="amount-item center">
+          <span class="amount-label">Total</span>
+          <strong class="amount-value">${fmt(total)}</strong>
+        </div>
+        <div class="amount-item right">
+          <span class="amount-label">Pendiente</span>
+          <strong class="amount-value pending">${fmt(pend)}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3 class="section-title">📋 Historial de pagos</h3>
+      <div id="pagos-list">${pagosHtml}</div>
+    </div>
+
+    ${pend > 0 ? `
+    <div class="section">
+      <h3 class="section-title">💳 Realizar un pago</h3>
+
+      <div class="pago-opcion">
+        <h4 class="opcion-title">💳 Pagar con tarjeta</h4>
+        <p class="opcion-hint">Selecciona o escribe el monto a pagar:</p>
+        <div class="monto-opciones">${antBtn}${saldoBtn}</div>
+        <div class="custom-monto-wrap">
+          <label class="input-label">Otro monto</label>
+          <input type="number" id="monto-custom" class="monto-input" placeholder="0" min="100" max="${pend}" oninput="selMontoCustom(this.value)">
+        </div>
+        <div id="monto-sel" class="monto-seleccionado" style="display:none;">
+          Monto: <strong id="monto-disp"></strong>
+        </div>
+        <button id="btn-clip" class="btn-primary-wide" onclick="generarLink()">
+          💳 Generar link de pago
+        </button>
+        <div id="clip-result" style="display:none;" class="clip-result">
+          <p class="clip-result-text">¡Tu link de pago está listo!</p>
+          <a id="clip-url" href="#" target="_blank" rel="noopener" class="clip-link-btn">Ir a pagar →</a>
+        </div>
+        <p id="clip-err" class="error-msg" style="display:none;"></p>
+      </div>
+
+      <div class="pago-opcion">
+        <h4 class="opcion-title">🏦 Transferencia / Depósito</h4>
+        <div class="datos-bancarios">
+          <div class="dato-banco">
+            <span class="dato-label">Banco</span>
+            <strong class="dato-value">BBVA</strong>
+          </div>
+          <div class="dato-banco">
+            <span class="dato-label">CLABE</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <strong class="dato-value" id="clabe-txt">012180015346960794</strong>
+              <button onclick="copiarCLABE()" class="btn-copy" id="btn-copy">📋 Copiar</button>
+            </div>
+          </div>
+          <div class="dato-banco">
+            <span class="dato-label">Beneficiario</span>
+            <strong class="dato-value">Zipolite al Desnudo</strong>
+          </div>
+          <div class="dato-banco last">
+            <span class="dato-label">Referencia</span>
+            <strong class="dato-value">${r.nombre}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="pago-opcion">
+        <h4 class="opcion-title">📎 Subir comprobante de transferencia</h4>
+        <p class="opcion-hint">Sube tu comprobante y lo confirmamos en menos de 24 horas.</p>
+        <div class="file-upload-wrap">
+          <label class="input-label">Archivo (imagen o PDF)</label>
+          <input type="file" id="comp-file" class="file-input" accept="image/*,application/pdf">
+        </div>
+        <div class="custom-monto-wrap">
+          <label class="input-label">Monto transferido ($)</label>
+          <input type="number" id="comp-monto" class="monto-input" placeholder="0" min="1">
+        </div>
+        <button id="btn-comp" class="btn-secondary-wide" onclick="subirComprobante()">
+          📤 Enviar comprobante
+        </button>
+        <div id="comp-result" style="display:none;" class="success-msg">
+          ✅ Comprobante recibido. Lo confirmamos en menos de 24 horas.
+        </div>
+        <p id="comp-err" class="error-msg" style="display:none;"></p>
+      </div>
+    </div>
+    ` : `
+    <div class="section">
+      <div class="liquidado-msg">
+        <div class="liquidado-icon">🎉</div>
+        <h3>¡Reserva liquidada!</h3>
+        <p>Tu pago está completo. Nos vemos en Zipolite.</p>
+      </div>
+    </div>
+    `}
+
+    <div class="contacto-section">
+      <p class="contacto-text">¿Dudas o necesitas ayuda?</p>
+      <a href="https://wa.me/529582199953?text=${waMsg}" class="btn-whatsapp" target="_blank" rel="noopener">
+        💬 Escribir por WhatsApp
+      </a>
+    </div>
+  `;
+}
+
+function selMonto(m) {
+  _monto = m;
+  document.querySelectorAll('.monto-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.monto-btn[data-m="${m}"]`)?.classList.add('active');
+  const ci = document.getElementById('monto-custom');
+  if (ci) ci.value = '';
+  const el = document.getElementById('monto-sel');
+  if (el) { el.style.display = 'flex'; document.getElementById('monto-disp').textContent = fmt(m); }
+}
+
+function selMontoCustom(v) {
+  _monto = Number(v) || 0;
+  document.querySelectorAll('.monto-btn').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('monto-sel');
+  if (!el) return;
+  if (_monto > 0) { el.style.display = 'flex'; document.getElementById('monto-disp').textContent = fmt(_monto); }
+  else el.style.display = 'none';
+}
+
+async function generarLink() {
+  const errEl = document.getElementById('clip-err');
+  errEl.style.display = 'none';
+  const total  = Number(_reserva.total) || 0;
+  const pagado = _pagos.filter(p => p.confirmado).reduce((s, p) => s + (Number(p.monto)||0), 0);
+  const pend   = Math.max(0, total - pagado);
+
+  if (!_monto || _monto <= 0) { errEl.textContent = 'Selecciona o ingresa un monto'; errEl.style.display = 'block'; return; }
+  if (_monto > pend + 1) { errEl.textContent = `El monto no puede superar el saldo pendiente (${fmt(pend)})`; errEl.style.display = 'block'; return; }
+  if (_monto < 100) { errEl.textContent = 'El monto mínimo es $100'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('btn-clip');
+  btn.textContent = 'Generando...'; btn.disabled = true;
+  try {
+    const res = await fetch('/api/create-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        monto:          _monto,
+        paquete_id:     _reserva.paquete_id,
+        paquete_nombre: _reserva.paquete_nombre,
+        nombre:         _reserva.nombre,
+        email:          _reserva.email,
+        reservacion_id: _reserva.id,
+      }),
+    });
+    const d = await res.json();
+    if (!res.ok || !d.checkout_url) {
+      errEl.textContent = d.error || 'Error al generar link'; errEl.style.display = 'block';
+      btn.textContent = '💳 Generar link de pago'; btn.disabled = false;
+      return;
+    }
+    document.getElementById('clip-url').href = d.checkout_url;
+    document.getElementById('clip-result').style.display = 'block';
+    btn.textContent = '🔄 Generar nuevo link'; btn.disabled = false;
+  } catch {
+    errEl.textContent = 'Error de conexión. Intenta de nuevo.'; errEl.style.display = 'block';
+    btn.textContent = '💳 Generar link de pago'; btn.disabled = false;
+  }
+}
+
+function copiarCLABE() {
+  const clabe = document.getElementById('clabe-txt')?.textContent || '';
+  navigator.clipboard?.writeText(clabe).then(() => {
+    const btn = document.getElementById('btn-copy');
+    if (btn) { btn.textContent = '✅ Copiado'; setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000); }
+  });
+}
+
+async function subirComprobante() {
+  const errEl = document.getElementById('comp-err');
+  const resEl = document.getElementById('comp-result');
+  errEl.style.display = 'none';
+  resEl.style.display = 'none';
+
+  const file  = document.getElementById('comp-file')?.files[0];
+  const monto = Number(document.getElementById('comp-monto')?.value);
+  if (!file)  { errEl.textContent = 'Selecciona un archivo'; errEl.style.display = 'block'; return; }
+  if (!monto || monto <= 0) { errEl.textContent = 'Ingresa el monto transferido'; errEl.style.display = 'block'; return; }
+  if (file.size > 8 * 1024 * 1024) { errEl.textContent = 'El archivo es muy grande (máx. 8 MB)'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('btn-comp');
+  btn.textContent = 'Enviando...'; btn.disabled = true;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result.split(',')[1];
+    try {
+      const res = await fetch('/api/pagos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:         'comprobante',
+          reservacion_id: _reserva.id,
+          monto,
+          file_base64:    base64,
+          file_name:      file.name,
+          file_type:      file.type,
+        }),
+      });
+      if (res.ok) {
+        resEl.style.display = 'block';
+        document.getElementById('comp-file').value  = '';
+        document.getElementById('comp-monto').value = '';
+        // Reload payment history inline
+        const r2 = await fetch(`/api/pagos?reservacion_id=${_reserva.id}`);
+        if (r2.ok) {
+          const { pagos } = await r2.json();
+          _pagos = pagos || [];
+          const pagosHtml = _pagos.length
+            ? _pagos.map(p => `
+              <div class="pago-item">
+                <div class="pago-left">
+                  <span class="pago-fecha">${fmtDate(p.fecha)}</span>
+                  <span class="pago-metodo">${p.metodo || '—'}</span>
+                </div>
+                <div class="pago-right">
+                  <span class="pago-monto">${fmt(p.monto)}</span>
+                  <span class="pago-estado ${p.confirmado ? 'confirmado' : 'pendiente-estado'}">
+                    ${p.confirmado ? '✅ Confirmado' : '⏳ En revisión'}
+                  </span>
+                </div>
+              </div>`).join('')
+            : '<p class="empty-pagos">Sin pagos registrados aún.</p>';
+          const listEl = document.getElementById('pagos-list');
+          if (listEl) listEl.innerHTML = pagosHtml;
+        }
+      } else {
+        const d = await res.json().catch(() => ({}));
+        errEl.textContent = d.error || 'Error al enviar'; errEl.style.display = 'block';
+      }
+    } catch {
+      errEl.textContent = 'Error de conexión. Intenta de nuevo.'; errEl.style.display = 'block';
+    }
+    btn.textContent = '📤 Enviar comprobante'; btn.disabled = false;
+  };
+  reader.onerror = () => {
+    errEl.textContent = 'Error al leer el archivo'; errEl.style.display = 'block';
+    btn.textContent = '📤 Enviar comprobante'; btn.disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+init();
+</script>
+</body>
+</html>
