@@ -62,6 +62,7 @@ function switchAdminTab(tabId) {
   if (tabId === 'comisiones') loadComisiones();
   if (tabId === 'analytics') loadAnalytics();
   if (tabId === 'ano-nuevo') loadAnoNuevo();
+  if (tabId === 'pagos-pro') loadReservacionesPro();
 }
 
 function openAdmin() {
@@ -2184,7 +2185,7 @@ function loadAnoNuevo() {
     const s = document.createElement('style');
     s.id = 'an-styles';
     s.textContent = `
-      #ano-nuevo-container{font-family:'Segoe UI',Arial,sans-serif;font-size:14px;background:#f4f7f9;border-radius:8px;overflow:hidden;}
+      #ano-nuevo-container,#pagos-pro-container{font-family:'Segoe UI',Arial,sans-serif;font-size:14px;background:#f4f7f9;border-radius:8px;overflow:hidden;}
       .an-header{background:#1A3A4A;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
       .an-header h2{margin:0;font-size:1.05rem;}
       .an-summary{display:flex;flex-wrap:wrap;gap:10px;padding:14px 20px;background:#fff;border-bottom:1px solid #e0e0e0;}
@@ -2542,3 +2543,428 @@ async function an_guardarReserva() {
   await an_loadData();
 }
 // ===================== FIN AÑO NUEVO =====================
+
+// ===================== PAGOS PRO — VISTA GLOBAL =====================
+let ppRes = [], ppResFiltered = [], ppExpandedId = null, ppFilter = 'todos', ppPkgs = [];
+const ppFmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+function pp_getToken() { return sessionStorage.getItem('adminToken') || ''; }
+
+function loadReservacionesPro() {
+  const container = document.getElementById('pagos-pro-container');
+  if (!container) return;
+
+  if (!document.getElementById('an-styles')) {
+    const s = document.createElement('style');
+    s.id = 'an-styles';
+    s.textContent = `
+      #ano-nuevo-container,#pagos-pro-container{font-family:'Segoe UI',Arial,sans-serif;font-size:14px;background:#f4f7f9;border-radius:8px;overflow:hidden;}
+      .an-header{background:#1A3A4A;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+      .an-header h2{margin:0;font-size:1.05rem;}
+      .an-summary{display:flex;flex-wrap:wrap;gap:10px;padding:14px 20px;background:#fff;border-bottom:1px solid #e0e0e0;}
+      .an-stat{background:#FFFBF2;border:1px solid #e0e0e0;border-radius:10px;padding:10px 14px;min-width:110px;flex:1;}
+      .an-stat .lbl{font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:.05em;}
+      .an-stat .val{font-size:1.2rem;font-weight:800;color:#1A3A4A;margin-top:2px;}
+      .an-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;flex-wrap:wrap;gap:8px;}
+      .an-toolbar h3{margin:0;font-size:.9rem;color:#1A3A4A;}
+      .an-tw{overflow-x:auto;padding:0 20px 24px;}
+      .an-tbl{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+      .an-tbl thead{background:#1A3A4A;color:#fff;}
+      .an-tbl thead th{padding:9px 12px;text-align:left;font-size:.78rem;font-weight:600;white-space:nowrap;}
+      .an-tbl tbody tr.an-rrow{cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background .1s;}
+      .an-tbl tbody tr.an-rrow:hover{background:#f0feff;}
+      .an-tbl tbody td{padding:9px 12px;font-size:.85rem;vertical-align:middle;}
+      .an-tbl tbody tr.an-drow td{padding:0;background:#fafafa;border-bottom:2px solid #e0e0e0;}
+      .an-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.73rem;font-weight:700;}
+      .an-badge-red{background:#fde8e8;color:#b71c1c;}
+      .an-badge-yellow{background:#fff9e6;color:#e65100;}
+      .an-badge-green{background:#e8f5e9;color:#1b5e20;}
+      .an-detail{padding:14px 20px;}
+      .an-detail h4{font-size:.83rem;font-weight:700;color:#1A3A4A;margin-bottom:10px;}
+      .an-ptbl{width:100%;border-collapse:collapse;margin-bottom:10px;}
+      .an-ptbl th{font-size:.74rem;color:#888;font-weight:600;padding:3px 8px;text-align:left;border-bottom:1px solid #e0e0e0;}
+      .an-ptbl td{font-size:.81rem;padding:5px 8px;border-bottom:1px solid #f0f0f0;}
+      .an-pform{background:#fff;border:1.5px solid #1a9fa0;border-radius:10px;padding:14px;margin-top:10px;}
+      .an-pform h4{font-size:.83rem;font-weight:700;color:#1a9fa0;margin-bottom:10px;}
+      .an-frow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+      .an-fg{display:flex;flex-direction:column;gap:3px;flex:1;min-width:110px;}
+      .an-fg label{font-size:.72rem;color:#666;font-weight:600;}
+      .an-fg input,.an-fg select,.an-fg textarea{padding:6px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:.85rem;outline:none;font-family:inherit;}
+      .an-fg input:focus,.an-fg select:focus{border-color:#1a9fa0;}
+      .an-btn{padding:7px 14px;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem;}
+      .an-btn-teal{background:#1a9fa0;color:#fff;}
+      .an-btn-teal:hover{background:#157f80;}
+      .an-btn-red{background:#E8312A;color:#fff;}
+      .an-btn-sm{padding:4px 9px;font-size:.77rem;border-radius:6px;}
+      .an-btn-outline{background:transparent;border:1.5px solid #1a9fa0;color:#1a9fa0;}
+      .an-modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;}
+      .an-modal-ov.open{display:flex;}
+      .an-modal-box{background:#fff;border-radius:14px;padding:24px;width:90%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18);}
+      .an-modal-box h2{font-size:1rem;color:#1A3A4A;margin-bottom:16px;}
+    `;
+    document.head.appendChild(s);
+  }
+
+  container.innerHTML = `
+    <div class="an-header">
+      <h2>💳 Pagos — Todos los paquetes</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="an-btn an-btn-teal an-btn-sm" onclick="pp_reload()">↺ Actualizar</button>
+        <button class="an-btn an-btn-teal an-btn-sm" onclick="pp_openReservaModal()">+ Nueva reserva</button>
+      </div>
+    </div>
+    <div class="an-summary">
+      <div class="an-stat"><div class="lbl">Reservaciones</div><div class="val" id="pp-stat-total">—</div></div>
+      <div class="an-stat"><div class="lbl">Total cobrado</div><div class="val" id="pp-stat-cobrado">—</div></div>
+      <div class="an-stat"><div class="lbl">Total pendiente</div><div class="val" id="pp-stat-pendiente">—</div></div>
+      <div class="an-stat"><div class="lbl">Sin pago</div><div class="val" id="pp-stat-sinpago">—</div></div>
+      <div class="an-stat"><div class="lbl">Liquidados</div><div class="val" id="pp-stat-liquidados">—</div></div>
+    </div>
+    <div class="an-toolbar" style="flex-direction:column;align-items:flex-start;gap:10px;">
+      <div id="pp-filters" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      <h3 id="pp-table-title" style="margin:0;font-size:.9rem;color:#1A3A4A;">Cargando...</h3>
+    </div>
+    <div class="an-tw">
+      <table class="an-tbl">
+        <thead><tr>
+          <th>Nombre</th><th>Paquete</th><th>Variante</th><th>Pers.</th>
+          <th>Total</th><th>Pagado</th><th>Pendiente</th>
+          <th>Último pago</th><th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="pp-tbody"><tr><td colspan="10" style="text-align:center;color:#aaa;padding:28px;">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="an-modal-ov" id="pp-reserva-modal" onclick="if(event.target===this)pp_closeReservaModal()">
+      <div class="an-modal-box">
+        <h2>+ Nueva reserva manual</h2>
+        <div class="an-frow">
+          <div class="an-fg" style="flex:2"><label>Nombre *</label><input type="text" id="pp-nr-nombre" placeholder="Nombre del viajero"></div>
+        </div>
+        <div class="an-frow">
+          <div class="an-fg"><label>Email *</label><input type="email" id="pp-nr-email" placeholder="correo@ejemplo.com"></div>
+          <div class="an-fg"><label>WhatsApp</label><input type="tel" id="pp-nr-whatsapp" placeholder="55 1234 5678"></div>
+        </div>
+        <div class="an-frow">
+          <div class="an-fg"><label>Paquete *</label><select id="pp-nr-paquete" onchange="pp_onPaqueteChange()"><option value="">— Selecciona —</option></select></div>
+          <div class="an-fg"><label>Variante</label><select id="pp-nr-variante" onchange="pp_recalcTotal()"><option value="" data-precio="0">Sin variante</option></select></div>
+        </div>
+        <div class="an-frow">
+          <div class="an-fg"><label>Personas</label><input type="number" id="pp-nr-personas" value="1" min="1" max="48" oninput="pp_recalcTotal()"></div>
+          <div class="an-fg"><label>Total ($)</label><input type="number" id="pp-nr-total" placeholder="0" readonly style="background:#f5f5f5;color:#555;"></div>
+        </div>
+        <div class="an-fg" style="margin-bottom:10px;"><label>Notas</label><textarea id="pp-nr-notas" rows="2" placeholder="Notas internas..."></textarea></div>
+        <p id="pp-nr-error" style="color:#E8312A;font-size:.8rem;min-height:16px;"></p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="an-btn an-btn-outline an-btn-sm" onclick="pp_closeReservaModal()">Cancelar</button>
+          <button class="an-btn an-btn-teal an-btn-sm" onclick="pp_guardarReserva()">Guardar reserva</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  pp_loadData();
+}
+
+async function pp_loadData() {
+  const [resResult, pagosResult] = await Promise.all([
+    sb.from('reservaciones').select('*, variantes_paquete(nombre), paquetes(nombre)').order('created_at', { ascending: false }),
+    sb.from('pagos').select('*').order('fecha', { ascending: true }),
+  ]);
+  const reservaciones = resResult.data || [];
+  const pagos = pagosResult.data || [];
+
+  ppRes = reservaciones.map(r => ({
+    ...r,
+    pagos: pagos.filter(p => p.reservacion_id === r.id),
+    total_pagado: pagos.filter(p => p.reservacion_id === r.id && p.confirmado).reduce((s, p) => s + (Number(p.monto) || 0), 0),
+  }));
+
+  const seenPkgs = new Map();
+  ppRes.forEach(r => {
+    const nombre = r.paquetes?.nombre || r.paquete_nombre || '—';
+    const id = r.paquete_id || 'sin-paquete';
+    if (!seenPkgs.has(id)) seenPkgs.set(id, nombre);
+  });
+  ppPkgs = [...seenPkgs.entries()].map(([id, nombre]) => ({ id, nombre }));
+
+  pp_applyFilter(ppFilter);
+}
+
+function pp_applyFilter(filter) {
+  ppFilter = filter;
+  ppResFiltered = filter === 'todos'
+    ? ppRes
+    : ppRes.filter(r => (r.paquetes?.nombre || r.paquete_nombre || '') === filter);
+  pp_renderSummary();
+  pp_renderFilters();
+  pp_renderTable();
+}
+
+function pp_reload() { ppExpandedId = null; ppFilter = 'todos'; pp_loadData(); }
+
+function pp_renderSummary() {
+  const list = ppResFiltered;
+  let cobrado = 0, pendiente = 0, sinPago = 0, liquidados = 0;
+  list.forEach(r => {
+    cobrado += r.total_pagado || 0;
+    pendiente += Math.max(0, (Number(r.total) || 0) - (r.total_pagado || 0));
+    if ((r.total_pagado || 0) === 0) sinPago++;
+    if (Number(r.total) > 0 && r.total_pagado >= Number(r.total)) liquidados++;
+  });
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('pp-stat-total', list.length);
+  set('pp-stat-cobrado', ppFmt(cobrado));
+  set('pp-stat-pendiente', ppFmt(pendiente));
+  set('pp-stat-sinpago', sinPago);
+  set('pp-stat-liquidados', liquidados);
+}
+
+function pp_renderFilters() {
+  const el = document.getElementById('pp-filters');
+  if (!el) return;
+  const btn = (label, active, onclick) =>
+    `<button onclick="${onclick}" style="padding:5px 12px;border-radius:20px;border:1.5px solid #1a9fa0;cursor:pointer;font-size:.8rem;font-weight:700;font-family:inherit;${active ? 'background:#1a9fa0;color:#fff;' : 'background:#fff;color:#1a9fa0;'}">${label}</button>`;
+  el.innerHTML = btn(`Todos (${ppRes.length})`, ppFilter === 'todos', "pp_applyFilter('todos')") +
+    ppPkgs.map(p => {
+      const count = ppRes.filter(r => (r.paquetes?.nombre || r.paquete_nombre || '') === p.nombre).length;
+      const safe = p.nombre.replace(/'/g, "\\'");
+      return btn(`✈️ ${p.nombre} (${count})`, ppFilter === p.nombre, `pp_applyFilter('${safe}')`);
+    }).join('');
+}
+
+function pp_estadoBadge(r) {
+  const pagado = r.total_pagado || 0, total = Number(r.total) || 0;
+  if (pagado === 0) return '<span class="an-badge an-badge-red">Sin pago</span>';
+  if (total > 0 && pagado >= total) return '<span class="an-badge an-badge-green">Liquidado</span>';
+  return '<span class="an-badge an-badge-yellow">Parcial</span>';
+}
+
+function pp_ultimoPago(r) {
+  const conf = (r.pagos || []).filter(p => p.confirmado).sort((a, b) => b.fecha > a.fecha ? 1 : -1);
+  return conf.length ? conf[0].fecha + '<br><small>' + (conf[0].metodo || '') + '</small>' : '—';
+}
+
+function pp_renderTable() {
+  const tbody = document.getElementById('pp-tbody');
+  const title = document.getElementById('pp-table-title');
+  if (!tbody) return;
+  const list = ppResFiltered;
+  if (title) title.textContent = `${list.length} reservación${list.length !== 1 ? 'es' : ''}${ppFilter !== 'todos' ? ' — ' + ppFilter : ''}`;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#aaa;padding:28px;">Sin reservaciones</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(r => {
+    const pagado = r.total_pagado || 0;
+    const total  = Number(r.total) || 0;
+    const pend   = Math.max(0, total - pagado);
+    const exp    = ppExpandedId === r.id;
+    const pkgNombre = r.paquetes?.nombre || r.paquete_nombre || '—';
+    const varNombre = r.variantes_paquete?.nombre || '—';
+    return `
+      <tr class="an-rrow" onclick="pp_toggleDetail('${r.id}')">
+        <td><strong>${r.nombre || '—'}</strong><br><small style="color:#888;">${r.email || ''}</small></td>
+        <td style="font-size:.8rem;">${pkgNombre}</td>
+        <td style="font-size:.8rem;">${varNombre}</td>
+        <td style="text-align:center;">${r.personas || '—'}</td>
+        <td>${ppFmt(total)}</td>
+        <td style="color:${pagado > 0 ? '#2e7d32' : '#888'};">${ppFmt(pagado)}</td>
+        <td style="color:${pend > 0 ? '#e07b00' : '#2e7d32'};">${ppFmt(pend)}</td>
+        <td style="font-size:.78rem;">${pp_ultimoPago(r)}</td>
+        <td>${pp_estadoBadge(r)}</td>
+        <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+          <button class="an-btn an-btn-teal an-btn-sm" onclick="pp_showPagoForm('${r.id}')">+ Pago</button>
+          <button class="an-btn an-btn-red an-btn-sm" onclick="pp_eliminarReservacion('${r.id}')" style="margin-left:4px;">Eliminar</button>
+        </td>
+      </tr>
+      <tr class="an-drow" id="pp-detail-${r.id}" style="display:${exp ? 'table-row' : 'none'}">
+        <td colspan="10">${pp_renderDetail(r)}</td>
+      </tr>`;
+  }).join('');
+}
+
+function pp_renderDetail(r) {
+  const pagos = r.pagos || [];
+  const ptbl = pagos.length
+    ? `<table class="an-ptbl">
+        <thead><tr><th>Fecha</th><th>Método</th><th>Monto</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
+        <tbody>${pagos.map(p => `
+          <tr>
+            <td>${p.fecha || '—'}</td>
+            <td>${p.metodo || '—'}</td>
+            <td>${ppFmt(p.monto)}</td>
+            <td>${p.confirmado ? '<span class="an-badge an-badge-green">Confirmado</span>' : '<span class="an-badge an-badge-yellow">Pendiente</span>'}</td>
+            <td style="color:#888;font-size:.78rem;">${p.notas || '—'}</td>
+            <td style="white-space:nowrap;">
+              ${!p.confirmado ? `<button class="an-btn an-btn-teal an-btn-sm" onclick="pp_confirmarPago('${p.id}','${r.id}')">Confirmar</button> ` : ''}
+              <button class="an-btn an-btn-red an-btn-sm" onclick="pp_eliminarPago('${p.id}','${r.id}')" title="Eliminar">✕</button>
+            </td>
+          </tr>`).join('')}
+        </tbody></table>`
+    : '<p style="font-size:.82rem;color:#aaa;margin-bottom:10px;">Sin pagos registrados aún.</p>';
+
+  return `<div class="an-detail">
+    <h4>📋 Historial de pagos — ${r.nombre || '—'}</h4>
+    ${ptbl}
+    <div id="pp-pf-${r.id}" style="display:none;">
+      <div class="an-pform">
+        <h4>+ Registrar pago</h4>
+        <div class="an-frow">
+          <div class="an-fg"><label>Monto ($)</label><input type="number" id="pp-monto-${r.id}" placeholder="0" step="0.01"></div>
+          <div class="an-fg"><label>Método</label>
+            <select id="pp-metodo-${r.id}">
+              <option value="transfer">Transferencia</option>
+              <option value="clip">Clip</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="an-fg"><label>Fecha</label><input type="date" id="pp-fecha-${r.id}" value="${new Date().toISOString().split('T')[0]}"></div>
+        </div>
+        <div class="an-frow">
+          <div class="an-fg" style="flex:3"><label>Notas</label><input type="text" id="pp-notas-${r.id}" placeholder="Referencia, observaciones..."></div>
+          <div class="an-fg" style="justify-content:flex-end;padding-bottom:4px;">
+            <label>&nbsp;</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:.83rem;">
+              <input type="checkbox" id="pp-conf-${r.id}" checked> Confirmado
+            </label>
+          </div>
+        </div>
+        <p id="pp-pferr-${r.id}" style="color:#E8312A;font-size:.78rem;min-height:14px;"></p>
+        <div style="display:flex;gap:8px;">
+          <button class="an-btn an-btn-teal an-btn-sm" onclick="pp_guardarPago('${r.id}')">Guardar pago</button>
+          <button class="an-btn an-btn-outline an-btn-sm" onclick="document.getElementById('pp-pf-${r.id}').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pp_toggleDetail(id) {
+  ppExpandedId = ppExpandedId === id ? null : id;
+  pp_renderTable();
+}
+
+function pp_showPagoForm(id) {
+  if (ppExpandedId !== id) { ppExpandedId = id; pp_renderTable(); }
+  setTimeout(() => {
+    const el = document.getElementById(`pp-pf-${id}`);
+    if (el) { el.style.display = 'block'; el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  }, 50);
+}
+
+async function pp_guardarPago(reservacionId) {
+  const errEl = document.getElementById(`pp-pferr-${reservacionId}`);
+  const monto = Number(document.getElementById(`pp-monto-${reservacionId}`)?.value);
+  if (!monto || monto <= 0) { errEl.textContent = 'Ingresa un monto válido'; return; }
+  errEl.textContent = '';
+  const r = await fetch('/api/pagos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': pp_getToken() },
+    body: JSON.stringify({
+      reservacion_id: reservacionId,
+      monto,
+      metodo: document.getElementById(`pp-metodo-${reservacionId}`)?.value,
+      fecha: document.getElementById(`pp-fecha-${reservacionId}`)?.value,
+      notas: document.getElementById(`pp-notas-${reservacionId}`)?.value,
+      confirmado: document.getElementById(`pp-conf-${reservacionId}`)?.checked,
+    }),
+  });
+  if (!r.ok) { const { error } = await r.json().catch(() => ({})); errEl.textContent = error || 'Error al guardar'; return; }
+  ppExpandedId = reservacionId;
+  await pp_loadData();
+}
+
+async function pp_confirmarPago(pagoId, reservacionId) {
+  const r = await fetch(`/api/pagos?id=${pagoId}`, { method: 'PATCH', headers: { 'x-admin-token': pp_getToken() } });
+  if (!r.ok) { alert('Error al confirmar pago'); return; }
+  ppExpandedId = reservacionId;
+  await pp_loadData();
+}
+
+async function pp_eliminarPago(pagoId, reservacionId) {
+  if (!confirm('¿Eliminar este pago?')) return;
+  const r = await fetch(`/api/pagos?pago_id=${pagoId}`, { method: 'DELETE', headers: { 'x-admin-token': pp_getToken() } });
+  if (!r.ok) { alert('Error al eliminar pago'); return; }
+  ppExpandedId = reservacionId;
+  await pp_loadData();
+}
+
+async function pp_eliminarReservacion(reservacionId) {
+  if (!confirm('¿Eliminar esta reservación y todos sus pagos? Esta acción no se puede deshacer.')) return;
+  const r = await fetch(`/api/pagos?reservacion_id=${reservacionId}&delete_reservacion=1`, { method: 'DELETE', headers: { 'x-admin-token': pp_getToken() } });
+  if (!r.ok) { alert('Error al eliminar reservación'); return; }
+  ppExpandedId = null;
+  await pp_loadData();
+}
+
+async function pp_openReservaModal() {
+  ['pp-nr-nombre','pp-nr-email','pp-nr-whatsapp','pp-nr-notas'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const pEl = document.getElementById('pp-nr-personas'); if (pEl) pEl.value = '1';
+  document.getElementById('pp-nr-error').textContent = '';
+  document.getElementById('pp-nr-variante').innerHTML = '<option value="" data-precio="0">Sin variante</option>';
+  document.getElementById('pp-nr-total').value = '';
+  const { data: pkgs } = await sb.from('paquetes').select('id, nombre').eq('activo', true).order('nombre');
+  const sel = document.getElementById('pp-nr-paquete');
+  if (sel && pkgs) {
+    sel.innerHTML = '<option value="">— Selecciona paquete —</option>' +
+      pkgs.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  }
+  document.getElementById('pp-reserva-modal').classList.add('open');
+}
+
+function pp_closeReservaModal() {
+  document.getElementById('pp-reserva-modal').classList.remove('open');
+}
+
+async function pp_onPaqueteChange() {
+  const pkgId = document.getElementById('pp-nr-paquete')?.value;
+  const sel = document.getElementById('pp-nr-variante');
+  sel.innerHTML = '<option value="" data-precio="0">Sin variante</option>';
+  if (!pkgId) { pp_recalcTotal(); return; }
+  const { data: vars } = await sb.from('variantes_paquete').select('id, nombre, precio').eq('paquete_id', pkgId).order('precio');
+  if (vars?.length) {
+    sel.innerHTML = '<option value="" data-precio="0">Sin variante</option>' +
+      vars.map(v => `<option value="${v.id}" data-precio="${v.precio}">${v.nombre} — ${ppFmt(v.precio)}</option>`).join('');
+  }
+  pp_recalcTotal();
+}
+
+function pp_recalcTotal() {
+  const sel = document.getElementById('pp-nr-variante');
+  const precio = Number(sel?.options[sel?.selectedIndex]?.dataset.precio || 0);
+  const personas = Number(document.getElementById('pp-nr-personas')?.value) || 1;
+  const el = document.getElementById('pp-nr-total');
+  if (el) el.value = precio * personas;
+}
+
+async function pp_guardarReserva() {
+  const errEl = document.getElementById('pp-nr-error');
+  const nombre = document.getElementById('pp-nr-nombre').value.trim();
+  const email  = document.getElementById('pp-nr-email').value.trim();
+  const pkgSel = document.getElementById('pp-nr-paquete');
+  const paqueteId = pkgSel?.value;
+  if (!nombre || !email) { errEl.textContent = 'Nombre y email son requeridos'; return; }
+  if (!paqueteId) { errEl.textContent = 'Selecciona un paquete'; return; }
+  errEl.textContent = '';
+  const paqueteNombre = pkgSel.options[pkgSel.selectedIndex].text;
+  const varSel = document.getElementById('pp-nr-variante');
+  const varianteId = varSel?.value || null;
+  const personas = Number(document.getElementById('pp-nr-personas').value) || 1;
+  const total = Number(document.getElementById('pp-nr-total').value) || 0;
+  const notas = document.getElementById('pp-nr-notas').value.trim();
+  const { error } = await sb.from('reservaciones').insert({
+    nombre, email,
+    whatsapp: document.getElementById('pp-nr-whatsapp').value.trim(),
+    paquete_id: paqueteId,
+    paquete_nombre: paqueteNombre,
+    variante_id: varianteId,
+    personas,
+    total,
+    notas,
+    estado: 'pendiente',
+  });
+  if (error) { errEl.textContent = error.message || 'Error al guardar'; return; }
+  pp_closeReservaModal();
+  await pp_loadData();
+}
+// ===================== FIN PAGOS PRO =====================
