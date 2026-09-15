@@ -79,9 +79,9 @@ function renderPkgs(list) {
     const placeholderBg = p.tipo==='secondary' ? 'background:linear-gradient(135deg,#1a4a22,#4CAF50)' : 'background:linear-gradient(135deg,#006080,#00BCD4)';
     const header = p.foto_url
       ? `<div class="pkg-img-wrap">
-          ${p.badge ? `<span class="pkg-badge">${p.badge}</span>` : ''}
           <img class="pkg-img" src="${p.foto_url}" alt="${p.nombre}" loading="lazy">
           <div class="pkg-img-overlay">
+            ${p.badge ? `<span class="pkg-badge">${p.badge}</span>` : ''}
             <div class="pkg-icon">${p.icono||'✈️'}</div>
             <h3>${p.nombre}</h3>
             <p>${p.descripcion||''}</p>
@@ -91,9 +91,9 @@ function renderPkgs(list) {
           </div>
         </div>`
       : `<div class="pkg-img-wrap">
-          ${p.badge ? `<span class="pkg-badge">${p.badge}</span>` : ''}
           <div class="pkg-img-placeholder" style="${placeholderBg};"></div>
           <div class="pkg-img-overlay">
+            ${p.badge ? `<span class="pkg-badge">${p.badge}</span>` : ''}
             <h3>${p.nombre}</h3>
             <p>${p.descripcion||''}</p>
             <div class="pkg-fechas">

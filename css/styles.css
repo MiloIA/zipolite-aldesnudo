@@ -1568,6 +1568,11 @@ footer a:hover {
     grid-template-columns: 1fr;
   }
 
+  .pkg-price-block {
+    flex-direction: column !important;
+    gap: 8px;
+  }
+
   :root {
     --section-py: 64px;
   }

@@ -49,6 +49,33 @@
     document.head.appendChild(s);
   }
 </script>
+<style>
+@media (max-width: 768px) {
+  div.hero-content,
+  .hero > div,
+  .hero .hero-content {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: unset !important;
+  }
+  .hero-visual {
+    order: -1 !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+  .hero-logo-wrap {
+    width: 160px !important;
+    height: 160px !important;
+  }
+  .hero-logo-wrap img {
+    width: 120px !important;
+  }
+  .hero h1 {
+    font-size: 2rem !important;
+  }
+}
+</style>
 </head>
 <body>
 <div class="rainbow-bar"></div>
