@@ -2665,24 +2665,46 @@ function loadReservacionesPro() {
 }
 
 async function pp_loadData() {
-  const [resResult, pagosResult] = await Promise.all([
-    sb.from('reservaciones').select('*, variantes_paquete(nombre), paquetes(nombre)').order('created_at', { ascending: false }),
+  const container = document.getElementById('pagos-pro-container');
+
+  const { data: reservaciones, error } = await sb
+    .from('reservaciones')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loading reservaciones:', error);
+    if (container) container.innerHTML = '<p style="color:red;padding:20px;">Error al cargar reservaciones</p>';
+    return;
+  }
+
+  const [{ data: paquetes }, { data: variantes }, { data: pagos }] = await Promise.all([
+    sb.from('paquetes').select('id, nombre, icono'),
+    sb.from('variantes_paquete').select('id, nombre, paquete_id'),
     sb.from('pagos').select('*').order('fecha', { ascending: true }),
   ]);
-  const reservaciones = resResult.data || [];
-  const pagos = pagosResult.data || [];
 
-  ppRes = reservaciones.map(r => ({
-    ...r,
-    pagos: pagos.filter(p => p.reservacion_id === r.id),
-    total_pagado: pagos.filter(p => p.reservacion_id === r.id && p.confirmado).reduce((s, p) => s + (Number(p.monto) || 0), 0),
-  }));
+  const pkgMap = {};
+  (paquetes || []).forEach(p => { pkgMap[p.id] = p; });
+  const varMap = {};
+  (variantes || []).forEach(v => { varMap[v.id] = v; });
+
+  ppRes = (reservaciones || []).map(r => {
+    const resPagos = (pagos || []).filter(p => p.reservacion_id === r.id);
+    return {
+      ...r,
+      paquete_nombre: pkgMap[r.paquete_id]?.nombre || r.paquete_nombre || '—',
+      paquete_icono:  pkgMap[r.paquete_id]?.icono  || '📦',
+      variante_nombre: varMap[r.variante_id]?.nombre || '—',
+      pagos: resPagos,
+      total_pagado: resPagos.filter(p => p.confirmado).reduce((s, p) => s + (Number(p.monto) || 0), 0),
+    };
+  });
 
   const seenPkgs = new Map();
   ppRes.forEach(r => {
-    const nombre = r.paquetes?.nombre || r.paquete_nombre || '—';
     const id = r.paquete_id || 'sin-paquete';
-    if (!seenPkgs.has(id)) seenPkgs.set(id, nombre);
+    if (!seenPkgs.has(id)) seenPkgs.set(id, r.paquete_nombre);
   });
   ppPkgs = [...seenPkgs.entries()].map(([id, nombre]) => ({ id, nombre }));
 
@@ -2693,7 +2715,7 @@ function pp_applyFilter(filter) {
   ppFilter = filter;
   ppResFiltered = filter === 'todos'
     ? ppRes
-    : ppRes.filter(r => (r.paquetes?.nombre || r.paquete_nombre || '') === filter);
+    : ppRes.filter(r => (r.paquete_nombre || '') === filter);
   pp_renderSummary();
   pp_renderFilters();
   pp_renderTable();
@@ -2725,7 +2747,7 @@ function pp_renderFilters() {
     `<button onclick="${onclick}" style="padding:5px 12px;border-radius:20px;border:1.5px solid #1a9fa0;cursor:pointer;font-size:.8rem;font-weight:700;font-family:inherit;${active ? 'background:#1a9fa0;color:#fff;' : 'background:#fff;color:#1a9fa0;'}">${label}</button>`;
   el.innerHTML = btn(`Todos (${ppRes.length})`, ppFilter === 'todos', "pp_applyFilter('todos')") +
     ppPkgs.map(p => {
-      const count = ppRes.filter(r => (r.paquetes?.nombre || r.paquete_nombre || '') === p.nombre).length;
+      const count = ppRes.filter(r => (r.paquete_nombre || '') === p.nombre).length;
       const safe = p.nombre.replace(/'/g, "\\'");
       return btn(`✈️ ${p.nombre} (${count})`, ppFilter === p.nombre, `pp_applyFilter('${safe}')`);
     }).join('');
@@ -2758,8 +2780,8 @@ function pp_renderTable() {
     const total  = Number(r.total) || 0;
     const pend   = Math.max(0, total - pagado);
     const exp    = ppExpandedId === r.id;
-    const pkgNombre = r.paquetes?.nombre || r.paquete_nombre || '—';
-    const varNombre = r.variantes_paquete?.nombre || '—';
+    const pkgNombre = r.paquete_nombre || '—';
+    const varNombre = r.variante_nombre || '—';
     return `
       <tr class="an-rrow" onclick="pp_toggleDetail('${r.id}')">
         <td><strong>${r.nombre || '—'}</strong><br><small style="color:#888;">${r.email || ''}</small></td>
