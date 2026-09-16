@@ -41,7 +41,6 @@ async function updateContactoEstado(email, whatsapp) {
       : { data: null };
     const existente = byEmail || byWa;
     const updates = {
-      estado:      'reservado',
       estado_crm:  'reservado',
       temperatura: 'caliente',
       updated_at:  new Date().toISOString(),
