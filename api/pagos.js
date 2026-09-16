@@ -190,7 +190,11 @@ export default async function handler(req, res) {
             parse_mode: 'HTML',
             ...(replyMarkup && { reply_markup: replyMarkup }),
           }),
-        }).catch(e => console.error('telegram comprobante:', e));
+        }).then(async r => {
+          const body = await r.json().catch(() => ({}));
+          console.log('TELEGRAM RESPONSE:', r.status, JSON.stringify(body));
+          return r;
+        }).catch(e => console.error('TELEGRAM ERROR:', e.message, JSON.stringify(e)));
       } else {
         fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
           method: 'POST',
@@ -201,7 +205,11 @@ export default async function handler(req, res) {
             parse_mode: 'HTML',
             ...(replyMarkup && { reply_markup: replyMarkup }),
           }),
-        }).catch(e => console.error('telegram comprobante:', e));
+        }).then(async r => {
+          const body = await r.json().catch(() => ({}));
+          console.log('TELEGRAM RESPONSE:', r.status, JSON.stringify(body));
+          return r;
+        }).catch(e => console.error('TELEGRAM ERROR:', e.message, JSON.stringify(e)));
       }
     }
 
