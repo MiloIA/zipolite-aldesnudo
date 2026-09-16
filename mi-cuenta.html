@@ -845,12 +845,8 @@ const PKG_FOTOS = {
   'default':      null,
 };
 
-function getPkgFoto(nombre) {
-  if (!nombre) return null;
-  const n = nombre.toLowerCase();
-  if (n.includes('año nuevo') || n.includes('ano nuevo')) return PKG_FOTOS['ano-nuevo'];
-  if (n.includes('luna') || n.includes('octubre')) return PKG_FOTOS['lunas'];
-  return null;
+function getPkgFoto(nombre, fotoUrl) {
+  return fotoUrl || null;
 }
 
 function show(v) {
@@ -1083,7 +1079,7 @@ async function loadReservas(email) {
       const titulo   = r.variante_nombre || r.paquete_nombre || '—';
       const fi       = r.fecha_inicio || '';
       const ff       = r.fecha_fin   || '';
-      const foto     = getPkgFoto(r.paquete_nombre || '');
+      const foto     = getPkgFoto(r.paquete_nombre || '', r.foto_url || '');
       const waMsg    = encodeURIComponent(`Hola, soy ${currentUser?.user_metadata?.full_name || 'cliente'} y quiero consultar sobre mi reserva ${r.id ? '#'+r.id.slice(-6).toUpperCase() : ''} — ${titulo}`);
 
       return `

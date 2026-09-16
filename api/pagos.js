@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     const email = params.get('email');
     const { data: reservaciones, error: rErr } = await sb
       .from('reservaciones')
-      .select('id, paquete_nombre, personas, total, estado, metodo_pago, fecha_inicio, fecha_fin, created_at, variantes_paquete(nombre)')
+      .select('id, paquete_nombre, personas, total, estado, metodo_pago, fecha_inicio, fecha_fin, created_at, variantes_paquete(nombre), paquetes(foto_url)')
       .eq('email', email)
       .order('created_at', { ascending: false });
 
@@ -93,6 +93,7 @@ export default async function handler(req, res) {
 
     const data = reservaciones.map(r => ({
       ...r,
+      foto_url: r.paquetes?.foto_url || null,
       total_pagado: (byReserva[r.id] || [])
         .filter(p => p.confirmado)
         .reduce((s, p) => s + (Number(p.monto) || 0), 0),
