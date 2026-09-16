@@ -10,6 +10,9 @@
       ]
     }
   ],
+  "rewrites": [
+    { "source": "/mi-reserva", "destination": "/mi-reserva.html" }
+  ],
   "crons": [
     {
       "path": "/api/crm-agent",
