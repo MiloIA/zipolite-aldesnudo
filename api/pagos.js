@@ -143,6 +143,21 @@ export default async function handler(req, res) {
       confirmado: false,
     }]);
     if (pagoErr) return res.status(500).json({ error: pagoErr.message });
+
+    const tgToken = process.env.TELEGRAM_BOT_TOKEN;
+    const tgChat  = process.env.TELEGRAM_CHAT_ID;
+    if (tgToken && tgChat) {
+      fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: tgChat,
+          parse_mode: 'HTML',
+          text: `🧾 <b>Comprobante recibido</b>\n\n<b>Reserva:</b> ${reservacion_id.slice(-6).toUpperCase()}\n<b>Monto:</b> $${Number(monto).toLocaleString('es-MX')}\n<b>Archivo:</b> ${file_name || '—'}`,
+        }),
+      }).catch(e => console.error('telegram comprobante:', e));
+    }
+
     return res.status(201).json({ ok: true });
   }
 
