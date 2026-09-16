@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { generarContrato } from '../lib/generar-contrato.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -28,7 +29,6 @@ export default async function handler(req, res) {
     personas, metodo_pago, total, anticipo,
     fecha_inicio, fecha_fin,
     bank_name, bank_clabe,
-    contrato_url,
   } = req.body || {};
 
   if (!email || !nombre) return res.status(400).json({ ok: false, error: 'Faltan campos' });
@@ -99,6 +99,9 @@ export default async function handler(req, res) {
     ? `<tr><td style="padding:10px 12px;color:#555;border-bottom:1px solid #e8f5f7;">Fechas</td>
          <td style="padding:10px 12px;font-weight:600;color:#1A3A4A;border-bottom:1px solid #e8f5f7;">${fecha_inicio || ''}${fecha_inicio && fecha_fin ? ' — ' : ''}${fecha_fin || ''}</td></tr>`
     : '';
+
+  const contrato = await generarContrato(reservacion_id);
+  const contrato_url = contrato.ok ? contrato.contrato_url : null;
 
   const html = `<!DOCTYPE html>
 <html lang="es">

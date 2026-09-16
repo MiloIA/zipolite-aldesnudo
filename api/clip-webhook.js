@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { generarContrato } from '../lib/generar-contrato.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -108,6 +109,8 @@ export default async function handler(req, res) {
     if (reserva && RESEND_API_KEY) {
       const shortId = refId.substring(0, 8).toUpperCase();
       const miReservaUrl = `https://zipolitealdesnudo.com/mi-reserva?id=${refId}`;
+      const contrato = await generarContrato(refId);
+      const contrato_url = contrato.ok ? contrato.contrato_url : null;
       const htmlClient = `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
           <div style="background:#1A3A4A;padding:2rem;text-align:center;">
@@ -131,6 +134,11 @@ export default async function handler(req, res) {
               <a href="${miReservaUrl}" style="background:#1a9fa0;color:white;padding:12px 24px;border-radius:99px;text-decoration:none;display:inline-block;font-weight:700;">
                 Ver mi reserva →
               </a>
+              ${contrato_url ? `
+              <a href="${contrato_url}"
+                 style="display:inline-block;margin-top:8px;padding:12px 24px;background:#f0f9f9;color:#1a9fa0;border:1.5px solid #1a9fa0;border-radius:99px;text-decoration:none;font-weight:700;">
+                📄 Descargar contrato PDF →
+              </a>` : ''}
             </div>
             <p>Si tienes dudas sobre tu reserva, contáctanos y menciona tu número <strong>${shortId}</strong>.</p>
             <p style="text-align:center;margin-top:2rem;">
