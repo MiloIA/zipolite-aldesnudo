@@ -521,6 +521,98 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
+    if (data.startsWith('confirmar_pago:') || data.startsWith('rechazar_pago:')) {
+      const esConfirmar = data.startsWith('confirmar_pago:');
+      const pagoId = data.split(':')[1];
+
+      // 1. Actualiza el pago en Supabase
+      const { error } = await supabase
+        .from('pagos')
+        .update({ confirmado: esConfirmar })
+        .eq('id', pagoId);
+
+      if (error) {
+        console.error('confirmar_pago error:', error.message);
+        return res.status(200).end();
+      }
+
+      if (esConfirmar) {
+        // 2. Trae datos del pago + reservación para el email
+        const { data: pago } = await supabase
+          .from('pagos')
+          .select('monto, reservacion_id, reservaciones(nombre, email, whatsapp, paquete_nombre, total, fecha_inicio, fecha_fin)')
+          .eq('id', pagoId)
+          .single();
+
+        const r = pago?.reservaciones;
+
+        // 3. Actualiza estado reservación pendiente → parcial
+        await supabase
+          .from('reservaciones')
+          .update({ estado: 'parcial' })
+          .eq('id', pago.reservacion_id)
+          .eq('estado', 'pendiente');
+
+        // 4. Manda email al cliente vía Resend
+        if (r?.email && process.env.RESEND_API_KEY) {
+          const shortId = pago.reservacion_id.slice(-6).toUpperCase();
+          const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              from: 'Zipolite al Desnudo <hola@zipolitealdesnudo.com>',
+              to: [r.email],
+              subject: `✅ Pago confirmado — Reserva #${shortId}`,
+              html: `
+                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;">
+                  <h2 style="color:#0B2E3E;">¡Tu pago fue confirmado! 🎉</h2>
+                  <p>Hola ${r.nombre}, confirmamos la recepción de tu pago de <strong>${fmt(pago.monto)}</strong> para tu reserva <strong>#${shortId}</strong>.</p>
+                  <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                    <tr><td style="padding:8px;color:#6b7280;font-size:14px;">Paquete</td><td style="padding:8px;font-weight:600;">${r.paquete_nombre}</td></tr>
+                    ${r.fecha_inicio ? `<tr><td style="padding:8px;color:#6b7280;font-size:14px;">Fechas</td><td style="padding:8px;font-weight:600;">${r.fecha_inicio} → ${r.fecha_fin}</td></tr>` : ''}
+                    <tr><td style="padding:8px;color:#6b7280;font-size:14px;">Monto confirmado</td><td style="padding:8px;font-weight:600;color:#1a9fa0;">${fmt(pago.monto)}</td></tr>
+                  </table>
+                  <a href="https://zipolitealdesnudo.com/mi-reserva?id=${pago.reservacion_id}"
+                     style="display:inline-block;padding:12px 24px;background:#1a9fa0;color:#fff;border-radius:99px;text-decoration:none;font-weight:700;">
+                    Ver mi reserva →
+                  </a>
+                  <p style="margin-top:24px;color:#6b7280;font-size:13px;">¿Dudas? Escríbenos al <a href="https://wa.me/529582199953">WhatsApp</a>.</p>
+                </div>`
+            })
+          }).catch(e => console.error('resend confirmar_pago:', e));
+        }
+
+        // 5. Edita botones del mensaje original
+        await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            message_id: query.message.message_id,
+            reply_markup: { inline_keyboard: [[{ text: '✅ Pago confirmado', callback_data: 'noop' }]] }
+          })
+        }).catch(() => {});
+
+      } else {
+        // Rechazado — solo edita los botones
+        await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            message_id: query.message.message_id,
+            reply_markup: { inline_keyboard: [[{ text: '❌ Pago rechazado', callback_data: 'noop' }]] }
+          })
+        }).catch(() => {});
+      }
+
+      return res.status(200).end();
+    }
+
     return res.status(200).end();
   }
 
