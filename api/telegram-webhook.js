@@ -7,6 +7,7 @@ import {
 import {
   handleMesesSelection, crearReservaYPago, handleReservaStep
 } from '../lib/telegram-reserva.js';
+import { generarContrato } from '../lib/generar-contrato.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -553,6 +554,10 @@ export default async function handler(req, res) {
           .eq('id', pago.reservacion_id)
           .eq('estado', 'pendiente');
 
+        // 3b. Genera contrato automáticamente
+        const contrato = await generarContrato(pago.reservacion_id);
+        const contrato_url = contrato.ok ? contrato.contrato_url : null;
+
         // 4. Manda email al cliente vía Resend
         if (r?.email && process.env.RESEND_API_KEY) {
           const shortId = pago.reservacion_id.slice(-6).toUpperCase();
@@ -580,6 +585,11 @@ export default async function handler(req, res) {
                      style="display:inline-block;padding:12px 24px;background:#1a9fa0;color:#fff;border-radius:99px;text-decoration:none;font-weight:700;">
                     Ver mi reserva →
                   </a>
+                  ${contrato_url ? `
+                  <a href="${contrato_url}"
+                     style="display:inline-block;margin-top:8px;padding:12px 24px;background:#f0f9f9;color:#1a9fa0;border:1.5px solid #1a9fa0;border-radius:99px;text-decoration:none;font-weight:700;">
+                    📄 Descargar contrato PDF →
+                  </a>` : ''}
                   <p style="margin-top:24px;color:#6b7280;font-size:13px;">¿Dudas? Escríbenos al <a href="https://wa.me/529582199953">WhatsApp</a>.</p>
                 </div>`
             })
