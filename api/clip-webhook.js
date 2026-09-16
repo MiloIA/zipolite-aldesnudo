@@ -137,7 +137,7 @@ export default async function handler(req, res) {
       const shortId = refId.substring(0, 8).toUpperCase();
       const miReservaUrl = `https://zipolitealdesnudo.com/mi-reserva?id=${refId}`;
       const contrato = await generarContrato(refId);
-      const contrato_url = contrato.ok ? contrato.contrato_url : null;
+      const contrato_url = contrato.ok ? contrato.url : null;
       const htmlClient = `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
           <div style="background:#1A3A4A;padding:2rem;text-align:center;">

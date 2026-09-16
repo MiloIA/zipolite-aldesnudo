@@ -101,7 +101,7 @@ export default async function handler(req, res) {
     : '';
 
   const contrato = await generarContrato(reservacion_id);
-  const contrato_url = contrato.ok ? contrato.contrato_url : null;
+  const contrato_url = contrato.ok ? contrato.url : null;
 
   const html = `<!DOCTYPE html>
 <html lang="es">
