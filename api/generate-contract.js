@@ -20,7 +20,9 @@ export default async function handler(req, res) {
     const bodyToken = req.body?.admin_token;
     const token = authHeader?.replace('Bearer ', '') || bodyToken;
 
-    if (token) {
+    if (token === process.env.ADMIN_PASSWORD) {
+      // llamada interna autorizada — continúa
+    } else if (token) {
       const { data } = await supabase
         .from('admin_sessions')
         .select('expires_at')
