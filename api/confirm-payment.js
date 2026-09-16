@@ -180,6 +180,22 @@ export default async function handler(req, res) {
     `<b>Método de pago:</b> ${traducirMetodoPago(metodo_pago)}\n` +
     `<b>Total:</b> ${fmt(total)}`;
 
+  // Actualizar estado según total pagado
+  const { data: todosPagos } = await supabase
+    .from('pagos')
+    .select('monto')
+    .eq('reservacion_id', reservacion_id)
+    .eq('confirmado', true);
+
+  const totalPagado = (todosPagos || []).reduce((s, p) => s + (Number(p.monto) || 0), 0);
+  const totalReserva = Number(total) || 0;
+  const nuevoEstado = totalPagado >= totalReserva ? 'confirmada' : 'parcial';
+
+  await supabase
+    .from('reservaciones')
+    .update({ estado: nuevoEstado })
+    .eq('id', reservacion_id);
+
   try {
     await Promise.all([
       fetch('https://api.resend.com/emails', {

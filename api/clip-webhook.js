@@ -78,15 +78,14 @@ export default async function handler(req, res) {
     // 1. Fetch current state before updating (to detect first confirmation)
     const { data: reservaAntes } = await supabase
       .from('reservaciones')
-      .select('estado, variante_id, personas')
+      .select('estado, variante_id, personas, total')
       .eq('id', refId)
       .single();
 
-    // 2. Update reservation status
+    // 2. Update reservation status (campos fijos, estado se calcula abajo)
     const { error: updateError } = await supabase
       .from('reservaciones')
       .update({
-        estado: 'confirmada',
         metodo_pago: 'card',
         clip_payment_id: clipId,
         anticipo_pagado: parseFloat(amount),
@@ -98,6 +97,34 @@ export default async function handler(req, res) {
       console.error('Supabase update error:', updateError);
       return res.status(500).json({ error: 'DB update failed' });
     }
+
+    // 2b. Insertar pago confirmado (solo en primera confirmación para evitar duplicados)
+    if (reservaAntes?.estado !== 'confirmada') {
+      await supabase.from('pagos').insert({
+        reservacion_id: refId,
+        monto: parseFloat(amount),
+        metodo: 'card',
+        fecha: new Date().toISOString().split('T')[0],
+        confirmado: true,
+        notas: `Pago con tarjeta vía Clip — order_id: ${clipId}`,
+      });
+    }
+
+    // 2c. Calcular estado según total pagado
+    const { data: todosPagosClip } = await supabase
+      .from('pagos')
+      .select('monto')
+      .eq('reservacion_id', refId)
+      .eq('confirmado', true);
+
+    const totalPagadoClip = (todosPagosClip || []).reduce((s, p) => s + (Number(p.monto) || 0), 0);
+    const totalReservaClip = Number(reservaAntes?.total) || 0;
+    const nuevoEstadoClip = totalPagadoClip >= totalReservaClip ? 'confirmada' : 'parcial';
+
+    await supabase
+      .from('reservaciones')
+      .update({ estado: nuevoEstadoClip })
+      .eq('id', refId);
 
     // 2. Fetch full reservation data for email
     const { data: reserva } = await supabase
