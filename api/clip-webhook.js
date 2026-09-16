@@ -9,6 +9,53 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
+async function createViajero(reservacion) {
+  try {
+    const { data: existing } = await supabase
+      .from('viajeros').select('id')
+      .eq('reservacion_id', reservacion.id).eq('numero_viajero', 1).maybeSingle();
+    if (existing) return;
+    const parts = (reservacion.nombre || '').split(' ');
+    await supabase.from('viajeros').insert({
+      reservacion_id: reservacion.id,
+      nombre:         parts[0] || '',
+      ap_paterno:     parts[1] || '',
+      ap_materno:     parts[2] || '',
+      correo:         reservacion.email,
+      whatsapp:       reservacion.whatsapp || null,
+      es_titular:     true,
+      numero_viajero: 1,
+    });
+  } catch (e) {
+    console.error('createViajero error:', e.message);
+  }
+}
+
+async function updateContactoEstado(email, whatsapp) {
+  try {
+    const { data: byEmail } = email
+      ? await supabase.from('contactos').select('id').eq('email', email).maybeSingle()
+      : { data: null };
+    const { data: byWa } = (!byEmail && whatsapp)
+      ? await supabase.from('contactos').select('id').eq('whatsapp', whatsapp).maybeSingle()
+      : { data: null };
+    const existente = byEmail || byWa;
+    const updates = {
+      estado:      'reservado',
+      estado_crm:  'reservado',
+      temperatura: 'caliente',
+      updated_at:  new Date().toISOString(),
+    };
+    if (existente) {
+      await supabase.from('contactos').update(updates).eq('id', existente.id);
+    } else {
+      await supabase.from('contactos').insert({ email: email || null, whatsapp: whatsapp || null, origen: 'sitio', ...updates });
+    }
+  } catch (e) {
+    console.error('updateContactoEstado error:', e.message);
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -61,6 +108,7 @@ export default async function handler(req, res) {
 
     if (reserva && RESEND_API_KEY) {
       const shortId = refId.substring(0, 8).toUpperCase();
+      const miReservaUrl = `https://zipolitealdesnudo.com/mi-reserva?id=${refId}`;
       const htmlClient = `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
           <div style="background:#1A3A4A;padding:2rem;text-align:center;">
@@ -78,6 +126,12 @@ export default async function handler(req, res) {
                 <tr><td style="padding:0.5rem 0;color:#666;">Total del paquete</td><td style="text-align:right;">$${reserva.total} MXN</td></tr>
                 <tr style="border-top:2px solid #1A3A4A;"><td style="padding:0.75rem 0;font-weight:700;">Total pagado</td><td style="text-align:right;font-weight:700;color:#1A3A4A;">$${amount} MXN</td></tr>
               </table>
+            </div>
+            <div style="text-align:center;margin:1.5rem 0;">
+              <p style="margin:0 0 10px;font-size:0.88rem;color:#555;">🔗 Consulta tu reserva y realiza tus pagos:</p>
+              <a href="${miReservaUrl}" style="background:#1a9fa0;color:white;padding:12px 24px;border-radius:99px;text-decoration:none;display:inline-block;font-weight:700;">
+                Ver mi reserva →
+              </a>
             </div>
             <p>Si tienes dudas sobre tu reserva, contáctanos y menciona tu número <strong>${shortId}</strong>.</p>
             <p style="text-align:center;margin-top:2rem;">
@@ -129,36 +183,11 @@ export default async function handler(req, res) {
         .eq('id', reservaAntes.variante_id);
     }
 
-    console.log(`Reservación ${refId} confirmada via Clip webhook`);
-  }
-
-  // Upsert en CRM
-  try {
-    const { data: existente } = await supabase
-      .from('contactos')
-      .select('id')
-      .eq('email', reserva.email)
-      .maybeSingle();
-
-    if (existente) {
-      await supabase
-        .from('contactos')
-        .update({ estado_crm: 'reservado', temperatura: 'caliente' })
-        .eq('id', existente.id);
-    } else {
-      await supabase
-        .from('contactos')
-        .insert({
-          email: reserva.email,
-          nombre: reserva.nombre,
-          whatsapp: reserva.whatsapp,
-          origen: 'sitio',
-          estado_crm: 'reservado',
-          temperatura: 'caliente'
-        });
+    if (reserva) {
+      await createViajero(reserva);
+      await updateContactoEstado(reserva.email, reserva.whatsapp);
     }
-  } catch (crmErr) {
-    console.error('CRM upsert error:', crmErr);
+    console.log(`Reservación ${refId} confirmada via Clip webhook`);
   }
 
   return res.status(200).json({ received: true });

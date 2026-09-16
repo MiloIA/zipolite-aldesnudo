@@ -5,6 +5,53 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+async function createViajero(reservacion) {
+  try {
+    const { data: existing } = await supabase
+      .from('viajeros').select('id')
+      .eq('reservacion_id', reservacion.id).eq('numero_viajero', 1).maybeSingle();
+    if (existing) return;
+    const parts = (reservacion.nombre || '').split(' ');
+    await supabase.from('viajeros').insert({
+      reservacion_id: reservacion.id,
+      nombre:         parts[0] || '',
+      ap_paterno:     parts[1] || '',
+      ap_materno:     parts[2] || '',
+      correo:         reservacion.email,
+      whatsapp:       reservacion.whatsapp || null,
+      es_titular:     true,
+      numero_viajero: 1,
+    });
+  } catch (e) {
+    console.error('createViajero error:', e.message);
+  }
+}
+
+async function updateContactoEstado(email, whatsapp) {
+  try {
+    const { data: byEmail } = email
+      ? await supabase.from('contactos').select('id').eq('email', email).maybeSingle()
+      : { data: null };
+    const { data: byWa } = (!byEmail && whatsapp)
+      ? await supabase.from('contactos').select('id').eq('whatsapp', whatsapp).maybeSingle()
+      : { data: null };
+    const existente = byEmail || byWa;
+    const updates = {
+      estado:      'reservado',
+      estado_crm:  'reservado',
+      temperatura: 'caliente',
+      updated_at:  new Date().toISOString(),
+    };
+    if (existente) {
+      await supabase.from('contactos').update(updates).eq('id', existente.id);
+    } else {
+      await supabase.from('contactos').insert({ email: email || null, whatsapp: whatsapp || null, origen: 'sitio', ...updates });
+    }
+  } catch (e) {
+    console.error('updateContactoEstado error:', e.message);
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
@@ -15,13 +62,15 @@ export default async function handler(req, res) {
   const token = authHeader?.replace('Bearer ', '');
 
   if (token) {
-    const { data: session } = await supabase
-      .from('admin_sessions')
-      .select('expires_at')
-      .eq('token', token)
-      .single();
-    if (!session || new Date(session.expires_at) < new Date()) {
-      return res.status(401).json({ error: 'Sesión expirada' });
+    if (token !== process.env.ADMIN_PASSWORD) {
+      const { data: session } = await supabase
+        .from('admin_sessions')
+        .select('expires_at')
+        .eq('token', token)
+        .single();
+      if (!session || new Date(session.expires_at) < new Date()) {
+        return res.status(401).json({ error: 'Sesión expirada' });
+      }
     }
   } else {
     const reservacion_id = req.body?.reservacion_id;
@@ -83,6 +132,8 @@ export default async function handler(req, res) {
          <p style="margin:0;font-size:0.88rem;color:#777;">Te contactaremos para coordinar el pago.</p>
        </div>`;
 
+  const miReservaUrl = `https://zipolitealdesnudo.com/mi-reserva?id=${reservacion_id}`;
+
   const clientHtml = `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -130,6 +181,14 @@ export default async function handler(req, res) {
           </tr>
         </table>
         ${pagoSection}
+      </td></tr>
+
+      <tr><td style="padding:20px 32px 0;text-align:center;">
+        <p style="margin:0 0 10px;font-size:0.88rem;color:#555;">🔗 Consulta tu reserva y realiza tus pagos:</p>
+        <a href="${miReservaUrl}" style="background:#1a9fa0;color:white;padding:12px 24px;border-radius:99px;text-decoration:none;display:inline-block;font-weight:700;margin:4px 0 8px;">
+          Ver mi reserva →
+        </a>
+        <p style="margin:0;font-size:0.75rem;color:#aaa;">Ver historial · Pagar con tarjeta · Subir comprobantes</p>
       </td></tr>
 
       <tr><td style="padding:24px 32px 0;font-size:0.82rem;color:#888;line-height:1.6;">
@@ -200,37 +259,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ ok: false, error: err.message || 'Error enviando email al cliente' });
     }
 
-    // Upsert en CRM
-    try {
-      const crmData = {
-        email: email,
-        nombre: nombre,
-        origen: 'sitio',
-        estado_crm: 'reservado',
-        temperatura: 'caliente'
-      };
-      if (whatsapp) crmData.whatsapp = whatsapp;
-
-      const { data: existente } = await supabase
-        .from('contactos')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (existente) {
-        await supabase
-          .from('contactos')
-          .update({ estado_crm: 'reservado', temperatura: 'caliente' })
-          .eq('id', existente.id);
-      } else {
-        await supabase
-          .from('contactos')
-          .insert(crmData);
-      }
-    } catch (crmErr) {
-      console.error('CRM upsert error:', crmErr);
-    }
-
+    await createViajero({ id: reservacion_id, nombre, email, whatsapp: whatsapp || null });
+    await updateContactoEstado(email, whatsapp || null);
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });

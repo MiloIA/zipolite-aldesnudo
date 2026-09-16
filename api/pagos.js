@@ -16,6 +16,53 @@ async function requireAuth(req) {
   return false;
 }
 
+async function createViajero(reservacion) {
+  try {
+    const { data: existing } = await sb
+      .from('viajeros').select('id')
+      .eq('reservacion_id', reservacion.id).eq('numero_viajero', 1).maybeSingle();
+    if (existing) return;
+    const parts = (reservacion.nombre || '').split(' ');
+    await sb.from('viajeros').insert({
+      reservacion_id: reservacion.id,
+      nombre:         parts[0] || '',
+      ap_paterno:     parts[1] || '',
+      ap_materno:     parts[2] || '',
+      correo:         reservacion.email,
+      whatsapp:       reservacion.whatsapp || null,
+      es_titular:     true,
+      numero_viajero: 1,
+    });
+  } catch (e) {
+    console.error('createViajero error:', e.message);
+  }
+}
+
+async function updateContactoEstado(email, whatsapp) {
+  try {
+    const { data: byEmail } = email
+      ? await sb.from('contactos').select('id').eq('email', email).maybeSingle()
+      : { data: null };
+    const { data: byWa } = (!byEmail && whatsapp)
+      ? await sb.from('contactos').select('id').eq('whatsapp', whatsapp).maybeSingle()
+      : { data: null };
+    const existente = byEmail || byWa;
+    const updates = {
+      estado:      'reservado',
+      estado_crm:  'reservado',
+      temperatura: 'caliente',
+      updated_at:  new Date().toISOString(),
+    };
+    if (existente) {
+      await sb.from('contactos').update(updates).eq('id', existente.id);
+    } else {
+      await sb.from('contactos').insert({ email: email || null, whatsapp: whatsapp || null, origen: 'sitio', ...updates });
+    }
+  } catch (e) {
+    console.error('updateContactoEstado error:', e.message);
+  }
+}
+
 export default async function handler(req, res) {
   const { method } = req;
   const url = new URL(req.url, 'http://localhost');
@@ -151,6 +198,8 @@ export default async function handler(req, res) {
       }]).select().single();
 
       if (error) return res.status(500).json({ error: error.message });
+      await createViajero(data);
+      await updateContactoEstado(data.email, data.whatsapp);
       return res.status(201).json({ data });
     }
 
