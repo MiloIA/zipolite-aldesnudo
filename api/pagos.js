@@ -134,10 +134,9 @@ export default async function handler(req, res) {
         const buffer = Buffer.from(file_base64, 'base64');
         const ext = (file_name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
         uploadPath = `${reservacion_id}/${Date.now()}.${ext}`;
-        const { data: uploadData, error: upErr } = await sb.storage
+        const { error: upErr } = await sb.storage
           .from('comprobantes')
           .upload(uploadPath, buffer, { contentType: file_type || 'image/jpeg', upsert: true });
-        console.log('UPLOAD RESULT:', JSON.stringify({ uploadData, uploadError: upErr }));
         if (!upErr) comprobanteNota += ` — archivo: ${uploadPath}`;
       } catch (_) {}
     }
@@ -174,44 +173,23 @@ export default async function handler(req, res) {
         ]],
       } : undefined;
 
-      console.log('TELEGRAM NOTIFY:', JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID ? 'SET' : 'MISSING', uploadPath }));
-      if (uploadPath) {
-        const fileUrl  = `${process.env.SUPABASE_URL}/storage/v1/object/public/comprobantes/${uploadPath}`;
-        const ext      = uploadPath.split('.').pop().toLowerCase();
-        const isImage  = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
-        const tgMethod = isImage ? 'sendPhoto' : 'sendDocument';
-        const mediaKey = isImage ? 'photo' : 'document';
-        fetch(`https://api.telegram.org/bot${tgToken}/${tgMethod}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: tgChat,
-            [mediaKey]: fileUrl,
-            caption,
-            parse_mode: 'HTML',
-            ...(replyMarkup && { reply_markup: replyMarkup }),
-          }),
-        }).then(async r => {
-          const body = await r.json().catch(() => ({}));
-          console.log('TELEGRAM RESPONSE:', r.status, JSON.stringify(body));
-          return r;
-        }).catch(e => console.error('TELEGRAM ERROR:', e.message, JSON.stringify(e)));
-      } else {
-        fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: tgChat,
-            text: caption,
-            parse_mode: 'HTML',
-            ...(replyMarkup && { reply_markup: replyMarkup }),
-          }),
-        }).then(async r => {
-          const body = await r.json().catch(() => ({}));
-          console.log('TELEGRAM RESPONSE:', r.status, JSON.stringify(body));
-          return r;
-        }).catch(e => console.error('TELEGRAM ERROR:', e.message, JSON.stringify(e)));
-      }
+      const fileUrl = uploadPath
+        ? `${process.env.SUPABASE_URL}/storage/v1/object/public/comprobantes/${uploadPath}`
+        : null;
+      const mensajeTelegram = caption + (uploadPath
+        ? `\n\n📎 <a href="${fileUrl}">Ver comprobante</a>`
+        : '');
+
+      fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: tgChat,
+          text: mensajeTelegram,
+          parse_mode: 'HTML',
+          ...(replyMarkup && { reply_markup: replyMarkup }),
+        }),
+      }).catch(e => console.error('telegram comprobante:', e));
     }
 
     return res.status(201).json({ ok: true });
