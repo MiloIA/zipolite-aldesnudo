@@ -155,7 +155,6 @@ export default async function handler(req, res) {
     // 4. Telegram notification
     const tgToken = process.env.TELEGRAM_BOT_TOKEN;
     const tgChat  = process.env.TELEGRAM_CHAT_ID;
-    console.log('TG CHECK:', tgToken ? 'TOKEN_SET' : 'TOKEN_MISSING', tgChat ? 'CHAT_SET' : 'CHAT_MISSING');
     if (tgToken && tgChat) {
       const shortId = reservacion_id.slice(-6).toUpperCase();
       const caption =
