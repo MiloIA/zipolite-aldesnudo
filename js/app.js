@@ -1065,7 +1065,7 @@ function mostrarStep3(res, info) {
       <p style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">🔐 Tu cuenta</p>
       <p style="font-size:0.83rem;color:#555;margin-bottom:12px;">${info.email}</p>
       ${currentSession
-        ? `<p style="font-size:0.83rem;color:#2e7d32;font-weight:600;">✅ Reserva registrada en tu cuenta. <a href="cuenta.html" style="color:var(--ocean);">Ver mis reservaciones →</a></p>`
+        ? `<p style="font-size:0.83rem;color:#2e7d32;font-weight:600;">✅ Reserva registrada en tu cuenta. <a href="/mi-cuenta" style="color:var(--ocean);">Ver mis reservaciones →</a></p>`
         : `<div id="new-pass-section">
         <input type="password" id="new-password" placeholder="Establece tu contraseña" style="width:100%;padding:9px 12px;border:1.5px solid #a5d6a7;border-radius:8px;font-size:0.9rem;outline:none;margin-bottom:8px;">
         <button onclick="updatePassword()" style="width:100%;padding:9px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:0.88rem;font-weight:700;cursor:pointer;">Guardar contraseña</button>
@@ -1263,7 +1263,7 @@ async function signInGoogle() {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin + '/cuenta.html'
+      redirectTo: window.location.origin + '/mi-cuenta'
     }
   });
   if (error) showRegMsg('Error: ' + error.message, true);
@@ -1296,7 +1296,7 @@ async function doLogin() {
   if (!pass) { showRegMsg('Escribe tu contraseña', true); return; }
   const {error} = await sb.auth.signInWithPassword({email, password: pass});
   if (error) showRegMsg('Error: '+error.message, true);
-  else { showRegMsg('✅ ¡Bienvenido!'); setTimeout(() => { closeRegister(); window.location.href = 'cuenta.html'; }, 1200); }
+  else { showRegMsg('✅ ¡Bienvenido!'); setTimeout(() => { closeRegister(); window.location.href = '/mi-cuenta'; }, 1200); }
 }
 function resetPass() {
   const email = document.getElementById('reg-email').value.trim();
@@ -1469,7 +1469,7 @@ sb.auth.onAuthStateChange((event, session) => {
     const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
     btn.textContent = '👤 ' + name;
     btn.removeAttribute('onclick');
-    btn.href = 'cuenta.html';
+    btn.href = '/mi-cuenta';
   } else if (!session && btn) {
     btn.textContent = '👤 Mi cuenta';
     btn.href = '#';
@@ -1499,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (window.location.hash.includes('access_token') && window.location.hash.includes('type=recovery')) {
-    window.location.href = 'cuenta.html' + window.location.hash;
+    window.location.href = '/mi-cuenta' + window.location.hash;
     return;
   }
   const _slugParam = new URLSearchParams(window.location.search).get('paquete');

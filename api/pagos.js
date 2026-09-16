@@ -67,6 +67,40 @@ export default async function handler(req, res) {
   const url = new URL(req.url, 'http://localhost');
   const params = url.searchParams;
 
+  // ── PUBLIC: client reads own reservaciones by email ──────────────────────
+  if (method === 'GET' && params.get('email') && params.get('cliente') === '1') {
+    const email = params.get('email');
+    const { data: reservaciones, error: rErr } = await sb
+      .from('reservaciones')
+      .select('id, paquete_nombre, personas, total, estado, metodo_pago, fecha_inicio, fecha_fin, created_at, variantes_paquete(nombre)')
+      .eq('email', email)
+      .order('created_at', { ascending: false });
+
+    if (rErr) return res.status(500).json({ error: rErr.message });
+    if (!reservaciones || reservaciones.length === 0) return res.status(200).json({ data: [] });
+
+    const ids = reservaciones.map(r => r.id);
+    const { data: pagos } = await sb
+      .from('pagos')
+      .select('reservacion_id, monto, confirmado')
+      .in('reservacion_id', ids);
+
+    const byReserva = {};
+    (pagos || []).forEach(p => {
+      if (!byReserva[p.reservacion_id]) byReserva[p.reservacion_id] = [];
+      byReserva[p.reservacion_id].push(p);
+    });
+
+    const data = reservaciones.map(r => ({
+      ...r,
+      total_pagado: (byReserva[r.id] || [])
+        .filter(p => p.confirmado)
+        .reduce((s, p) => s + (Number(p.monto) || 0), 0),
+    }));
+
+    return res.status(200).json({ data });
+  }
+
   // ── PUBLIC: client reads own reservacion by UUID (no auth needed) ─────────
   if (method === 'GET' && params.get('reservacion_id') && !params.get('all') && !params.get('variantes')) {
     const reservacionId = params.get('reservacion_id');

@@ -11,7 +11,8 @@
     }
   ],
   "rewrites": [
-    { "source": "/mi-reserva", "destination": "/mi-reserva.html" }
+    { "source": "/mi-reserva", "destination": "/mi-reserva.html" },
+    { "source": "/mi-cuenta", "destination": "/mi-cuenta.html" }
   ],
   "crons": [
     {
