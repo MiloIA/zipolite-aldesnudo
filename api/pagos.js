@@ -99,6 +99,7 @@ export default async function handler(req, res) {
         .reduce((s, p) => s + (Number(p.monto) || 0), 0),
     }));
 
+    console.log('CLIENTE RESERVAS:', JSON.stringify(data?.slice(0,1), null, 2));
     return res.status(200).json({ data });
   }
 
