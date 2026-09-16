@@ -1,355 +1,651 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Cuenta — Zipolite al Desnudo</title>
-  <meta name="robots" content="noindex">
-  <link rel="icon" type="image/png" href="/favicon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Fraunces:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root {
-      --ocean: #0097A7;
-      --teal:  #1a9fa0;
-      --teal2: #157f80;
-      --sand:  #FFFBF2;
-      --dark:  #0B2E3E;
-      --red:   #E8312A;
-      --border: #e2ddd6;
-      --text:  #374151;
-      --muted: #6b7280;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: #f0f4f7;
-      min-height: 100vh;
-      color: var(--text);
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Cuenta — Zipolite al Desnudo</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Fraunces:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --ocean: #0097A7;
+  --teal: #1a9fa0;
+  --teal2: #157f80;
+  --sand: #FFFBF2;
+  --dark: #0B2E3E;
+  --red: #E8312A;
+  --sunset: #E8622A;
+  --border: #e2ddd6;
+  --text: #374151;
+  --muted: #6b7280;
+}
 
-    .rainbow-bar {
-      height: 5px;
-      background: linear-gradient(90deg,#E8312A 0%,#F5831F 20%,#FFCA28 40%,#4CAF50 60%,#00BCD4 80%,#9C27B0 100%);
-    }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── TOP BAR ── */
-    .top-bar {
-      background: var(--dark);
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .tb-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-    .tb-logo img { height: 34px; width: auto; }
-    .tb-logo span {
-      color: #fff;
-      font-family: 'Fraunces', serif;
-      font-size: 0.95rem;
-      font-weight: 700;
-    }
-    .tb-user {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .tb-nombre {
-      color: rgba(255,255,255,0.85);
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-    .btn-logout {
-      background: rgba(255,255,255,0.12);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 6px 14px;
-      border-radius: 99px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.2s;
-    }
-    .btn-logout:hover { background: rgba(255,255,255,0.22); }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #f0f4f7;
+  min-height: 100vh;
+  color: var(--text);
+}
 
-    /* ── LOADING ── */
-    .view-loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: calc(100vh - 100px);
-    }
-    .spinner {
-      width: 36px; height: 36px;
-      border: 3px solid #e0e0e0;
-      border-top-color: var(--teal);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+.rainbow-bar {
+  height: 5px;
+  background: linear-gradient(90deg,#E8312A 0%,#F5831F 20%,#FFCA28 40%,#4CAF50 60%,#00BCD4 80%,#9C27B0 100%);
+}
 
-    /* ── LOGIN ── */
-    .view-login {
-      min-height: calc(100vh - 100px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 16px;
-    }
-    .login-box {
-      background: #fff;
-      border-radius: 20px;
-      padding: 36px 28px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-    }
-    .login-brand {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-    .login-brand h2 {
-      font-family: 'Fraunces', serif;
-      font-size: 1.5rem;
-      font-weight: 900;
-      color: var(--dark);
-      margin-bottom: 4px;
-    }
-    .login-brand p { font-size: 0.82rem; color: var(--muted); }
-    .oauth-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      padding: 12px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 10px;
-      background: #fff;
-      font-family: inherit;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--dark);
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .oauth-btn:hover { background: #f5f5f5; border-color: #bbb; }
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 18px 0;
-      color: var(--muted);
-      font-size: 0.78rem;
-    }
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: #e2e2e2;
-    }
-    .fg { margin-bottom: 14px; }
-    .fg label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-bottom: 5px;
-    }
-    .fg input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 10px;
-      font-family: inherit;
-      font-size: 0.9rem;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-    .fg input:focus { border-color: var(--teal); }
-    .btn-primary-full {
-      display: block;
-      width: 100%;
-      padding: 13px;
-      background: var(--teal);
-      color: #fff;
-      border: none;
-      border-radius: 99px;
-      font-family: inherit;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 8px;
-    }
-    .btn-primary-full:hover { background: var(--teal2); }
-    .btn-text {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 0.8rem;
-      cursor: pointer;
-      font-family: inherit;
-      display: block;
-      margin: 10px auto 0;
-    }
-    .btn-text-teal {
-      background: none;
-      border: none;
-      color: var(--teal);
-      font-size: 0.8rem;
-      cursor: pointer;
-      font-family: inherit;
-      display: block;
-      margin-top: 4px;
-    }
-    .login-msg {
-      font-size: 0.82rem;
-      text-align: center;
-      margin-top: 12px;
-      min-height: 20px;
-      font-weight: 600;
-    }
-    .login-msg.ok  { color: #15803d; }
-    .login-msg.err { color: var(--red); }
+/* ── TOP BAR ── */
+.top-bar {
+  background: var(--dark);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tb-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.tb-logo img { height: 34px; width: auto; }
+.tb-logo span {
+  color: #fff;
+  font-family: 'Fraunces', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.tb-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tb-nombre {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.btn-logout {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.btn-logout:hover { background: rgba(255,255,255,0.22); }
 
-    /* ── DASHBOARD ── */
-    .cuenta-dashboard {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 24px 16px;
-    }
-    .cuenta-welcome { margin-bottom: 20px; }
-    .cuenta-welcome h1 {
-      font-family: 'Fraunces', serif;
-      font-size: 1.6rem;
-      font-weight: 900;
-      color: var(--dark);
-      margin-bottom: 4px;
-    }
-    .cuenta-welcome p { font-size: 0.88rem; color: var(--muted); }
-    .loading-text {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.88rem;
-      padding: 32px 0;
-    }
+/* ── LOADING ── */
+.view-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 100px);
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #e0e0e0;
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── RESERVATION CARDS (from spec) ── */
-    .reserva-card-cliente {
-      background: white;
-      border-radius: 16px;
-      border: 1px solid #e2ddd6;
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px rgba(11,46,62,0.06);
-    }
-    .rc-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 16px;
-    }
-    .rc-paquete {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #1a9fa0;
-      display: block;
-    }
-    .rc-titulo {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.2rem;
-      color: #0B2E3E;
-      margin: 4px 0;
-    }
-    .rc-fechas { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
-    .rc-estado {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 99px;
-      white-space: nowrap;
-      flex-shrink: 0;
-      margin-left: 8px;
-    }
-    .rc-estado.pendiente  { background: #fff3cd; color: #856404; }
-    .rc-estado.parcial    { background: #fff3cd; color: #856404; }
-    .rc-estado.confirmada { background: #d1e7dd; color: #0a3622; }
-    .rc-estado.cancelada  { background: #f8d7da; color: #842029; }
-    .rc-progress {
-      height: 6px;
-      background: #e2ddd6;
-      border-radius: 99px;
-      margin-bottom: 12px;
-      overflow: hidden;
-    }
-    .rc-progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #1a9fa0, #4CAF50);
-      border-radius: 99px;
-      transition: width 0.4s ease;
-    }
-    .rc-amounts {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 16px;
-      font-size: 0.85rem;
-    }
-    .rc-amounts div { display: flex; flex-direction: column; }
-    .rc-amounts span { color: #888; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    .rc-amounts strong { font-size: 1rem; }
-    .green  { color: #1a9fa0; }
-    .orange { color: #e07b00; }
-    .rc-btn {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      background: #1a9fa0;
-      color: white;
-      text-align: center;
-      border-radius: 99px;
-      font-weight: 700;
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: background 0.2s;
-    }
-    .rc-btn:hover { background: var(--teal2); }
+/* ── LOGIN ── */
+.view-login {
+  min-height: calc(100vh - 100px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+.login-box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 28px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+}
+.login-brand { text-align: center; margin-bottom: 24px; }
+.login-brand h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+.login-brand p { font-size: 0.82rem; color: var(--muted); }
+.oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--dark);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.oauth-btn:hover { background: #f5f5f5; border-color: #bbb; }
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e2e2;
+}
+.fg { margin-bottom: 14px; }
+.fg label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.fg input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.fg input:focus { border-color: var(--teal); }
+.btn-primary-full {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: 99px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.btn-primary-full:hover { background: var(--teal2); }
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  display: block;
+  margin: 10px auto 0;
+}
+.btn-text-teal {
+  background: none;
+  border: none;
+  color: var(--teal);
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  display: block;
+  margin-top: 4px;
+}
+.login-msg {
+  font-size: 0.82rem;
+  text-align: center;
+  margin-top: 12px;
+  min-height: 20px;
+  font-weight: 600;
+}
+.login-msg.ok { color: #15803d; }
+.login-msg.err { color: var(--red); }
 
-    /* ── EMPTY STATE ── */
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      background: white;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 8px rgba(11,46,62,0.06);
-    }
-    .empty-state p { color: var(--muted); font-size: 0.9rem; margin-bottom: 16px; }
-    .btn-paquetes {
-      display: inline-block;
-      padding: 11px 24px;
-      background: var(--teal);
-      color: white;
-      border-radius: 99px;
-      font-weight: 700;
-      text-decoration: none;
-      font-size: 0.88rem;
-      transition: background 0.2s;
-    }
-    .btn-paquetes:hover { background: var(--teal2); }
-  </style>
+/* ── DASHBOARD ── */
+.cuenta-dashboard {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+.cuenta-welcome { margin-bottom: 20px; }
+.cuenta-welcome h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+.cuenta-welcome p { font-size: 0.88rem; color: var(--muted); }
+.loading-text {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88rem;
+  padding: 32px 0;
+}
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--dark);
+  margin: 28px 0 12px;
+}
+
+/* ── RESERVATION CARD ENRIQUECIDA ── */
+.reserva-card-cliente {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #e2ddd6;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(11,46,62,0.07);
+  overflow: hidden;
+}
+
+/* Foto del paquete */
+.rc-foto {
+  position: relative;
+  height: 160px;
+  background: linear-gradient(135deg, var(--dark) 0%, var(--teal) 100%);
+  overflow: hidden;
+}
+.rc-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rc-foto-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  opacity: 0.35;
+}
+.rc-foto-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+.rc-foto-badge.confirmada { background: rgba(209,231,221,0.92); color: #0a3622; }
+.rc-foto-badge.parcial    { background: rgba(255,243,205,0.92); color: #856404; }
+.rc-foto-badge.pendiente  { background: rgba(255,243,205,0.92); color: #856404; }
+.rc-foto-badge.cancelada  { background: rgba(248,215,218,0.92); color: #842029; }
+
+/* Countdown sobre la foto */
+.rc-countdown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(11,46,62,0.85), transparent);
+  padding: 20px 16px 12px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.rc-countdown-label {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.rc-countdown-dias {
+  font-family: 'Fraunces', serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+.rc-countdown-sub {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.rc-countdown-badge {
+  background: var(--sunset);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 99px;
+}
+.rc-countdown-pasado {
+  background: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 99px;
+}
+
+/* Cuerpo de la card */
+.rc-body { padding: 18px 18px 20px; }
+
+.rc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+.rc-paquete {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--teal);
+  display: block;
+  margin-bottom: 3px;
+}
+.rc-titulo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  color: var(--dark);
+  margin-bottom: 2px;
+}
+.rc-variante {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+/* Fechas viaje */
+.rc-fechas-bloque {
+  background: #f7fafa;
+  border: 1px solid #d4eff0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rc-fechas-icon { font-size: 1.1rem; flex-shrink: 0; }
+.rc-fechas-texto { font-size: 0.82rem; color: var(--dark); font-weight: 600; line-height: 1.4; }
+.rc-fechas-sub { font-size: 0.75rem; color: var(--muted); font-weight: 400; }
+
+/* Progress */
+.rc-progress {
+  height: 6px;
+  background: #e2ddd6;
+  border-radius: 99px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.rc-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1a9fa0, #4CAF50);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+.rc-amounts {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+}
+.rc-amounts div { display: flex; flex-direction: column; }
+.rc-amounts span { color: #888; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.rc-amounts strong { font-size: 1rem; }
+.green { color: #1a9fa0; }
+.orange { color: #e07b00; }
+
+/* Botones acción */
+.rc-acciones {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.rc-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 8px;
+  background: var(--teal);
+  color: white;
+  text-align: center;
+  border-radius: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.rc-btn:hover { background: var(--teal2); }
+.rc-btn.wa {
+  background: #25D366;
+  flex: 0 0 auto;
+  width: 48px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+}
+.rc-btn.wa:hover { background: #1da851; }
+
+/* Documentos */
+.rc-docs {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+.rc-docs-titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.rc-doc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  text-decoration: none;
+  color: var(--dark);
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.rc-doc-item:hover { background: #eef2f5; }
+.rc-doc-icon { font-size: 1.1rem; flex-shrink: 0; }
+.rc-doc-label { flex: 1; }
+.rc-doc-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #e0f0f0;
+  color: var(--teal2);
+}
+.rc-doc-chip.pendiente {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(11,46,62,0.06);
+}
+.empty-state p { color: var(--muted); font-size: 0.9rem; margin-bottom: 16px; }
+.btn-paquetes {
+  display: inline-block;
+  padding: 11px 24px;
+  background: var(--teal);
+  color: white;
+  border-radius: 99px;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.88rem;
+  transition: background 0.2s;
+}
+.btn-paquetes:hover { background: var(--teal2); }
+
+/* ── PANEL DE CUENTA ── */
+.cuenta-panel {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(11,46,62,0.07);
+  overflow: hidden;
+}
+.panel-section {
+  padding: 20px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-section:last-child { border-bottom: none; }
+.panel-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.panel-section-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-section-title span { font-size: 1rem; }
+.btn-editar {
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-editar:hover { border-color: var(--teal); color: var(--teal); }
+.btn-editar.guardando { opacity: 0.5; pointer-events: none; }
+
+/* Perfil campos */
+.perfil-datos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.perfil-dato { display: flex; flex-direction: column; gap: 2px; }
+.perfil-dato-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.perfil-dato-val {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+.perfil-dato-val.empty { color: #bbb; font-style: italic; font-weight: 400; }
+
+/* Edit form inline */
+.edit-form { display: none; }
+.edit-form.open { display: block; }
+.edit-form .fg { margin-bottom: 12px; }
+.edit-form .fg:last-of-type { margin-bottom: 0; }
+.edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.btn-save {
+  flex: 1;
+  padding: 10px;
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: 99px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-save:hover { background: var(--teal2); }
+.btn-cancel-edit {
+  padding: 10px 18px;
+  background: none;
+  color: var(--muted);
+  border: 1.5px solid var(--border);
+  border-radius: 99px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.edit-msg {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 10px;
+  min-height: 18px;
+}
+.edit-msg.ok { color: #15803d; }
+.edit-msg.err { color: var(--red); }
+
+/* Password strength */
+.pass-strength {
+  height: 3px;
+  background: #e0e0e0;
+  border-radius: 99px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.pass-strength-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s, background 0.3s;
+}
+</style>
 </head>
 <body>
 
@@ -427,13 +723,110 @@
 <!-- DASHBOARD -->
 <div id="view-dashboard" style="display:none;">
   <div class="cuenta-dashboard">
+
     <div class="cuenta-welcome">
-      <h1>Mis reservas</h1>
-      <p id="welcome-text">Bienvenido. Aquí puedes ver y gestionar tus viajes.</p>
+      <h1>Mis viajes</h1>
+      <p id="welcome-text">Aquí puedes ver y gestionar tus reservas.</p>
     </div>
+
+    <!-- RESERVAS -->
     <div id="mis-reservas">
       <div class="loading-text">Cargando tus reservas...</div>
     </div>
+
+    <!-- MI PERFIL -->
+    <p class="section-title">Mi cuenta</p>
+    <div class="cuenta-panel">
+
+      <!-- Datos personales -->
+      <div class="panel-section">
+        <div class="panel-section-header">
+          <div class="panel-section-title"><span>👤</span> Datos personales</div>
+          <button class="btn-editar" id="btn-edit-perfil" onclick="toggleEditPerfil()">Editar</button>
+        </div>
+
+        <!-- Vista lectura -->
+        <div id="perfil-vista" class="perfil-datos">
+          <div class="perfil-dato">
+            <span class="perfil-dato-label">Nombre</span>
+            <span class="perfil-dato-val" id="pv-nombre">—</span>
+          </div>
+          <div class="perfil-dato">
+            <span class="perfil-dato-label">Email</span>
+            <span class="perfil-dato-val" id="pv-email" style="word-break:break-all;">—</span>
+          </div>
+          <div class="perfil-dato">
+            <span class="perfil-dato-label">WhatsApp</span>
+            <span class="perfil-dato-val" id="pv-whatsapp">—</span>
+          </div>
+          <div class="perfil-dato">
+            <span class="perfil-dato-label">Fecha de nacimiento</span>
+            <span class="perfil-dato-val" id="pv-nacimiento">—</span>
+          </div>
+        </div>
+
+        <!-- Formulario edición -->
+        <div class="edit-form" id="form-perfil">
+          <div class="fg">
+            <label>Nombre completo</label>
+            <input type="text" id="ep-nombre" placeholder="Tu nombre">
+          </div>
+          <div class="fg">
+            <label>WhatsApp (10 dígitos)</label>
+            <input type="tel" id="ep-whatsapp" placeholder="5512345678" maxlength="10">
+          </div>
+          <div class="fg">
+            <label>Fecha de nacimiento</label>
+            <input type="date" id="ep-nacimiento">
+          </div>
+          <div class="edit-actions">
+            <button class="btn-cancel-edit" onclick="cancelEditPerfil()">Cancelar</button>
+            <button class="btn-save" onclick="guardarPerfil()">Guardar cambios</button>
+          </div>
+          <div class="edit-msg" id="msg-perfil"></div>
+        </div>
+      </div>
+
+      <!-- Cambiar contraseña -->
+      <div class="panel-section">
+        <div class="panel-section-header">
+          <div class="panel-section-title"><span>🔒</span> Contraseña</div>
+          <button class="btn-editar" id="btn-edit-pass" onclick="toggleEditPass()">Cambiar</button>
+        </div>
+
+        <div id="pass-vista">
+          <p style="font-size:0.84rem;color:var(--muted);">Tu contraseña está protegida. Para cambiarla, usa el botón de la derecha.</p>
+        </div>
+
+        <div class="edit-form" id="form-pass">
+          <div class="fg">
+            <label>Nueva contraseña</label>
+            <input type="password" id="np-pass1" placeholder="Mínimo 6 caracteres" oninput="checkPassStrength(this.value)">
+            <div class="pass-strength">
+              <div class="pass-strength-fill" id="pass-strength-fill" style="width:0%;background:#e0e0e0;"></div>
+            </div>
+          </div>
+          <div class="fg">
+            <label>Confirmar contraseña</label>
+            <input type="password" id="np-pass2" placeholder="Repite la nueva contraseña" onkeydown="if(event.key==='Enter')cambiarPassword()">
+          </div>
+          <div class="edit-actions">
+            <button class="btn-cancel-edit" onclick="cancelEditPass()">Cancelar</button>
+            <button class="btn-save" onclick="cambiarPassword()">Actualizar contraseña</button>
+          </div>
+          <div class="edit-msg" id="msg-pass"></div>
+        </div>
+      </div>
+
+      <!-- Cerrar sesión (mobile-friendly) -->
+      <div class="panel-section" style="text-align:center;">
+        <button class="btn-logout" style="background:#f8f0f0;color:var(--red);border:1.5px solid #f8d7da;font-size:0.85rem;padding:10px 24px;font-family:inherit;border-radius:99px;cursor:pointer;font-weight:700;" onclick="doSignOut()">
+          Cerrar sesión
+        </button>
+      </div>
+
+    </div><!-- /cuenta-panel -->
+
   </div>
 </div>
 
@@ -441,22 +834,45 @@
 const SB_URL = 'https://rimpazjnhxnrkvziqmbj.supabase.co';
 const SB_KEY = 'sb_publishable_NEoxD-p2ZK-VzzFpYlVlUw_nxbMWARz';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
+const WA_NUMBER = '529582199953';
 
 let currentUser = null;
 
-const VIEWS = { loading: 'flex', login: 'flex', dashboard: 'block' };
+// Fotos por paquete_id o nombre (placeholder elegante si no hay)
+const PKG_FOTOS = {
+  'ano-nuevo':    'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&q=80',
+  'lunas':        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80',
+  'default':      null,
+};
+
+function getPkgFoto(nombre) {
+  if (!nombre) return null;
+  const n = nombre.toLowerCase();
+  if (n.includes('año nuevo') || n.includes('ano nuevo')) return PKG_FOTOS['ano-nuevo'];
+  if (n.includes('luna') || n.includes('octubre')) return PKG_FOTOS['lunas'];
+  return null;
+}
+
 function show(v) {
-  document.getElementById('view-loading').style.display   = v === 'loading'   ? 'flex'  : 'none';
-  document.getElementById('view-login').style.display     = v === 'login'     ? 'flex'  : 'none';
+  document.getElementById('view-loading').style.display = v === 'loading' ? 'flex' : 'none';
+  document.getElementById('view-login').style.display   = v === 'login'   ? 'flex' : 'none';
   document.getElementById('view-dashboard').style.display = v === 'dashboard' ? 'block' : 'none';
 }
 
 function showDashboard(user) {
   const name = user.user_metadata?.full_name || user.email.split('@')[0];
-  document.getElementById('tb-user').style.display = 'flex';
-  document.getElementById('tb-nombre').textContent = 'Hola, ' + name;
-  document.getElementById('welcome-text').textContent =
-    `Bienvenido, ${name}. Aquí puedes ver y gestionar tus viajes.`;
+  document.getElementById('tb-user').style.display  = 'flex';
+  document.getElementById('tb-nombre').textContent  = 'Hola, ' + name;
+  document.getElementById('welcome-text').textContent = `Bienvenido, ${name}.`;
+  // Llena perfil
+  document.getElementById('pv-nombre').textContent  = name;
+  document.getElementById('pv-email').textContent   = user.email;
+  const meta = user.user_metadata || {};
+  document.getElementById('pv-whatsapp').textContent   = meta.whatsapp   || '—';
+  document.getElementById('pv-nacimiento').textContent = meta.nacimiento  || '—';
+  document.getElementById('ep-nombre').value     = name;
+  document.getElementById('ep-whatsapp').value   = meta.whatsapp   || '';
+  document.getElementById('ep-nacimiento').value = meta.nacimiento  || '';
   show('dashboard');
   loadReservas(user.email);
 }
@@ -470,6 +886,12 @@ sb.auth.onAuthStateChange((event, session) => {
     currentUser = null;
     document.getElementById('tb-user').style.display = 'none';
     show('login');
+  } else if (event === 'PASSWORD_RECOVERY') {
+    // El usuario viene del link de reset — muestra form de nueva contraseña
+    show('dashboard');
+    currentUser = session?.user;
+    if (currentUser) showDashboard(currentUser);
+    toggleEditPass();
   }
 });
 
@@ -489,20 +911,20 @@ async function signInGoogle() {
     provider: 'google',
     options: { redirectTo: window.location.origin + '/mi-cuenta' }
   });
-  if (error) showMsg('Error: ' + error.message, true);
+  if (error) showMsg('lp-msg', 'Error: ' + error.message, true);
 }
 
 async function checkEmail() {
   const email = document.getElementById('lp-email').value.trim();
-  if (!email) { showMsg('Escribe tu email', true); return; }
-  showMsg('Verificando...', false);
+  if (!email) { showMsg('lp-msg', 'Escribe tu email', true); return; }
+  showMsg('lp-msg', 'Verificando...', false);
   const { error } = await sb.auth.signInWithPassword({ email, password: '' });
   if (error?.message === 'Invalid login credentials') {
     document.getElementById('lp-step-1').style.display = 'none';
     document.getElementById('lp-step-login').style.display = 'block';
     document.getElementById('lp-email-show-login').textContent = email;
     document.getElementById('lp-pass').value = '';
-    clearMsg();
+    clearMsg('lp-msg');
     document.getElementById('lp-pass').focus();
   } else {
     document.getElementById('lp-step-1').style.display = 'none';
@@ -510,7 +932,7 @@ async function checkEmail() {
     document.getElementById('lp-email-show-signup').textContent = email;
     document.getElementById('lp-name').value = '';
     document.getElementById('lp-signup-pass').value = '';
-    clearMsg();
+    clearMsg('lp-msg');
     document.getElementById('lp-name').focus();
   }
 }
@@ -518,47 +940,34 @@ async function checkEmail() {
 async function doLogin() {
   const email = document.getElementById('lp-email').value.trim();
   const pass  = document.getElementById('lp-pass').value;
-  if (!pass) { showMsg('Escribe tu contraseña', true); return; }
+  if (!pass) { showMsg('lp-msg', 'Escribe tu contraseña', true); return; }
   const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) showMsg('Error: ' + error.message, true);
-  else showMsg('✅ ¡Bienvenido!', false);
+  if (error) showMsg('lp-msg', 'Error: ' + error.message, true);
+  else showMsg('lp-msg', '✅ ¡Bienvenido!', false);
 }
 
 async function doSignup() {
   const email = document.getElementById('lp-email').value.trim();
   const name  = document.getElementById('lp-name').value.trim();
   const pass  = document.getElementById('lp-signup-pass').value;
-  if (!name || !pass) { showMsg('Completa todos los campos', true); return; }
+  if (!name || !pass) { showMsg('lp-msg', 'Completa todos los campos', true); return; }
   const { error } = await sb.auth.signUp({ email, password: pass, options: { data: { full_name: name } } });
-  if (error) showMsg('Error: ' + error.message, true);
-  else showMsg('✅ ¡Cuenta creada! Revisa tu email para confirmar.', false);
+  if (error) showMsg('lp-msg', 'Error: ' + error.message, true);
+  else showMsg('lp-msg', '✅ ¡Cuenta creada! Revisa tu email para confirmar.', false);
 }
 
 function resetPass() {
   const email = document.getElementById('lp-email').value.trim();
-  if (!email) { showMsg('Escribe tu email primero', true); return; }
+  if (!email) { showMsg('lp-msg', 'Escribe tu email primero', true); return; }
   sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/mi-cuenta' })
-    .then(() => showMsg('✅ Revisa tu email para restablecer tu contraseña', false));
+    .then(() => showMsg('lp-msg', '✅ Revisa tu email para restablecer tu contraseña', false));
 }
 
 function backToStep1() {
   document.getElementById('lp-step-login').style.display  = 'none';
   document.getElementById('lp-step-signup').style.display = 'none';
   document.getElementById('lp-step-1').style.display      = 'block';
-  clearMsg();
-}
-
-function showMsg(text, isError) {
-  const el = document.getElementById('lp-msg');
-  el.textContent = text;
-  el.className = 'login-msg ' + (isError ? 'err' : 'ok');
-  if (!isError) setTimeout(() => { el.textContent = ''; el.className = 'login-msg'; }, 3500);
-}
-
-function clearMsg() {
-  const el = document.getElementById('lp-msg');
-  el.textContent = '';
-  el.className = 'login-msg';
+  clearMsg('lp-msg');
 }
 
 async function doSignOut() {
@@ -567,6 +976,80 @@ async function doSignOut() {
 
 // ── Reservations ──
 const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+
+function diasParaViaje(fechaInicio) {
+  if (!fechaInicio) return null;
+  const hoy   = new Date(); hoy.setHours(0,0,0,0);
+  const viaje = new Date(fechaInicio + 'T00:00:00');
+  const diff  = Math.round((viaje - hoy) / 86400000);
+  return diff;
+}
+
+function fmtFechaLarga(f) {
+  if (!f) return '';
+  const [y,m,d] = f.split('-');
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
+}
+
+function buildCountdown(fechaInicio, fechaFin) {
+  const dias = diasParaViaje(fechaInicio);
+  if (dias === null) return '';
+
+  if (dias < 0) {
+    return `<div class="rc-countdown">
+      <div>
+        <div class="rc-countdown-label">Viaje realizado</div>
+        <div class="rc-countdown-dias">${Math.abs(dias)}</div>
+        <div class="rc-countdown-sub">días desde que viajaste 🌊</div>
+      </div>
+      <div class="rc-countdown-pasado">Ya viviste este viaje</div>
+    </div>`;
+  }
+  if (dias === 0) {
+    return `<div class="rc-countdown">
+      <div>
+        <div class="rc-countdown-label">¡Hoy es el día!</div>
+        <div class="rc-countdown-dias">🎉</div>
+        <div class="rc-countdown-sub">¡Buen viaje!</div>
+      </div>
+      <div class="rc-countdown-badge">¡Hoy sales!</div>
+    </div>`;
+  }
+  return `<div class="rc-countdown">
+    <div>
+      <div class="rc-countdown-label">Tu viaje en</div>
+      <div class="rc-countdown-dias">${dias}</div>
+      <div class="rc-countdown-sub">${dias === 1 ? 'día' : 'días'}</div>
+    </div>
+    <div class="rc-countdown-badge">¡Prepárate!</div>
+  </div>`;
+}
+
+function buildDocumentos(reservaId, estado) {
+  const contratoDisp = estado === 'confirmada';
+  return `
+    <div class="rc-docs">
+      <p class="rc-docs-titulo">Documentos</p>
+      ${contratoDisp
+        ? `<a href="/api/contrato?id=${reservaId}" target="_blank" class="rc-doc-item">
+            <span class="rc-doc-icon">📄</span>
+            <span class="rc-doc-label">Contrato de servicio</span>
+            <span class="rc-doc-chip">PDF</span>
+           </a>`
+        : `<div class="rc-doc-item" style="opacity:0.6;cursor:default;">
+            <span class="rc-doc-icon">📄</span>
+            <span class="rc-doc-label">Contrato de servicio</span>
+            <span class="rc-doc-chip pendiente">Al confirmar</span>
+           </div>`
+      }
+      <a href="/mi-reserva?id=${reservaId}" class="rc-doc-item">
+        <span class="rc-doc-icon">🧾</span>
+        <span class="rc-doc-label">Historial de pagos</span>
+        <span class="rc-doc-chip">Ver</span>
+      </a>
+    </div>`;
+}
 
 async function loadReservas(email) {
   const container = document.getElementById('mis-reservas');
@@ -592,40 +1075,72 @@ async function loadReservas(email) {
     };
 
     container.innerHTML = data.map(r => {
-      const pagado    = Number(r.total_pagado) || 0;
-      const total     = Number(r.total) || 0;
+      const pagado   = Number(r.total_pagado) || 0;
+      const total    = Number(r.total) || 0;
       const pendiente = Math.max(0, total - pagado);
-      const pct       = total > 0 ? Math.min(100, Math.round(pagado / total * 100)) : 0;
-      const estado    = r.estado || 'pendiente';
-      const titulo    = r.variante_nombre || r.paquete_nombre || '—';
-      const fechas    = r.fecha_inicio && r.fecha_fin
-        ? `${r.fecha_inicio} — ${r.fecha_fin}`
-        : (r.fecha_inicio || '');
+      const pct      = total > 0 ? Math.min(100, Math.round(pagado / total * 100)) : 0;
+      const estado   = r.estado || 'pendiente';
+      const titulo   = r.variante_nombre || r.paquete_nombre || '—';
+      const fi       = r.fecha_inicio || '';
+      const ff       = r.fecha_fin   || '';
+      const foto     = getPkgFoto(r.paquete_nombre || '');
+      const waMsg    = encodeURIComponent(`Hola, soy ${currentUser?.user_metadata?.full_name || 'cliente'} y quiero consultar sobre mi reserva ${r.id ? '#'+r.id.slice(-6).toUpperCase() : ''} — ${titulo}`);
 
       return `
         <div class="reserva-card-cliente">
-          <div class="rc-header">
-            <div>
-              <span class="rc-paquete">${r.paquete_nombre || ''}</span>
-              <h3 class="rc-titulo">${titulo}</h3>
-              ${fechas ? `<p class="rc-fechas">${fechas}</p>` : ''}
+          <!-- FOTO + COUNTDOWN -->
+          <div class="rc-foto">
+            ${foto
+              ? `<img src="${foto}" alt="${titulo}" loading="lazy">`
+              : `<div class="rc-foto-placeholder">🌊</div>`
+            }
+            <span class="rc-foto-badge ${estado}">${estadoLabels[estado] || estado}</span>
+            ${buildCountdown(fi, ff)}
+          </div>
+
+          <!-- CUERPO -->
+          <div class="rc-body">
+            <div class="rc-header">
+              <div>
+                <span class="rc-paquete">${r.paquete_nombre || ''}</span>
+                <h3 class="rc-titulo">${titulo}</h3>
+              </div>
             </div>
-            <span class="rc-estado ${estado}">${estadoLabels[estado] || estado}</span>
-          </div>
 
-          <div class="rc-progress">
-            <div class="rc-progress-fill" style="width:${pct}%"></div>
-          </div>
+            ${fi ? `
+            <div class="rc-fechas-bloque">
+              <span class="rc-fechas-icon">📅</span>
+              <div>
+                <div class="rc-fechas-texto">
+                  ${fmtFechaLarga(fi)}${ff ? ` → ${fmtFechaLarga(ff)}` : ''}
+                </div>
+                ${fi && ff ? `<div class="rc-fechas-sub">${Math.round((new Date(ff+'T00:00:00') - new Date(fi+'T00:00:00')) / 86400000)} noches en Zipolite</div>` : ''}
+              </div>
+            </div>` : ''}
 
-          <div class="rc-amounts">
-            <div><span>Pagado</span><strong class="green">${fmt(pagado)}</strong></div>
-            <div><span>Pendiente</span><strong class="orange">${fmt(pendiente)}</strong></div>
-            <div><span>Total</span><strong>${fmt(total)}</strong></div>
-          </div>
+            <div class="rc-progress">
+              <div class="rc-progress-fill" style="width:${pct}%"></div>
+            </div>
+            <div class="rc-amounts">
+              <div><span>Pagado</span><strong class="green">${fmt(pagado)}</strong></div>
+              <div><span>Pendiente</span><strong class="orange">${fmt(pendiente)}</strong></div>
+              <div><span>Total</span><strong>${fmt(total)}</strong></div>
+            </div>
 
-          <a href="/mi-reserva?id=${r.id}" class="rc-btn">Ver detalle y pagar →</a>
+            <div class="rc-acciones">
+              <a href="/mi-reserva?id=${r.id}" class="rc-btn">
+                💳 Ver detalle y pagar
+              </a>
+              <a href="https://wa.me/${WA_NUMBER}?text=${waMsg}" target="_blank" class="rc-btn wa" title="WhatsApp asesor">
+                💬
+              </a>
+            </div>
+
+            ${buildDocumentos(r.id, estado)}
+          </div>
         </div>`;
     }).join('');
+
   } catch (_) {
     container.innerHTML = `
       <div class="empty-state">
@@ -633,6 +1148,117 @@ async function loadReservas(email) {
         <a href="/#paquetes" class="btn-paquetes">Ver paquetes →</a>
       </div>`;
   }
+}
+
+// ── Edición de perfil ──
+let perfilEditando = false;
+function toggleEditPerfil() {
+  perfilEditando = !perfilEditando;
+  document.getElementById('perfil-vista').style.display = perfilEditando ? 'none' : 'grid';
+  document.getElementById('form-perfil').className = 'edit-form' + (perfilEditando ? ' open' : '');
+  document.getElementById('btn-edit-perfil').textContent = perfilEditando ? 'Cancelar' : 'Editar';
+}
+function cancelEditPerfil() {
+  perfilEditando = true;
+  toggleEditPerfil();
+  clearMsg('msg-perfil');
+}
+
+async function guardarPerfil() {
+  const nombre     = document.getElementById('ep-nombre').value.trim();
+  const whatsapp   = document.getElementById('ep-whatsapp').value.trim();
+  const nacimiento = document.getElementById('ep-nacimiento').value;
+  if (!nombre) { showMsg('msg-perfil', 'El nombre es obligatorio', true); return; }
+
+  const btn = document.querySelector('#form-perfil .btn-save');
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+
+  const { error } = await sb.auth.updateUser({
+    data: { full_name: nombre, whatsapp, nacimiento }
+  });
+
+  btn.textContent = 'Guardar cambios'; btn.disabled = false;
+
+  if (error) {
+    showMsg('msg-perfil', 'Error: ' + error.message, true);
+    return;
+  }
+
+  // Actualiza vistas
+  document.getElementById('pv-nombre').textContent     = nombre;
+  document.getElementById('pv-whatsapp').textContent   = whatsapp  || '—';
+  document.getElementById('pv-nacimiento').textContent = nacimiento || '—';
+  document.getElementById('tb-nombre').textContent     = 'Hola, ' + nombre;
+  showMsg('msg-perfil', '✅ Datos actualizados', false);
+  setTimeout(() => { cancelEditPerfil(); }, 1200);
+}
+
+// ── Cambiar contraseña ──
+let passEditando = false;
+function toggleEditPass() {
+  passEditando = !passEditando;
+  document.getElementById('pass-vista').style.display  = passEditando ? 'none' : 'block';
+  document.getElementById('form-pass').className       = 'edit-form' + (passEditando ? ' open' : '');
+  document.getElementById('btn-edit-pass').textContent = passEditando ? 'Cancelar' : 'Cambiar';
+  if (passEditando) {
+    document.getElementById('np-pass1').value = '';
+    document.getElementById('np-pass2').value = '';
+    document.getElementById('pass-strength-fill').style.width = '0%';
+    document.getElementById('np-pass1').focus();
+  }
+}
+function cancelEditPass() {
+  passEditando = true;
+  toggleEditPass();
+  clearMsg('msg-pass');
+}
+
+function checkPassStrength(val) {
+  const fill = document.getElementById('pass-strength-fill');
+  let score = 0;
+  if (val.length >= 6)  score++;
+  if (val.length >= 10) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const pct = score * 20;
+  const colors = ['#e0e0e0','#E8312A','#F5831F','#FFCA28','#4CAF50','#1a9fa0'];
+  fill.style.width      = pct + '%';
+  fill.style.background = colors[score] || '#e0e0e0';
+}
+
+async function cambiarPassword() {
+  const p1 = document.getElementById('np-pass1').value;
+  const p2 = document.getElementById('np-pass2').value;
+  if (p1.length < 6) { showMsg('msg-pass', 'La contraseña debe tener al menos 6 caracteres', true); return; }
+  if (p1 !== p2)      { showMsg('msg-pass', 'Las contraseñas no coinciden', true); return; }
+
+  const btn = document.querySelector('#form-pass .btn-save');
+  btn.textContent = 'Actualizando...'; btn.disabled = true;
+
+  const { error } = await sb.auth.updateUser({ password: p1 });
+
+  btn.textContent = 'Actualizar contraseña'; btn.disabled = false;
+
+  if (error) {
+    showMsg('msg-pass', 'Error: ' + error.message, true);
+    return;
+  }
+  showMsg('msg-pass', '✅ Contraseña actualizada', false);
+  setTimeout(() => { cancelEditPass(); }, 1400);
+}
+
+// ── Helpers UI ──
+function showMsg(id, text, isError) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className   = (id === 'lp-msg' ? 'login-msg ' : 'edit-msg ') + (isError ? 'err' : 'ok');
+  if (!isError) setTimeout(() => { el.textContent = ''; el.className = el.className.split(' ')[0]; }, 3500);
+}
+function clearMsg(id) {
+  const el = document.getElementById(id);
+  el.textContent = '';
+  el.className   = id === 'lp-msg' ? 'login-msg' : 'edit-msg';
 }
 </script>
 </body>
