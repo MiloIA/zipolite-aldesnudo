@@ -173,6 +173,7 @@ export default async function handler(req, res) {
         ]],
       } : undefined;
 
+      console.log('TELEGRAM NOTIFY:', JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID ? 'SET' : 'MISSING', uploadPath, foto_url: fotoUrl }));
       if (uploadPath) {
         const fileUrl  = `${process.env.SUPABASE_URL}/storage/v1/object/public/comprobantes/${uploadPath}`;
         const ext      = uploadPath.split('.').pop().toLowerCase();
