@@ -118,44 +118,90 @@ export default async function handler(req, res) {
     const { reservacion_id, monto, file_base64, file_name, file_type } = req.body || {};
     if (!reservacion_id || !monto) return res.status(400).json({ error: 'Faltan datos' });
 
-    const { data: reservaCheck } = await sb.from('reservaciones').select('id').eq('id', reservacion_id).single();
-    if (!reservaCheck) return res.status(404).json({ error: 'Reservación no encontrada' });
+    // 1. Fetch reservacion data for notification
+    const { data: reserva } = await sb
+      .from('reservaciones')
+      .select('id, nombre, email, whatsapp, paquete_nombre')
+      .eq('id', reservacion_id)
+      .single();
+    if (!reserva) return res.status(404).json({ error: 'Reservación no encontrada' });
 
+    // 2. Upload file to Storage
     let comprobanteNota = 'Comprobante subido por cliente — pendiente confirmación';
+    let uploadPath = null;
     if (file_base64 && file_name) {
       try {
         const buffer = Buffer.from(file_base64, 'base64');
         const ext = (file_name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
-        const path = `${reservacion_id}/${Date.now()}.${ext}`;
+        uploadPath = `${reservacion_id}/${Date.now()}.${ext}`;
         const { error: upErr } = await sb.storage
           .from('comprobantes')
-          .upload(path, buffer, { contentType: file_type || 'image/jpeg', upsert: true });
-        if (!upErr) comprobanteNota += ` — archivo: ${path}`;
+          .upload(uploadPath, buffer, { contentType: file_type || 'image/jpeg', upsert: true });
+        if (!upErr) comprobanteNota += ` — archivo: ${uploadPath}`;
       } catch (_) {}
     }
 
-    const { error: pagoErr } = await sb.from('pagos').insert([{
+    // 3. Insert pago — select id back for inline keyboard
+    const { data: pago, error: pagoErr } = await sb.from('pagos').insert([{
       reservacion_id,
       monto: Number(monto),
       metodo: 'transferencia',
       fecha: new Date().toISOString().split('T')[0],
       notas: comprobanteNota,
       confirmado: false,
-    }]);
+    }]).select('id').single();
     if (pagoErr) return res.status(500).json({ error: pagoErr.message });
 
+    // 4. Telegram notification
     const tgToken = process.env.TELEGRAM_BOT_TOKEN;
     const tgChat  = process.env.TELEGRAM_CHAT_ID;
     if (tgToken && tgChat) {
-      fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: tgChat,
-          parse_mode: 'HTML',
-          text: `🧾 <b>Comprobante recibido</b>\n\n<b>Reserva:</b> ${reservacion_id.slice(-6).toUpperCase()}\n<b>Monto:</b> $${Number(monto).toLocaleString('es-MX')}\n<b>Archivo:</b> ${file_name || '—'}`,
-        }),
-      }).catch(e => console.error('telegram comprobante:', e));
+      const shortId = reservacion_id.slice(-6).toUpperCase();
+      const caption =
+        `🧾 <b>Comprobante recibido</b>\n\n` +
+        `<b>Reserva:</b> #${shortId}\n` +
+        `<b>Cliente:</b> ${reserva.nombre || '—'}\n` +
+        `<b>Email:</b> ${reserva.email || '—'}\n` +
+        `<b>WhatsApp:</b> ${reserva.whatsapp || '—'}\n` +
+        `<b>Paquete:</b> ${reserva.paquete_nombre || '—'}\n` +
+        `<b>Monto declarado:</b> $${Number(monto).toLocaleString('es-MX')}`;
+
+      const replyMarkup = pago?.id ? {
+        inline_keyboard: [[
+          { text: '✅ Confirmar pago', callback_data: `confirmar_pago:${pago.id}` },
+          { text: '❌ Rechazar',       callback_data: `rechazar_pago:${pago.id}`  },
+        ]],
+      } : undefined;
+
+      if (uploadPath) {
+        const fileUrl  = `${process.env.SUPABASE_URL}/storage/v1/object/public/comprobantes/${uploadPath}`;
+        const ext      = uploadPath.split('.').pop().toLowerCase();
+        const isImage  = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
+        const tgMethod = isImage ? 'sendPhoto' : 'sendDocument';
+        const mediaKey = isImage ? 'photo' : 'document';
+        fetch(`https://api.telegram.org/bot${tgToken}/${tgMethod}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: tgChat,
+            [mediaKey]: fileUrl,
+            caption,
+            parse_mode: 'HTML',
+            ...(replyMarkup && { reply_markup: replyMarkup }),
+          }),
+        }).catch(e => console.error('telegram comprobante:', e));
+      } else {
+        fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: tgChat,
+            text: caption,
+            parse_mode: 'HTML',
+            ...(replyMarkup && { reply_markup: replyMarkup }),
+          }),
+        }).catch(e => console.error('telegram comprobante:', e));
+      }
     }
 
     return res.status(201).json({ ok: true });
