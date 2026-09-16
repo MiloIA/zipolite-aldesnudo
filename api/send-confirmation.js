@@ -225,38 +225,40 @@ export default async function handler(req, res) {
 </html>`;
 
   try {
-    const send = (to, subject, html) => fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM, to: [to], subject, html }),
-    });
+    // ── EMAIL + TELEGRAM DESACTIVADO TEMPORALMENTE ────────────────────────
+    // const send = (to, subject, html) => fetch('https://api.resend.com/emails', {
+    //   method: 'POST',
+    //   headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+    // });
 
-    const tgText = `🔔 <b>Nueva reserva</b>\n\n` +
-      `<b>No. reserva:</b> ${shortId}\n` +
-      `<b>Nombre:</b> ${nombre}\n` +
-      `<b>Email:</b> ${email}\n` +
-      `<b>WhatsApp:</b> ${whatsapp || '—'}\n` +
-      `<b>Paquete:</b> ${paquete_nombre}\n` +
-      `<b>Personas:</b> ${personas}\n` +
-      `<b>Fechas:</b> ${fecha_inicio || '—'} → ${fecha_fin || '—'}\n` +
-      `<b>Método de pago:</b> ${metodoLabel}\n` +
-      `<b>Total:</b> ${fmt(total)}\n` +
-      `<b>${anticipoLabel}:</b> ${fmt(anticipo)}`;
+    // const tgText = `🔔 <b>Nueva reserva</b>\n\n` +
+    //   `<b>No. reserva:</b> ${shortId}\n` +
+    //   `<b>Nombre:</b> ${nombre}\n` +
+    //   `<b>Email:</b> ${email}\n` +
+    //   `<b>WhatsApp:</b> ${whatsapp || '—'}\n` +
+    //   `<b>Paquete:</b> ${paquete_nombre}\n` +
+    //   `<b>Personas:</b> ${personas}\n` +
+    //   `<b>Fechas:</b> ${fecha_inicio || '—'} → ${fecha_fin || '—'}\n` +
+    //   `<b>Método de pago:</b> ${metodoLabel}\n` +
+    //   `<b>Total:</b> ${fmt(total)}\n` +
+    //   `<b>${anticipoLabel}:</b> ${fmt(anticipo)}`;
 
-    const [r1] = await Promise.all([
-      send(email,   `✅ Reserva confirmada — ${paquete_nombre}`, clientHtml),
-      send(NOTIFY,  `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
-      fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: tgText, parse_mode: 'HTML' }),
-      }).catch(e => console.error('telegram:', e)),
-    ]);
+    // const [r1] = await Promise.all([
+    //   send(email,   `✅ Reserva confirmada — ${paquete_nombre}`, clientHtml),
+    //   send(NOTIFY,  `🔔 Nueva reserva — ${nombre} — ${paquete_nombre}`, notifHtml),
+    //   fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: tgText, parse_mode: 'HTML' }),
+    //   }).catch(e => console.error('telegram:', e)),
+    // ]);
 
-    if (!r1.ok) {
-      const err = await r1.json().catch(() => ({}));
-      return res.status(500).json({ ok: false, error: err.message || 'Error enviando email al cliente' });
-    }
+    // if (!r1.ok) {
+    //   const err = await r1.json().catch(() => ({}));
+    //   return res.status(500).json({ ok: false, error: err.message || 'Error enviando email al cliente' });
+    // }
+    // ─────────────────────────────────────────────────────────────────────
 
     await createViajero({ id: reservacion_id, nombre, email, whatsapp: whatsapp || null });
     await updateContactoEstado(email, whatsapp || null);
