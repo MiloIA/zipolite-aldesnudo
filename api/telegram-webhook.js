@@ -565,6 +565,7 @@ export default async function handler(req, res) {
 
         // 3b. Genera contrato automáticamente
         const contrato = await generarContrato(pago.reservacion_id);
+        console.log('CONTRATO RESULT:', JSON.stringify(contrato));
         const contrato_url = contrato.ok ? contrato.contrato_url : null;
 
         // 4. Manda email al cliente vía Resend
