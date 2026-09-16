@@ -134,9 +134,10 @@ export default async function handler(req, res) {
         const buffer = Buffer.from(file_base64, 'base64');
         const ext = (file_name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
         uploadPath = `${reservacion_id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await sb.storage
+        const { data: uploadData, error: upErr } = await sb.storage
           .from('comprobantes')
           .upload(uploadPath, buffer, { contentType: file_type || 'image/jpeg', upsert: true });
+        console.log('UPLOAD RESULT:', JSON.stringify({ uploadData, uploadError: upErr }));
         if (!upErr) comprobanteNota += ` — archivo: ${uploadPath}`;
       } catch (_) {}
     }
