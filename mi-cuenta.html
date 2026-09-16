@@ -1022,8 +1022,8 @@ function buildCountdown(fechaInicio, fechaFin) {
   </div>`;
 }
 
-function buildDocumentos(reservaId, estado) {
-  const contratoDisp = estado === 'confirmada';
+function buildDocumentos(reservaId, estado, contrato_url) {
+  const contratoDisp = !!contrato_url;
   return `
     <div class="rc-docs">
       <p class="rc-docs-titulo">Documentos</p>
@@ -1132,7 +1132,7 @@ async function loadReservas(email) {
               </a>
             </div>
 
-            ${buildDocumentos(r.id, estado)}
+            ${buildDocumentos(r.id, estado, r.contrato_url)}
           </div>
         </div>`;
     }).join('');
