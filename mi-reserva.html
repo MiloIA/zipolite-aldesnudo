@@ -212,27 +212,6 @@
     }
     .opcion-hint { font-size: 0.82rem; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
 
-    /* monto selector */
-    .monto-opciones { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-    .monto-btn {
-      flex: 1;
-      min-width: 130px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 12px;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      background: #fff;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
-    }
-    .monto-btn:hover { border-color: var(--teal); background: #f0fefe; }
-    .monto-btn.active { border-color: var(--teal); background: #e6f7f7; box-shadow: 0 0 0 3px rgba(26,159,160,0.12); }
-    .monto-btn-label { font-size: 0.74rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
-    .monto-btn-price { font-size: 1.05rem; font-weight: 800; color: var(--teal); }
-
     .custom-monto-wrap { margin-bottom: 12px; }
     .input-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
     .monto-input {
@@ -247,15 +226,6 @@
       transition: border-color 0.15s;
     }
     .monto-input:focus { border-color: var(--teal); }
-    .monto-seleccionado {
-      font-size: 0.85rem;
-      color: var(--teal);
-      font-weight: 600;
-      margin-bottom: 12px;
-      padding: 8px 12px;
-      background: #f0fefe;
-      border-radius: 8px;
-    }
 
     /* ── BUTTONS ── */
     .btn-primary-wide {
@@ -419,7 +389,6 @@
 
     @media (max-width: 540px) {
       .reserva-header h1 { font-size: 1.35rem; }
-      .monto-btn { min-width: 100%; }
     }
   </style>
 </head>
@@ -453,7 +422,7 @@ const _sb = window.supabase.createClient(SB_URL, SB_KEY);
 
 let _reserva = null;
 let _pagos   = [];
-let _monto   = 0;
+let _pend    = 0;
 
 function fmt(n) {
   return '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
@@ -494,11 +463,13 @@ async function render() {
   const pend    = Math.max(0, total - pagado);
   const pct     = total > 0 ? Math.min(100, Math.round(pagado / total * 100)) : 0;
 
-  // Fetch variante for name + anticipo
-  let anticipo = 0, varNombre = r.variante_id ? '—' : 'Sin variante';
+  _pend = pend;
+
+  // Fetch variante name
+  let varNombre = r.variante_id ? '—' : 'Sin variante';
   if (r.variante_id) {
-    const { data: v } = await _sb.from('variantes_paquete').select('nombre, anticipo').eq('id', r.variante_id).single();
-    if (v) { varNombre = v.nombre || varNombre; anticipo = Number(v.anticipo) || 0; }
+    const { data: v } = await _sb.from('variantes_paquete').select('nombre').eq('id', r.variante_id).single();
+    if (v) { varNombre = v.nombre || varNombre; }
   }
 
   // Estado badge
@@ -531,18 +502,6 @@ async function render() {
         </div>
       </div>`).join('')
     : '<p class="empty-pagos">Sin pagos registrados aún.</p>';
-
-  // Monto buttons
-  const antBtn = (anticipo > 0 && anticipo < pend)
-    ? `<button class="monto-btn" onclick="selMonto(${anticipo})" data-m="${anticipo}">
-        <span class="monto-btn-label">Anticipo</span>
-        <span class="monto-btn-price">${fmt(anticipo)}</span>
-       </button>` : '';
-  const saldoBtn = pend > 0
-    ? `<button class="monto-btn" onclick="selMonto(${pend})" data-m="${pend}">
-        <span class="monto-btn-label">Saldo completo</span>
-        <span class="monto-btn-price">${fmt(pend)}</span>
-       </button>` : '';
 
   // WhatsApp message
   const waMsg = encodeURIComponent(`Hola, tengo una pregunta sobre mi reserva: ${r.nombre}`);
@@ -589,16 +548,14 @@ async function render() {
 
       <div class="pago-opcion">
         <h4 class="opcion-title">💳 Pagar con tarjeta</h4>
-        <p class="opcion-hint">Selecciona o escribe el monto a pagar:</p>
-        <div class="monto-opciones">${antBtn}${saldoBtn}</div>
-        <div class="custom-monto-wrap">
-          <label class="input-label">Otro monto</label>
-          <input type="number" id="monto-custom" class="monto-input" placeholder="0" min="100" max="${pend}" oninput="selMontoCustom(this.value)">
+        <button id="btn-saldo" class="btn-primary-wide" onclick="generarLink(_pend)" style="font-size:1.05rem;padding:16px 13px;">
+          Pagar saldo completo ${fmt(pend)}
+        </button>
+        <div style="margin-top:18px;">
+          <label class="input-label">O elige otra cantidad:</label>
+          <input type="number" id="monto-custom" class="monto-input" placeholder="0" min="100" max="${pend}" style="margin-top:6px;">
         </div>
-        <div id="monto-sel" class="monto-seleccionado" style="display:none;">
-          Monto: <strong id="monto-disp"></strong>
-        </div>
-        <button id="btn-clip" class="btn-primary-wide" onclick="generarLink()">
+        <button id="btn-clip" class="btn-primary-wide" onclick="generarLinkCustom()" style="margin-top:12px;">
           💳 Generar link de pago
         </button>
         <div id="clip-result" style="display:none;" class="clip-result">
@@ -672,44 +629,35 @@ async function render() {
   `;
 }
 
-function selMonto(m) {
-  _monto = m;
-  document.querySelectorAll('.monto-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.monto-btn[data-m="${m}"]`)?.classList.add('active');
-  const ci = document.getElementById('monto-custom');
-  if (ci) ci.value = '';
-  const el = document.getElementById('monto-sel');
-  if (el) { el.style.display = 'flex'; document.getElementById('monto-disp').textContent = fmt(m); }
+function generarLinkCustom() {
+  const errEl = document.getElementById('clip-err');
+  errEl.style.display = 'none';
+  const val = Number(document.getElementById('monto-custom')?.value) || 0;
+  const monto = val > 0 ? val : _pend;
+  if (monto < 100) { errEl.textContent = 'El monto mínimo es $100'; errEl.style.display = 'block'; return; }
+  generarLink(monto);
 }
 
-function selMontoCustom(v) {
-  _monto = Number(v) || 0;
-  document.querySelectorAll('.monto-btn').forEach(b => b.classList.remove('active'));
-  const el = document.getElementById('monto-sel');
-  if (!el) return;
-  if (_monto > 0) { el.style.display = 'flex'; document.getElementById('monto-disp').textContent = fmt(_monto); }
-  else el.style.display = 'none';
-}
-
-async function generarLink() {
+async function generarLink(monto) {
   const errEl = document.getElementById('clip-err');
   errEl.style.display = 'none';
   const total  = Number(_reserva.total) || 0;
   const pagado = _pagos.filter(p => p.confirmado).reduce((s, p) => s + (Number(p.monto)||0), 0);
   const pend   = Math.max(0, total - pagado);
 
-  if (!_monto || _monto <= 0) { errEl.textContent = 'Selecciona o ingresa un monto'; errEl.style.display = 'block'; return; }
-  if (_monto > pend + 1) { errEl.textContent = `El monto no puede superar el saldo pendiente (${fmt(pend)})`; errEl.style.display = 'block'; return; }
-  if (_monto < 100) { errEl.textContent = 'El monto mínimo es $100'; errEl.style.display = 'block'; return; }
+  if (!monto || monto <= 0) { errEl.textContent = 'Ingresa un monto'; errEl.style.display = 'block'; return; }
+  if (monto > pend + 1) { errEl.textContent = `El monto no puede superar el saldo pendiente (${fmt(pend)})`; errEl.style.display = 'block'; return; }
 
-  const btn = document.getElementById('btn-clip');
-  btn.textContent = 'Generando...'; btn.disabled = true;
+  const btnSaldo = document.getElementById('btn-saldo');
+  const btnClip  = document.getElementById('btn-clip');
+  if (btnSaldo) { btnSaldo.disabled = true; }
+  if (btnClip)  { btnClip.textContent = 'Generando...'; btnClip.disabled = true; }
   try {
     const res = await fetch('/api/create-payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        monto:          _monto,
+        monto,
         paquete_id:     _reserva.paquete_id,
         paquete_nombre: _reserva.paquete_nombre,
         nombre:         _reserva.nombre,
@@ -720,16 +668,15 @@ async function generarLink() {
     const d = await res.json();
     if (!res.ok || !d.checkout_url) {
       errEl.textContent = d.error || 'Error al generar link'; errEl.style.display = 'block';
-      btn.textContent = '💳 Generar link de pago'; btn.disabled = false;
-      return;
+    } else {
+      document.getElementById('clip-url').href = d.checkout_url;
+      document.getElementById('clip-result').style.display = 'block';
     }
-    document.getElementById('clip-url').href = d.checkout_url;
-    document.getElementById('clip-result').style.display = 'block';
-    btn.textContent = '🔄 Generar nuevo link'; btn.disabled = false;
   } catch {
     errEl.textContent = 'Error de conexión. Intenta de nuevo.'; errEl.style.display = 'block';
-    btn.textContent = '💳 Generar link de pago'; btn.disabled = false;
   }
+  if (btnSaldo) { btnSaldo.disabled = false; }
+  if (btnClip)  { btnClip.textContent = '💳 Generar link de pago'; btnClip.disabled = false; }
 }
 
 function copiarCLABE() {
