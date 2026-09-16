@@ -547,12 +547,21 @@ export default async function handler(req, res) {
 
         const r = pago?.reservaciones;
 
-        // 3. Actualiza estado reservación pendiente → parcial
+        // 3. Calcular total pagado para determinar estado
+        const { data: todosPagos } = await supabase
+          .from('pagos')
+          .select('monto')
+          .eq('reservacion_id', pago.reservacion_id)
+          .eq('confirmado', true);
+
+        const totalPagado = (todosPagos || []).reduce((s, p) => s + (Number(p.monto) || 0), 0);
+        const totalReserva = Number(r?.total) || 0;
+        const nuevoEstado = totalPagado >= totalReserva ? 'confirmada' : 'parcial';
+
         await supabase
           .from('reservaciones')
-          .update({ estado: 'parcial' })
-          .eq('id', pago.reservacion_id)
-          .eq('estado', 'pendiente');
+          .update({ estado: nuevoEstado })
+          .eq('id', pago.reservacion_id);
 
         // 3b. Genera contrato automáticamente
         const contrato = await generarContrato(pago.reservacion_id);
