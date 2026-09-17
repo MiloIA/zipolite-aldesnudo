@@ -435,7 +435,7 @@ function fmtDate(d) {
 }
 
 function showBuscador() {
-  document.getElementById('contenido').innerHTML = `
+  document.getElementById('loading').innerHTML = `
     <div style="max-width:400px;margin:48px auto;padding:0 16px;">
       <h2 style="font-family:'Playfair Display',serif;color:#0B2E3E;margin-bottom:8px;">Encuentra tu reserva</h2>
       <p style="color:#6b7280;font-size:0.88rem;margin-bottom:24px;">Escribe el email con el que reservaste y te mostramos tu reserva.</p>
@@ -468,7 +468,7 @@ async function buscarReserva() {
       window.location.href = `/mi-reserva?id=${data[0].id}`;
       return;
     }
-    document.getElementById('contenido').innerHTML = `
+    document.getElementById('loading').innerHTML = `
       <div style="max-width:400px;margin:48px auto;padding:0 16px;">
         <h2 style="font-family:'Playfair Display',serif;color:#0B2E3E;margin-bottom:16px;">Tus reservas</h2>
         ${data.map(r => `
