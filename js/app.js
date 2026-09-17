@@ -618,7 +618,7 @@ const HABITACION_PRECIOS = {
   3: 2133,
   4: 3200,
 };
-let activeDiscount = null, lastTotal = 0;
+let activeDiscount = null, lastTotal = 0, lastBase = 0;
 
 function grossUp(base, rate, flat) { return Math.ceil((base + flat) / (1 - rate / 100)); }
 function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX'); }
@@ -997,7 +997,7 @@ async function confirmarReserva() {
     nombre, email, whatsapp,
     personas: p,
     metodo_pago: metodo,
-    total: lastTotal,
+    total: lastBase,
     anticipo,
     fecha_inicio: curPkg.fecha_inicio || null,
     fecha_fin: curPkg.fecha_fin || null,
@@ -1168,6 +1168,7 @@ function calcCotizador() {
   const tourTotal = tourPorPersona * p;
   const totalSinDesc = precioBase * p + tourTotal;
   const base = applyDiscountToBase(precioBase, p) + tourTotal;
+  lastBase = base;
   const descuento = totalSinDesc - base;
   const resultEl = document.getElementById('cot-result');
   const bankEl = document.getElementById('bank-info');
