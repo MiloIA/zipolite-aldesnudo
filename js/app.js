@@ -466,8 +466,26 @@ function renderDrawerHotel(drawer, pkg) {
         <div class="info-lugar-nombre">Hotel Juquila</div>
         <p class="info-lugar-desc">Hotel rústico a calle y media de la playa. Habitaciones con 1 o 2 camas. Sin asignación de compañero/a — tú eliges con quién compartes. Máximo 5 habitaciones disponibles para nuestro grupo.</p>
       </div>`;
+  } else if (/lunas|octubre/i.test(pkg.nombre)) {
+    el.innerHTML = `
+    <div style="margin-bottom:20px;">
+      <h4 style="font-family:'Playfair Display',serif;color:#0B2E3E;margin-bottom:6px;">🏨 Hotel Paraíso</h4>
+      <p style="font-size:0.88rem;color:#374151;line-height:1.6;margin-bottom:10px;">
+        Hotel frente al mar, directamente en la línea de playa de Zipolite. Despierta con el sonido de las olas y acceso inmediato a la playa nudista más famosa de México.
+      </p>
+      <a href="https://share.google/RSPlt9XP8ATMtT5Q8" target="_blank"
+        style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#f0f9f9;color:#1a9fa0;border:1.5px solid #1a9fa0;border-radius:99px;font-size:0.82rem;font-weight:700;text-decoration:none;">
+        📍 Ver en Google Maps
+      </a>
+    </div>
+    <div>
+      <h4 style="font-family:'Playfair Display',serif;color:#0B2E3E;margin-bottom:6px;">🌊 Zipolite, Oaxaca</h4>
+      <p style="font-size:0.88rem;color:#374151;line-height:1.6;">
+        Zipolite es el único destino nudista legal de México, en la costa de Oaxaca. Un pueblo mágico de playa con ambiente bohemio, LGBT+ friendly, rodeado de naturaleza y a 15 minutos de Mazunte y Punta Cometa.
+      </p>
+    </div>`;
   } else {
-    el.innerHTML = '<p style="color:#aaa;font-size:0.9rem;padding:16px 0">Información del lugar próximamente.</p>';
+    el.innerHTML = '<p style="color:#999;font-size:0.88rem;">Información del lugar próximamente.</p>';
   }
 }
 
