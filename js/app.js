@@ -942,6 +942,8 @@ async function confirmarReserva() {
   const nombre = document.getElementById('r-nombre').value.trim();
   const email = document.getElementById('r-email').value.trim();
   const whatsapp = document.getElementById('r-whatsapp').value.trim();
+  const nacimiento = document.getElementById('r-nacimiento')?.value || null;
+  const emergencia = document.getElementById('r-emergencia')?.value?.trim() || null;
   const errEl = document.getElementById('reserva-error');
 
   const resetBtn = () => {
@@ -981,6 +983,8 @@ async function confirmarReserva() {
     anticipo,
     fecha_inicio: curPkg.fecha_inicio || null,
     fecha_fin: curPkg.fecha_fin || null,
+    fecha_nacimiento: nacimiento,
+    contacto_emergencia: emergencia,
     grupo_id: null,
     estado: 'pendiente'
   }]).select().single();
@@ -1000,6 +1004,8 @@ async function confirmarReserva() {
       bank_clabe: localStorage.getItem('bank_clabe') || '',
       fecha_inicio: curPkg.fecha_inicio || '',
       fecha_fin: curPkg.fecha_fin || '',
+      fecha_nacimiento: nacimiento,
+      contacto_emergencia: emergencia,
     }),
   }).catch(e => console.error('send-confirmation:', e));
   const { data: { session } } = await sb.auth.getSession();

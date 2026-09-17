@@ -578,6 +578,15 @@
       <p id="login-hint" style="font-size:0.78rem;color:#888;margin-top:-8px;margin-bottom:4px;">¿Ya tienes cuenta? <a href="#" onclick="closePay();openRegister();return false;" style="color:var(--ocean);font-weight:600;">Inicia sesión para autocompletar</a></p>
       <div class="fg"><label>WhatsApp</label><input type="tel" id="r-whatsapp" placeholder="55 1234 5678"></div>
 
+      <div class="form-group" style="margin-top:12px;">
+        <label style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:5px;">Fecha de nacimiento</label>
+        <input type="date" id="r-nacimiento" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:inherit;font-size:0.9rem;outline:none;">
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:5px;">Contacto de emergencia (nombre y teléfono)</label>
+        <input type="text" id="r-emergencia" placeholder="Ej: María López 5512345678" style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:inherit;font-size:0.9rem;outline:none;">
+      </div>
+
       <!-- Pago -->
       <div class="fg"><label>¿Cuánto pagas hoy?</label>
         <select id="r-cuanto" onchange="calcCotizador()">
