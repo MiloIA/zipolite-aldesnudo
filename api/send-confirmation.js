@@ -13,14 +13,16 @@ async function createViajero(reservacion) {
     if (existing) return;
     const parts = (reservacion.nombre || '').split(' ');
     await supabase.from('viajeros').insert({
-      reservacion_id: reservacion.id,
-      nombre:         parts[0] || '',
-      ap_paterno:     parts[1] || '',
-      ap_materno:     parts[2] || '',
-      correo:         reservacion.email,
-      whatsapp:       reservacion.whatsapp || null,
-      es_titular:     true,
-      numero_viajero: 1,
+      reservacion_id:      reservacion.id,
+      nombre:              parts[0] || '',
+      ap_paterno:          parts[1] || '',
+      ap_materno:          parts[2] || '',
+      correo:              reservacion.email,
+      whatsapp:            reservacion.whatsapp || null,
+      fecha_nacimiento:    reservacion.fecha_nacimiento || null,
+      contacto_emergencia: reservacion.contacto_emergencia || null,
+      es_titular:          true,
+      numero_viajero:      1,
     });
   } catch (e) {
     console.error('createViajero error:', e.message);
@@ -93,6 +95,7 @@ export default async function handler(req, res) {
     reservacion_id, paquete_nombre, nombre, email, whatsapp,
     personas, metodo_pago, total, anticipo,
     bank_name, bank_clabe, fecha_inicio, fecha_fin,
+    fecha_nacimiento, contacto_emergencia,
   } = req.body || {};
 
   if (!email || !nombre || !paquete_nombre) {
@@ -260,7 +263,7 @@ export default async function handler(req, res) {
     // }
     // ─────────────────────────────────────────────────────────────────────
 
-    await createViajero({ id: reservacion_id, nombre, email, whatsapp: whatsapp || null });
+    await createViajero({ id: reservacion_id, nombre, email, whatsapp: whatsapp || null, fecha_nacimiento: fecha_nacimiento || null, contacto_emergencia: contacto_emergencia || null });
     await updateContactoEstado(email, whatsapp || null);
     return res.status(200).json({ ok: true });
   } catch (e) {
