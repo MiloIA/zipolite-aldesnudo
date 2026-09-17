@@ -1028,7 +1028,7 @@ function buildDocumentos(reservaId, estado, contrato_url) {
     <div class="rc-docs">
       <p class="rc-docs-titulo">Documentos</p>
       ${contratoDisp
-        ? `<a href="/api/contrato?id=${reservaId}" target="_blank" class="rc-doc-item">
+        ? `<a href="${contrato_url}" target="_blank" class="rc-doc-item">
             <span class="rc-doc-icon">📄</span>
             <span class="rc-doc-label">Contrato de servicio</span>
             <span class="rc-doc-chip">PDF</span>
