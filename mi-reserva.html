@@ -618,12 +618,8 @@ async function render() {
           <input type="number" id="monto-custom" class="monto-input" placeholder="0" min="100" max="${pend}" style="margin-top:6px;">
         </div>
         <button id="btn-clip" class="btn-primary-wide" onclick="generarLinkCustom()" style="margin-top:12px;">
-          💳 Generar link de pago
+          Pagar →
         </button>
-        <div id="clip-result" style="display:none;" class="clip-result">
-          <p class="clip-result-text">¡Tu link de pago está listo!</p>
-          <a id="clip-url" href="#" target="_blank" rel="noopener" class="clip-link-btn">Ir a pagar →</a>
-        </div>
         <p id="clip-err" class="error-msg" style="display:none;"></p>
       </div>
 
@@ -731,8 +727,7 @@ async function generarLink(monto) {
     if (!res.ok || !d.checkout_url) {
       errEl.textContent = d.error || 'Error al generar link'; errEl.style.display = 'block';
     } else {
-      document.getElementById('clip-url').href = d.checkout_url;
-      document.getElementById('clip-result').style.display = 'block';
+      window.location.href = d.checkout_url;
     }
   } catch {
     errEl.textContent = 'Error de conexión. Intenta de nuevo.'; errEl.style.display = 'block';
