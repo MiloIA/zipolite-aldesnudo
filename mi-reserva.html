@@ -434,9 +434,58 @@ function fmtDate(d) {
   return `${parseInt(day)} ${M[parseInt(m)-1]} ${y}`;
 }
 
+function showBuscador() {
+  document.getElementById('contenido').innerHTML = `
+    <div style="max-width:400px;margin:48px auto;padding:0 16px;">
+      <h2 style="font-family:'Playfair Display',serif;color:#0B2E3E;margin-bottom:8px;">Encuentra tu reserva</h2>
+      <p style="color:#6b7280;font-size:0.88rem;margin-bottom:24px;">Escribe el email con el que reservaste y te mostramos tu reserva.</p>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:5px;">Email</label>
+        <input type="email" id="buscar-email" placeholder="tu@email.com"
+          style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:inherit;font-size:0.9rem;outline:none;"
+          onkeydown="if(event.key==='Enter')buscarReserva()">
+      </div>
+      <button onclick="buscarReserva()"
+        style="width:100%;padding:13px;background:#1a9fa0;color:#fff;border:none;border-radius:99px;font-family:inherit;font-size:0.95rem;font-weight:700;cursor:pointer;">
+        Buscar reserva →
+      </button>
+      <div id="buscar-msg" style="font-size:0.82rem;font-weight:600;text-align:center;margin-top:12px;min-height:20px;"></div>
+    </div>`;
+}
+
+async function buscarReserva() {
+  const email = document.getElementById('buscar-email')?.value?.trim();
+  const msg = document.getElementById('buscar-msg');
+  if (!email) { msg.textContent = 'Escribe tu email'; msg.style.color = '#E8312A'; return; }
+  msg.textContent = 'Buscando...'; msg.style.color = '#6b7280';
+  try {
+    const res = await fetch(`/api/pagos?email=${encodeURIComponent(email)}&cliente=1`);
+    const { data } = await res.json();
+    if (!data || !data.length) {
+      msg.textContent = 'No encontramos reservas con ese email.'; msg.style.color = '#E8312A'; return;
+    }
+    if (data.length === 1) {
+      window.location.href = `/mi-reserva?id=${data[0].id}`;
+      return;
+    }
+    document.getElementById('contenido').innerHTML = `
+      <div style="max-width:400px;margin:48px auto;padding:0 16px;">
+        <h2 style="font-family:'Playfair Display',serif;color:#0B2E3E;margin-bottom:16px;">Tus reservas</h2>
+        ${data.map(r => `
+          <a href="/mi-reserva?id=${r.id}"
+            style="display:block;padding:14px 16px;background:#fff;border:1.5px solid #e2ddd6;border-radius:12px;margin-bottom:10px;text-decoration:none;color:#0B2E3E;">
+            <div style="font-weight:700;margin-bottom:2px;">${r.paquete_nombre || 'Reserva'}</div>
+            <div style="font-size:0.8rem;color:#6b7280;">${r.variante_nombre || ''} · $${Math.round(Number(r.total)||0).toLocaleString('es-MX')}</div>
+          </a>`).join('')}
+      </div>`;
+  } catch(e) {
+    msg.textContent = 'Error al buscar. Intenta de nuevo.'; msg.style.color = '#E8312A';
+  }
+}
+
 async function init() {
   const id = new URLSearchParams(window.location.search).get('id');
-  if (!id) { showError(); return; }
+  if (!id) { showBuscador(); return; }
   try {
     const res = await fetch(`/api/pagos?reservacion_id=${encodeURIComponent(id)}`);
     if (!res.ok) { showError(); return; }
