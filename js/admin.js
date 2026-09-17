@@ -348,6 +348,7 @@ function renderReservaciones(list, gruposMap = {}) {
       ${td('font-family:monospace;font-weight:700;color:#0097A7;','#'+shortId)}
       <td style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;">${r.nombre||'—'}${grupoBadge}</td>
       <td style="padding:8px 10px;font-size:0.82rem;border-bottom:1px solid #f0f0f0;white-space:nowrap;" title="${r.email||''}">${email}</td>
+      ${td('',r.canal||'web')}
       ${td('',r.whatsapp||r.telefono||'—')}
       ${td('max-width:160px;overflow:hidden;text-overflow:ellipsis;',r.paquete_nombre||'—')}
       ${td('text-align:center;',r.personas||'—')}
@@ -358,7 +359,7 @@ function renderReservaciones(list, gruposMap = {}) {
   }).join('');
   c.innerHTML = `<div style="overflow-x:auto;width:100%;"><table style="width:100%;border-collapse:collapse;min-width:600px;">
     <thead><tr>
-      <th ${thS}>#</th><th ${thS}>Fecha</th><th ${thS}>No. Reserva</th><th ${thS}>Nombre</th><th ${thS}>Email</th><th ${thS}>WhatsApp</th><th ${thS}>Paquete</th>
+      <th ${thS}>#</th><th ${thS}>Fecha</th><th ${thS}>No. Reserva</th><th ${thS}>Nombre</th><th ${thS}>Email</th><th ${thS}>Canal</th><th ${thS}>WhatsApp</th><th ${thS}>Paquete</th>
       <th ${thS}>Pers.</th><th ${thS}>Total</th><th ${thS}>Estado</th><th ${thS}>Acciones</th>
     </tr></thead>
     <tbody>${rows}</tbody>

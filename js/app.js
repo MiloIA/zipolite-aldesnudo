@@ -1004,6 +1004,7 @@ async function confirmarReserva() {
     fecha_nacimiento: nacimiento,
     contacto_emergencia: emergencia,
     grupo_id: null,
+    canal: 'web',
     estado: 'pendiente'
   }]).select().single();
   if (error) { errEl.textContent = 'Error al guardar reserva: ' + error.message; errEl.style.display = 'block'; resetBtn(); return; }
