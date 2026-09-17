@@ -3011,7 +3011,7 @@ async function abrirSelectorGaleria() {
     <div id="sel-${f.id}" onclick="toggleSeleccion('${f.id}')"
       style="cursor:pointer;border-radius:10px;overflow:hidden;position:relative;aspect-ratio:1;border:3px solid transparent;transition:border 0.15s;">
       <img src="${f.url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
-      <div id="sel-check-${f.id}" style="display:none;position:absolute;inset:0;background:rgba(26,159,160,0.45);display:flex;align-items:center;justify-content:center;font-size:2rem;">✓</div>
+      <div id="sel-check-${f.id}" style="display:none;position:absolute;inset:0;background:rgba(26,159,160,0.45);align-items:center;justify-content:center;font-size:2rem;">✓</div>
       ${f.paquete_id ? '<div style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.65rem;padding:2px 6px;border-radius:99px;">En uso</div>' : ''}
     </div>`).join('');
 }
@@ -3027,6 +3027,8 @@ function toggleSeleccion(id) {
     _seleccionGaleria.add(id);
     el.style.border = '3px solid #1a9fa0';
     check.style.display = 'flex';
+    check.style.alignItems = 'center';
+    check.style.justifyContent = 'center';
   }
 }
 
