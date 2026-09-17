@@ -48,6 +48,20 @@ async function updateContactoEstado(email, whatsapp) {
     } else {
       await supabase.from('contactos').insert({ email: email || null, whatsapp: whatsapp || null, origen: 'sitio', ...updates });
     }
+
+    // Vincular registro de Telegram huérfano: mismo whatsapp, tiene telegram_chat_id pero no tiene email
+    if (email && whatsapp) {
+      const { data: telegramContacto } = await supabase
+        .from('contactos')
+        .select('id')
+        .eq('whatsapp', whatsapp)
+        .not('telegram_chat_id', 'is', null)
+        .is('email', null)
+        .maybeSingle();
+      if (telegramContacto && telegramContacto.id !== existente?.id) {
+        await supabase.from('contactos').update({ email, ...updates }).eq('id', telegramContacto.id);
+      }
+    }
   } catch (e) {
     console.error('updateContactoEstado error:', e.message);
   }
