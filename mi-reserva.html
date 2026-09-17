@@ -445,6 +445,12 @@ function showBuscador() {
           style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:inherit;font-size:0.9rem;outline:none;"
           onkeydown="if(event.key==='Enter')buscarReserva()">
       </div>
+      <div style="margin-bottom:14px;margin-top:12px;">
+        <label style="display:block;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:5px;">Últimos 4 dígitos de tu WhatsApp</label>
+        <input type="tel" id="buscar-whatsapp" placeholder="Ej: 5678" maxlength="4"
+          style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:inherit;font-size:0.9rem;outline:none;letter-spacing:0.2em;"
+          onkeydown="if(event.key==='Enter')buscarReserva()">
+      </div>
       <button onclick="buscarReserva()"
         style="width:100%;padding:13px;background:#1a9fa0;color:#fff;border:none;border-radius:99px;font-family:inherit;font-size:0.95rem;font-weight:700;cursor:pointer;">
         Buscar reserva →
@@ -457,21 +463,27 @@ async function buscarReserva() {
   const email = document.getElementById('buscar-email')?.value?.trim();
   const msg = document.getElementById('buscar-msg');
   if (!email) { msg.textContent = 'Escribe tu email'; msg.style.color = '#E8312A'; return; }
+  const wa4 = document.getElementById('buscar-whatsapp')?.value?.trim();
+  if (!wa4 || wa4.length !== 4) { msg.textContent = 'Escribe los últimos 4 dígitos de tu WhatsApp'; msg.style.color = '#E8312A'; return; }
   msg.textContent = 'Buscando...'; msg.style.color = '#6b7280';
   try {
     const res = await fetch(`/api/pagos?email=${encodeURIComponent(email)}&cliente=1`);
     const { data } = await res.json();
     if (!data || !data.length) {
-      msg.textContent = 'No encontramos reservas con ese email.'; msg.style.color = '#E8312A'; return;
+      msg.textContent = 'Email o WhatsApp incorrectos.'; msg.style.color = '#E8312A'; return;
     }
-    if (data.length === 1) {
-      window.location.href = `/mi-reserva?id=${data[0].id}`;
+    const dataFiltrada = data.filter(r => r.whatsapp && String(r.whatsapp).slice(-4) === wa4);
+    if (!dataFiltrada.length) {
+      msg.textContent = 'Email o WhatsApp incorrectos.'; msg.style.color = '#E8312A'; return;
+    }
+    if (dataFiltrada.length === 1) {
+      window.location.href = `/mi-reserva?id=${dataFiltrada[0].id}`;
       return;
     }
     document.getElementById('loading').innerHTML = `
       <div style="max-width:400px;margin:48px auto;padding:0 16px;">
         <h2 style="font-family:'Playfair Display',serif;color:#0B2E3E;margin-bottom:16px;">Tus reservas</h2>
-        ${data.map(r => `
+        ${dataFiltrada.map(r => `
           <a href="/mi-reserva?id=${r.id}"
             style="display:block;padding:14px 16px;background:#fff;border:1.5px solid #e2ddd6;border-radius:12px;margin-bottom:10px;text-decoration:none;color:#0B2E3E;">
             <div style="font-weight:700;margin-bottom:2px;">${r.paquete_nombre || 'Reserva'}</div>
