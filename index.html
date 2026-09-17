@@ -727,6 +727,10 @@
                 ⬆️ Subir fotos
                 <input type="file" multiple accept="image/*" style="display:none" onchange="uploadFotosPaquete(this, document.getElementById('pf-id').value)">
               </label>
+              <button type="button" onclick="abrirSelectorGaleria()"
+                style="padding:8px 16px;background:#f0f9f9;color:#1a9fa0;border:1.5px solid #1a9fa0;border-radius:8px;font-family:inherit;font-size:0.85rem;font-weight:700;cursor:pointer;">
+                📂 Elegir de galería
+              </button>
             </div>
             <div id="galeria-paquete-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;">
               <div style="color:#aaa;font-size:0.82rem;grid-column:1/-1;">Sin fotos aún.</div>
@@ -1210,6 +1214,21 @@
   <div style="position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:0.25rem;">
     <div class="lb-desc" style="color:white;font-size:0.9rem;opacity:0.8;"></div>
     <div class="lb-counter" style="color:white;font-size:0.8rem;opacity:0.5;"></div>
+  </div>
+</div>
+
+<div id="modal-selector-galeria" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;overflow-y:auto;">
+  <div style="background:#fff;max-width:800px;margin:40px auto;border-radius:16px;padding:24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-family:'Playfair Display',serif;color:#0B2E3E;margin:0;">Elegir fotos de la galería</h3>
+      <button onclick="cerrarSelectorGaleria()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button>
+    </div>
+    <p style="font-size:0.82rem;color:#6b7280;margin-bottom:16px;">Selecciona las fotos que quieres agregar a este paquete. La categoría seleccionada en el dropdown se aplicará a todas.</p>
+    <div id="selector-galeria-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:500px;overflow-y:auto;"></div>
+    <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;">
+      <button onclick="cerrarSelectorGaleria()" style="padding:10px 20px;background:#f5f5f5;border:none;border-radius:99px;font-family:inherit;cursor:pointer;">Cancelar</button>
+      <button onclick="confirmarSeleccionGaleria()" style="padding:10px 20px;background:#1a9fa0;color:#fff;border:none;border-radius:99px;font-family:inherit;font-weight:700;cursor:pointer;">Agregar seleccionadas</button>
+    </div>
   </div>
 </div>
 </body>

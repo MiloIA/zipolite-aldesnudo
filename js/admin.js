@@ -2990,3 +2990,62 @@ async function pp_guardarReserva() {
   await pp_loadData();
 }
 // ===================== FIN PAGOS PRO =====================
+
+// ── SELECTOR DE GALERÍA PARA PAQUETE ─────────────────────────────────────────
+let _seleccionGaleria = new Set();
+
+async function abrirSelectorGaleria() {
+  _seleccionGaleria.clear();
+  const modal = document.getElementById('modal-selector-galeria');
+  const grid  = document.getElementById('selector-galeria-grid');
+  grid.innerHTML = '<p style="color:#999;text-align:center;padding:32px;">Cargando...</p>';
+  modal.style.display = 'block';
+
+  const { data, error } = await sb.from('galeria').select('id, url, descripcion, categoria, paquete_id').order('created_at', { ascending: false }).limit(100);
+  if (error || !data?.length) {
+    grid.innerHTML = '<p style="color:#999;text-align:center;padding:32px;">No hay fotos en la galería.</p>';
+    return;
+  }
+
+  grid.innerHTML = data.map(f => `
+    <div id="sel-${f.id}" onclick="toggleSeleccion('${f.id}')"
+      style="cursor:pointer;border-radius:10px;overflow:hidden;position:relative;aspect-ratio:1;border:3px solid transparent;transition:border 0.15s;">
+      <img src="${f.url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+      <div id="sel-check-${f.id}" style="display:none;position:absolute;inset:0;background:rgba(26,159,160,0.45);display:flex;align-items:center;justify-content:center;font-size:2rem;">✓</div>
+      ${f.paquete_id ? '<div style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.65rem;padding:2px 6px;border-radius:99px;">En uso</div>' : ''}
+    </div>`).join('');
+}
+
+function toggleSeleccion(id) {
+  const el    = document.getElementById('sel-' + id);
+  const check = document.getElementById('sel-check-' + id);
+  if (_seleccionGaleria.has(id)) {
+    _seleccionGaleria.delete(id);
+    el.style.border = '3px solid transparent';
+    check.style.display = 'none';
+  } else {
+    _seleccionGaleria.add(id);
+    el.style.border = '3px solid #1a9fa0';
+    check.style.display = 'flex';
+  }
+}
+
+async function confirmarSeleccionGaleria() {
+  if (!_seleccionGaleria.size) { alert('Selecciona al menos una foto'); return; }
+  const pkgId     = document.getElementById('pf-id')?.value;
+  const categoria = document.getElementById('pkg-gal-categoria')?.value || 'general';
+  if (!pkgId) { alert('Error: no hay paquete activo'); return; }
+
+  const ids = [..._seleccionGaleria];
+  const { error } = await sb.from('galeria').update({ paquete_id: pkgId, categoria }).in('id', ids);
+  if (error) { alert('Error: ' + error.message); return; }
+
+  cerrarSelectorGaleria();
+  loadGaleriaPaquete(pkgId);
+  alert(`✅ ${ids.length} foto(s) agregadas al paquete`);
+}
+
+function cerrarSelectorGaleria() {
+  document.getElementById('modal-selector-galeria').style.display = 'none';
+  _seleccionGaleria.clear();
+}
