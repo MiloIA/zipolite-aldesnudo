@@ -129,5 +129,64 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── Contactos sin Telegram pero con email ──────────────────
+  const { data: leadsSinTg } = await sb
+    .from('contactos')
+    .select('id, nombre, email, crm_mensajes_enviados, estado_crm')
+    .eq('opt_out', false)
+    .neq('estado_crm', 'reservado')
+    .lt('crm_mensajes_enviados', 1)
+    .is('telegram_chat_id', null)
+    .not('email', 'is', null)
+    .or(`crm_ultimo_mensaje.is.null,crm_ultimo_mensaje.lt.${sevenDaysAgo}`)
+    .limit(20);
+
+  if (leadsSinTg?.length && process.env.RESEND_API_KEY) {
+    for (const lead of leadsSinTg) {
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'Zipolite al Desnudo <hola@zipolitealdesnudo.com>',
+            to: [lead.email],
+            subject: '🌊 Tu lugar en Zipolite te espera',
+            html: `
+              <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;">
+                <h2 style="color:#0B2E3E;">Hola ${lead.nombre || 'viajero'} 👋</h2>
+                <p>Vimos que te interesaste en nuestros viajes LGBT+ a Zipolite, Oaxaca. Queremos ayudarte a encontrar el paquete perfecto para ti.</p>
+                <p style="margin:16px 0;"><strong>Tenemos disponibilidad limitada</strong> en nuestros próximos viajes. Nuestro asesor Mateo puede resolver todas tus dudas en segundos.</p>
+                <a href="https://t.me/Mateotravel_bot"
+                  style="display:inline-block;padding:12px 24px;background:#1a9fa0;color:#fff;border-radius:99px;text-decoration:none;font-weight:700;margin-bottom:12px;">
+                  💬 Chatear con Mateo en Telegram
+                </a>
+                <br>
+                <a href="https://wa.me/529582199953"
+                  style="display:inline-block;padding:12px 24px;background:#25D366;color:#fff;border-radius:99px;text-decoration:none;font-weight:700;">
+                  💚 Escribir por WhatsApp
+                </a>
+                <p style="margin-top:24px;color:#6b7280;font-size:0.82rem;">
+                  Si no deseas recibir más mensajes,
+                  <a href="https://zipolitealdesnudo.com/api/optout?email=${encodeURIComponent(lead.email)}">haz clic aquí</a>.
+                </p>
+              </div>`
+          })
+        });
+
+        await sb.from('contactos').update({
+          crm_mensajes_enviados: (lead.crm_mensajes_enviados || 0) + 1,
+          crm_ultimo_mensaje: new Date().toISOString()
+        }).eq('id', lead.id);
+
+        await new Promise(r => setTimeout(r, 2000));
+      } catch(e) {
+        console.error('CRM email error:', lead.email, e.message);
+      }
+    }
+  }
+
   return res.json({ sent, total: leads.length, results });
 }
