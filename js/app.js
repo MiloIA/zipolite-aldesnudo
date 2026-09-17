@@ -166,7 +166,7 @@ function renderPkgs(list) {
         ${p.nota ? `<p class="pkg-nota">⚠️ ${p.nota}</p>` : ''}
         ${toursHtml}
         <button class="pkg-btn pkg-btn-${p.tipo||'primary'} js-reservar-btn" data-pkg-id="${p.id}">
-          🏖️ Reservar — anticipo $<span class="js-btn-anticipo">${defaultAnticipo.toLocaleString('es-MX')}</span>
+          🏖️ Reservar
         </button>
         <div class="pkg-share-wrap">
           <button class="pkg-share-btn" onclick="toggleShareMenu(this)">🔗 Compartir</button>
