@@ -281,14 +281,46 @@ export default async function handler(req, res) {
         `¿Cómo quieres pagar?`;
 
       const botonesVariante = anticipoEsTotal ? [
+        [{ text: `ℹ️ Ver detalles`, callback_data: `detalle_var_${foundVar.id}` }],
         [{ text: `💰 Pagar completo $${precio}`, callback_data: `reservar_${slug}` }]
       ] : [
+        [{ text: `ℹ️ Ver detalles`, callback_data: `detalle_var_${foundVar.id}` }],
         [{ text: `🤝 Anticipo $${anticipo} — aparta tu lugar`, callback_data: `pago_anticipo_${foundVar.id}` }],
         [{ text: `💰 Pago completo $${precio}`, callback_data: `pago_total_${foundVar.id}` }]
       ];
 
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
       await sendMessage(token, chatId, msgVariante, botonesVariante);
+      return res.status(200).end();
+    }
+
+    if (data.startsWith('detalle_var_')) {
+      const varId = data.slice(12);
+      let foundVar = null, foundPaq = null;
+      for (const p of paquetes) {
+        const v = (p.variantes || []).find(v => v.id === varId);
+        if (v) { foundVar = v; foundPaq = p; break; }
+      }
+      if (!foundVar) return res.status(200).end();
+
+      const slug = slugify(foundPaq?.nombre || '');
+      const disp = (foundVar?.lugares_totales ?? 0) - (foundVar?.lugares_vendidos || 0);
+      const precio = Number(foundVar.precio).toLocaleString('es-MX');
+      const anticipo = Number(foundVar.anticipo).toLocaleString('es-MX');
+      const anticipoEsTotal = foundVar.anticipo >= foundVar.precio;
+
+      const detalleMsg = foundVar.descripcion
+        ? `*${foundVar.nombre}*\n_${foundPaq.nombre}_\n\n${foundVar.descripcion}\n\n💰 $${precio}/persona · 📍 ${disp} lugar${disp !== 1 ? 'es' : ''} disponible${disp !== 1 ? 's' : ''}`
+        : `*${foundVar.nombre}*\n_${foundPaq.nombre}_\n\n💰 $${precio}/persona\n📍 ${disp} lugar${disp !== 1 ? 'es' : ''} disponible${disp !== 1 ? 's' : ''}`;
+
+      const botonesDetalle = anticipoEsTotal ? [
+        [{ text: `💰 Pagar completo $${precio}`, callback_data: `reservar_${slug}` }]
+      ] : [
+        [{ text: `🤝 Anticipo $${anticipo} — aparta tu lugar`, callback_data: `pago_anticipo_${foundVar.id}` }],
+        [{ text: `💰 Pago completo $${precio}`, callback_data: `pago_total_${foundVar.id}` }]
+      ];
+
+      await sendMessage(token, chatId, detalleMsg, botonesDetalle);
       return res.status(200).end();
     }
 
