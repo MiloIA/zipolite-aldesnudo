@@ -351,8 +351,8 @@ export default async function handler(req, res) {
 
 💰 *Precios:*
 - Glamping: $4,750/persona (anticipo $1,500)
-- Hab. individual: $10,300/persona (anticipo $3,000)
-- Hab. doble: $7,900/persona (anticipo $3,000)
+- Hab. individual (Hotel Juquila): $10,300/persona (anticipo $3,000)
+- Hab. doble (Hotel Juquila): $7,900/persona (anticipo $3,000)
 - Transporte redondo: $3,000 (pago completo)`;
         await sendMessage(token, chatId, infoMsg, [
           [{ text: '✅ Reservar ahora', callback_data: `reservar_${slugify(p.nombre)}` }],
