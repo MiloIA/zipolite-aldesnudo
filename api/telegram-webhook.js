@@ -347,7 +347,7 @@ export default async function handler(req, res) {
 - 1 o 2 camas por habitación
 - Sin asignación de compañero/a — tú decides con quién compartes
 
-⚠️ *No incluye:* cena del 31 y consumo en destino van por tu cuenta
+⚠️ *No incluye:* vuelo — es viaje en autobús desde CDMX; cena del 31 y consumos en destino van por tu cuenta
 
 💰 *Precios:*
 - Glamping: $4,750/persona (anticipo $1,500)
