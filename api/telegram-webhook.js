@@ -694,7 +694,10 @@ export default async function handler(req, res) {
   }
 
   // ── Saludo → menú (sin AI, respuesta rápida) ──
-  const esSaludo = SALUDOS.some(s => userText.toLowerCase().includes(s)) || userText === '/start';
+  const esSaludo = SALUDOS.some(s => {
+    const t = userText.toLowerCase().trim();
+    return t === s || t.startsWith(s + ' ') || t.endsWith(' ' + s) || new RegExp('\\b' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(t);
+  }) || userText === '/start';
   if (esSaludo) {
     const saludo = nombre
       ? `🌊 ¡Hola de nuevo, *${nombre}*! Me alegra verte por aquí 🌈\n\n¿En qué te puedo ayudar hoy?`
