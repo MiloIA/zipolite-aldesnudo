@@ -324,6 +324,60 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
+    if (data.startsWith('pago_anticipo_') || data.startsWith('pago_total_')) {
+      const esAnticipo = data.startsWith('pago_anticipo_');
+      const varId = data.slice(esAnticipo ? 14 : 11);
+      const conv = await getHistorial(chatId);
+
+      let foundVar = null, foundPaq = null;
+      for (const p of paquetes) {
+        const v = (p.variantes || []).find(v => v.id === varId);
+        if (v) { foundVar = v; foundPaq = p; break; }
+      }
+      if (!foundVar || !foundPaq) return res.status(200).end();
+
+      const slug = slugify(foundPaq.nombre || '');
+
+      await supabase.from('conversaciones_telegram').upsert({
+        chat_id: String(chatId),
+        updated_at: new Date().toISOString(),
+        estado_reserva: {
+          step: 'pidiendo_metodo',
+          paquete_id: foundPaq.id,
+          paquete_nombre: foundPaq.nombre,
+          variante_id: foundVar.id,
+          variante_nombre: foundVar.nombre,
+          precio: foundVar.precio,
+          anticipo: foundVar.anticipo,
+          personas: 1,
+          tipo_pago: esAnticipo ? 'anticipo' : 'total',
+          metodo: null,
+          meses: null,
+          nombre: conv.nombre || null,
+          email: conv.email || null
+        },
+        pkg_context: {
+          paquete_id: foundPaq.id,
+          paquete_nombre: foundPaq.nombre,
+          variante_id: foundVar.id,
+          variante_nombre: foundVar.nombre,
+        }
+      }, { onConflict: 'chat_id' });
+
+      const montoMostrar = esAnticipo
+        ? Number(foundVar.anticipo).toLocaleString('es-MX')
+        : Number(foundVar.precio).toLocaleString('es-MX');
+
+      await sendMessage(token, chatId,
+        `${esAnticipo ? '🤝 Anticipo' : '💰 Pago completo'}: *$${montoMostrar} MXN*\n\n¿Cómo prefieres pagar?`,
+        [
+          [{ text: '🏦 Transferencia / Depósito', callback_data: 'metodo_transfer' }],
+          [{ text: '💳 Tarjeta de crédito', callback_data: 'metodo_tarjeta' }]
+        ]
+      );
+      return res.status(200).end();
+    }
+
     if (data.startsWith('info_pkg_')) {
       const conv = await getHistorial(chatId);
       const pkgId = data.slice(9);
