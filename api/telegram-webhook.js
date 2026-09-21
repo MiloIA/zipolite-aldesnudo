@@ -270,16 +270,25 @@ export default async function handler(req, res) {
       }
 
       const slug = slugify(foundPaq?.nombre || '');
-      const varButtons = (slug && foundPaq) ? [
-        [
-          { text: 'ℹ️ Información del viaje', callback_data: `info_pkg_${foundPaq.id}` },
-          { text: '❓ Preguntas frecuentes', callback_data: 'faq_menu' }
-        ],
-        [{ text: '✅ Reservar ahora', callback_data: `reservar_${slug}` }]
-      ] : null;
+      const disp = (foundVar?.lugares_totales ?? 0) - (foundVar?.lugares_vendidos || 0);
+      const precio = Number(foundVar.precio).toLocaleString('es-MX');
+      const anticipo = Number(foundVar.anticipo).toLocaleString('es-MX');
+      const anticipoEsTotal = foundVar.anticipo >= foundVar.precio;
+
+      const msgVariante = `${foundVar.nombre}\n*${foundPaq.nombre}*\n\n` +
+        `💰 $${precio}/persona\n` +
+        `📍 ${disp} lugar${disp !== 1 ? 'es' : ''} disponible${disp !== 1 ? 's' : ''}\n\n` +
+        `¿Cómo quieres pagar?`;
+
+      const botonesVariante = anticipoEsTotal ? [
+        [{ text: `💰 Pagar completo $${precio}`, callback_data: `reservar_${slug}` }]
+      ] : [
+        [{ text: `🤝 Anticipo $${anticipo} — aparta tu lugar`, callback_data: `pago_anticipo_${foundVar.id}` }],
+        [{ text: `💰 Pago completo $${precio}`, callback_data: `pago_total_${foundVar.id}` }]
+      ];
 
       await registrarInteraccion(contacto?.id, 'mensaje_entrante', `tap: ${data}`);
-      await handleWithClaude(chatId, context, conv, contacto, paquetes, resenas, token, nombre, varButtons);
+      await sendMessage(token, chatId, msgVariante, botonesVariante);
       return res.status(200).end();
     }
 
