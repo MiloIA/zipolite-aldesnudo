@@ -198,6 +198,10 @@ export default async function handler(req, res) {
 
   // ── Instagram MCP ────────────────────────────────────────────
   if (req.method === 'POST' && req.body?.action === 'instagram') {
+    const mcpSecret = process.env.INSTAGRAM_MCP_SECRET;
+    if (!mcpSecret || req.headers['x-mcp-secret'] !== mcpSecret) {
+      return res.status(401).json({ ok: false, error: 'No autorizado' });
+    }
     const { tool, params = {} } = req.body;
     const TOOLS = {
       get_account_info:          () => getAccountInfo(),
@@ -218,7 +222,7 @@ export default async function handler(req, res) {
     const fn = TOOLS[tool];
     if (!fn) return res.status(404).json({ ok: false, error: `Unknown tool: ${tool}` });
     try {
-      const data = await fn();
+      const data = await fn(params);
       return res.status(200).json({ ok: true, data });
     } catch (e) {
       return res.status(500).json({ ok: false, error: e.message });

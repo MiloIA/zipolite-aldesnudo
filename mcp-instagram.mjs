@@ -2,8 +2,23 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const API_URL = 'https://zipolitealdesnudo.com/api/pagos';
+
+// Clave compartida con la API (INSTAGRAM_MCP_SECRET en Vercel).
+// Se lee de la variable de entorno o de .env.mcp junto a este archivo (ignorado por git).
+function loadSecret() {
+  if (process.env.INSTAGRAM_MCP_SECRET) return process.env.INSTAGRAM_MCP_SECRET.trim();
+  try {
+    const file = join(dirname(fileURLToPath(import.meta.url)), '.env.mcp');
+    const m = readFileSync(file, 'utf8').match(/^INSTAGRAM_MCP_SECRET=(.+)$/m);
+    return m ? m[1].trim() : '';
+  } catch { return ''; }
+}
+const MCP_SECRET = loadSecret();
 
 const TOOLS = [
   { name: 'get_account_info', description: 'Obtiene información general de la cuenta de Instagram: nombre, biografía, seguidores, publicaciones, sitio web.', inputSchema: { type: 'object', properties: {} } },
@@ -25,7 +40,7 @@ const TOOLS = [
 async function callTool(name, params) {
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-mcp-secret': MCP_SECRET },
     body: JSON.stringify({ action: 'instagram', tool: name, params })
   });
   const json = await res.json();
