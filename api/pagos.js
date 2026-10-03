@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getAccountInfo, getMediaList, getMediaInsights, getAccountInsights, getTopPosts } from '../lib/instagram.js';
 
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -193,6 +194,26 @@ export default async function handler(req, res) {
     }
 
     return res.status(201).json({ ok: true });
+  }
+
+  // ── Instagram MCP ────────────────────────────────────────────
+  if (req.method === 'POST' && req.body?.action === 'instagram') {
+    const { tool, params = {} } = req.body;
+    const TOOLS = {
+      get_account_info:     () => getAccountInfo(),
+      get_media_list:       () => getMediaList(),
+      get_media_insights:   () => getMediaInsights(params),
+      get_account_insights: () => getAccountInsights(params),
+      get_top_posts:        () => getTopPosts()
+    };
+    const fn = TOOLS[tool];
+    if (!fn) return res.status(404).json({ ok: false, error: `Unknown tool: ${tool}` });
+    try {
+      const data = await fn();
+      return res.status(200).json({ ok: true, data });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
   }
 
   // ── Auth required for all other routes ────────────────────────────────────
