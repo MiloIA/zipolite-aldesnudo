@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { getAccountInfo, getMediaList, getMediaInsights, getAccountInsights, getTopPosts } from '../lib/instagram.js';
+import { getAccountInfo, getMediaList, getMediaInsights, getAccountInsights, getTopPosts, getCompetitorProfile, getCompetitorPosts, compareWithCompetitors, getPostComments, getMentions, searchHashtagPosts, identifyLeads, publishPhoto, replyToComment } from '../lib/instagram.js';
 
 const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -200,11 +200,20 @@ export default async function handler(req, res) {
   if (req.method === 'POST' && req.body?.action === 'instagram') {
     const { tool, params = {} } = req.body;
     const TOOLS = {
-      get_account_info:     () => getAccountInfo(),
-      get_media_list:       () => getMediaList(),
-      get_media_insights:   () => getMediaInsights(params),
-      get_account_insights: () => getAccountInsights(params),
-      get_top_posts:        () => getTopPosts()
+      get_account_info:          () => getAccountInfo(),
+      get_media_list:            () => getMediaList(),
+      get_media_insights:        () => getMediaInsights(params),
+      get_account_insights:      () => getAccountInsights(params),
+      get_top_posts:             () => getTopPosts(),
+      get_competitor_profile:    (p) => getCompetitorProfile(p),
+      get_competitor_posts:      (p) => getCompetitorPosts(p),
+      compare_with_competitors:  (p) => compareWithCompetitors(p),
+      get_post_comments:         (p) => getPostComments(p),
+      get_mentions:              (p) => getMentions(p),
+      search_hashtag_posts:      (p) => searchHashtagPosts(p),
+      identify_leads:            (p) => identifyLeads(p),
+      publish_photo:             (p) => publishPhoto(p),
+      reply_to_comment:          (p) => replyToComment(p),
     };
     const fn = TOOLS[tool];
     if (!fn) return res.status(404).json({ ok: false, error: `Unknown tool: ${tool}` });
