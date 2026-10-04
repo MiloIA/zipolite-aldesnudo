@@ -874,10 +874,33 @@ function showDashboard(user) {
 }
 
 // ── Auth state ──
+async function autoRegisterPush(userId) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  const permission = Notification.permission === 'granted'
+    ? 'granted'
+    : await Notification.requestPermission();
+  if (permission !== 'granted') return;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: 'BIC4z8vU4bWH0KAOvgi5YXmzuRU3EkbCOsDuTeKJn1bhjDCqSTOVh1LBHRaRMNVp54ho1JnntgC4kxz2qJsnYEg'
+    });
+    await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...sub.toJSON(), user_id: userId })
+    });
+  } catch (e) {
+    console.warn('autoRegisterPush:', e.message);
+  }
+}
+
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && !currentUser) {
     currentUser = session.user;
     showDashboard(session.user);
+    autoRegisterPush(session.user.id);
   } else if (event === 'SIGNED_OUT') {
     currentUser = null;
     document.getElementById('tb-user').style.display = 'none';

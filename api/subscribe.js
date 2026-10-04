@@ -17,8 +17,10 @@ export default async function handler(req, res) {
   if (!endpoint || !p256dh || !auth)
     return res.status(400).json({ error: 'Suscripción incompleta' });
 
+  const user_id = req.body?.user_id ?? null;
+
   const { error } = await sb.from('push_subscriptions').upsert(
-    { endpoint, p256dh, auth, user_agent: req.headers['user-agent'] ?? null, created_at: new Date().toISOString() },
+    { endpoint, p256dh, auth, user_agent: req.headers['user-agent'] ?? null, created_at: new Date().toISOString(), ...(user_id ? { user_id } : {}) },
     { onConflict: 'endpoint' }
   );
 
