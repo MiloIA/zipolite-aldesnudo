@@ -61,6 +61,34 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // ── Verificación de firma Clip ────────────────────────────────────────────
+  const clipSignature = req.headers['x-clip-signature'];
+  const clipSecret    = process.env.CLIP_WEBHOOK_SECRET;
+
+  if (clipSecret) {
+    if (!clipSignature) {
+      console.error('Clip webhook: firma ausente');
+      return res.status(401).json({ error: 'Firma requerida' });
+    }
+    const rawBody = typeof req.body === 'string'
+      ? req.body
+      : JSON.stringify(req.body);
+    const { createHmac, timingSafeEqual } = await import('crypto');
+    const expected = 'sha256=' + createHmac('sha256', clipSecret)
+      .update(rawBody)
+      .digest('hex');
+    const a = Buffer.from(clipSignature);
+    const b = Buffer.from(expected);
+    const valid = a.length === b.length && timingSafeEqual(a, b);
+    if (!valid) {
+      console.error('Clip webhook: firma inválida');
+      return res.status(401).json({ error: 'Firma inválida' });
+    }
+  } else {
+    console.warn('CLIP_WEBHOOK_SECRET no configurado — verificación de firma deshabilitada');
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const event = req.body;
   console.log('Clip webhook received:', JSON.stringify(event));
 
