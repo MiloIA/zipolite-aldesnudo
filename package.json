@@ -19,9 +19,9 @@
   },
   "homepage": "https://github.com/MiloIA/zipolite-aldesnudo#readme",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "@supabase/supabase-js": "^2.105.0",
     "pdfkit": "^0.18.0",
-    "stripe": "^22.1.0",
     "web-push": "^3.6.7"
   }
 }

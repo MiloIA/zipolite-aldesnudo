@@ -1422,25 +1422,6 @@ async function loadComisiones() {
       <td ${tdS()}>✅</td>
     </tr>`];
 
-    // Filas Stripe
-    for (const [key, cfg] of Object.entries(_COM_RATES)) {
-      const total    = grossUp(base, cfg.rate, cfg.flat);
-      const comision = total - base;
-      const verify   = grossUp(base, cfg.rate, cfg.flat);
-      const valido   = total === verify;
-      if (!valido) inconsistentes++;
-      const mensualidad = cfg.months > 0
-        ? `$${Math.ceil(total / cfg.months).toLocaleString('es-MX')} × ${cfg.months}`
-        : '—';
-      rows.push(`<tr>
-        <td ${tdS()}>${cfg.label}</td>
-        <td ${tdS('font-weight:700;')}>$${base.toLocaleString('es-MX')}</td>
-        <td ${tdS()}>+$${comision.toLocaleString('es-MX')}</td>
-        <td ${tdS('font-weight:700;')}>$${total.toLocaleString('es-MX')}</td>
-        <td ${tdS()}>${mensualidad}</td>
-        <td ${tdS(valido ? '' : 'color:#e53935;font-weight:700;')}>${valido ? '✅' : '❌'}</td>
-      </tr>`);
-    }
 
     return `<div style="margin-bottom:28px;">
       <h4 style="font-size:0.95rem;font-weight:700;margin:0 0 10px;color:#1A3A4A;">${pkg.nombre} — precio base $${base.toLocaleString('es-MX')} MXN</h4>
@@ -1449,7 +1430,7 @@ async function loadComisiones() {
           <thead><tr>
             <th ${thS}>Método de pago</th>
             <th ${thS}>Precio base</th>
-            <th ${thS}>Comisión Stripe</th>
+            <th ${thS}>Comisión</th>
             <th ${thS}>Total al cliente</th>
             <th ${thS}>Mensualidad</th>
             <th ${thS}>Válido</th>
