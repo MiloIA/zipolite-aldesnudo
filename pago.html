@@ -366,7 +366,7 @@ function renderTransfer() {
 
 function sendConfirmationOnTransfer() {
   console.log('Llamando send-confirmation...');
-  fetch('/api/send-confirmation', {
+  fetch('/api/notifications', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

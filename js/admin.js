@@ -257,7 +257,7 @@ async function sendPushNotification() {
   btn.disabled = true;
 
   const adminToken = sessionStorage.getItem('adminToken');
-  const res = await fetch('/api/send-notification', {
+  const res = await fetch('/api/notifications?type=notification', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1677,10 +1677,10 @@ async function runQA() {
 
   const endpoints = [
     '/api/admin-auth?action=verify',
-    '/api/send-notification',
+    '/api/notifications?type=notification',
     '/api/generate-contract',
     '/api/confirm-payment',
-    '/api/send-confirmation',
+    '/api/notifications',
   ];
   for (const ep of endpoints) {
     try {
@@ -2039,7 +2039,7 @@ async function crmCargar() {
   if (buscar) params.set('buscar', buscar);
 
   const token = sessionStorage.getItem('adminToken');
-  const res = await fetch(`/api/crm-contactos?${params}`, {
+  const res = await fetch(`/api/crm?${params}`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
 
@@ -2164,7 +2164,7 @@ async function crmGuardarContacto(id) {
   const notas = document.getElementById('crm-edit-notas')?.value;
   const token = sessionStorage.getItem('adminToken');
 
-  await fetch('/api/crm-contactos', {
+  await fetch('/api/crm', {
     method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${token}`,

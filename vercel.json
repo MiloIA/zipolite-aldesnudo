@@ -41,7 +41,7 @@
   ],
   "crons": [
     {
-      "path": "/api/crm-agent",
+      "path": "/api/crm?mode=agent",
       "schedule": "0 16 * * 1-6"
     }
   ]
