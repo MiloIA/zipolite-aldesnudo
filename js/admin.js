@@ -158,8 +158,39 @@ async function loadDescuentos() {
 }
 
 async function loadPushStats() {
-  const { data } = await sb.from('push_subscriptions').select('id');
+  const { data } = await sb
+    .from('push_subscriptions')
+    .select('id, endpoint, created_at')
+    .order('created_at', { ascending: false });
+
   document.getElementById('push-count').textContent = data?.length || 0;
+
+  const container = document.getElementById('push-subs-table');
+  if (!container) return;
+  if (!data?.length) { container.innerHTML = ''; return; }
+
+  const rows = data.map(s => {
+    const fecha   = s.created_at ? new Date(s.created_at).toLocaleDateString('es-MX') : '—';
+    const preview = (s.endpoint || '').slice(0, 40) + '…';
+    return `<tr>
+      <td style="padding:6px 10px;font-size:0.8rem;color:#555;">${fecha}</td>
+      <td style="padding:6px 10px;font-size:0.75rem;color:#888;font-family:monospace;word-break:break-all;">${preview}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <details style="font-size:0.85rem;">
+      <summary style="cursor:pointer;font-weight:600;color:#1A3A4A;margin-bottom:8px;">
+        Ver suscriptores (${data.length})
+      </summary>
+      <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+        <thead><tr>
+          <th style="text-align:left;padding:6px 10px;font-size:0.78rem;color:#7a9aaa;border-bottom:1px solid #e5e7eb;">Fecha</th>
+          <th style="text-align:left;padding:6px 10px;font-size:0.78rem;color:#7a9aaa;border-bottom:1px solid #e5e7eb;">Endpoint (primeros 40 chars)</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </details>`;
 }
 
 document.getElementById('push-title')?.addEventListener('input', updatePushPreview);
