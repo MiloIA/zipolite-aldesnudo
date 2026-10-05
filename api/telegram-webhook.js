@@ -7,7 +7,7 @@ import {
 import {
   handleMesesSelection, crearReservaYPago, handleReservaStep
 } from '../lib/telegram-reserva.js';
-import { generarContrato } from '../lib/generar-contrato.js';
+import { enviarConfirmacion } from '../lib/confirmacion.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -658,48 +658,8 @@ export default async function handler(req, res) {
           .update({ estado: nuevoEstado })
           .eq('id', pago.reservacion_id);
 
-        // 3b. Genera contrato automáticamente
-        const contrato = await generarContrato(pago.reservacion_id);
-        console.log('CONTRATO:', JSON.stringify(contrato));
-        const contrato_url = contrato.ok ? contrato.url : null;
-
-        // 4. Manda email al cliente vía Resend
-        if (r?.email && process.env.RESEND_API_KEY) {
-          const shortId = pago.reservacion_id.slice(-6).toUpperCase();
-          const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              from: 'Zipolite al Desnudo <hola@zipolitealdesnudo.com>',
-              to: [r.email],
-              subject: `✅ Pago confirmado — Reserva #${shortId}`,
-              html: `
-                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;">
-                  <h2 style="color:#0B2E3E;">¡Tu pago fue confirmado! 🎉</h2>
-                  <p>Hola ${r.nombre}, confirmamos la recepción de tu pago de <strong>${fmt(pago.monto)}</strong> para tu reserva <strong>#${shortId}</strong>.</p>
-                  <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-                    <tr><td style="padding:8px;color:#6b7280;font-size:14px;">Paquete</td><td style="padding:8px;font-weight:600;">${r.paquete_nombre}</td></tr>
-                    ${r.fecha_inicio ? `<tr><td style="padding:8px;color:#6b7280;font-size:14px;">Fechas</td><td style="padding:8px;font-weight:600;">${r.fecha_inicio} → ${r.fecha_fin}</td></tr>` : ''}
-                    <tr><td style="padding:8px;color:#6b7280;font-size:14px;">Monto confirmado</td><td style="padding:8px;font-weight:600;color:#1a9fa0;">${fmt(pago.monto)}</td></tr>
-                  </table>
-                  <a href="https://zipolitealdesnudo.com/mi-reserva?id=${pago.reservacion_id}"
-                     style="display:inline-block;padding:12px 24px;background:#1a9fa0;color:#fff;border-radius:99px;text-decoration:none;font-weight:700;">
-                    Ver mi reserva →
-                  </a>
-                  ${contrato_url ? `
-                  <a href="${contrato_url}"
-                     style="display:inline-block;margin-top:8px;padding:12px 24px;background:#f0f9f9;color:#1a9fa0;border:1.5px solid #1a9fa0;border-radius:99px;text-decoration:none;font-weight:700;">
-                    📄 Descargar contrato PDF →
-                  </a>` : ''}
-                  <p style="margin-top:24px;color:#6b7280;font-size:13px;">¿Dudas? Escríbenos al <a href="https://wa.me/529582199953">WhatsApp</a>.</p>
-                </div>`
-            })
-          }).catch(e => console.error('resend confirmar_pago:', e));
-        }
+        // 3b. Email + push al cliente
+        await enviarConfirmacion(pago.reservacion_id, { supabaseClient: supabase, resendApiKey: process.env.RESEND_API_KEY });
 
         // 5. Edita botones del mensaje original
         await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
