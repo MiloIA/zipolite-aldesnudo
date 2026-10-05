@@ -139,7 +139,7 @@ export default async function handler(req, res) {
           .from('comprobantes')
           .upload(uploadPath, buffer, { contentType: file_type || 'image/jpeg', upsert: true });
         if (!upErr) comprobanteNota += ` — archivo: ${uploadPath}`;
-      } catch (_) {}
+      } catch (e) { console.error('storage upload:', e); }
     }
 
     // 3. Insert pago — select id back for inline keyboard
@@ -181,7 +181,7 @@ export default async function handler(req, res) {
         ? `\n\n📎 <a href="${fileUrl}">Ver comprobante</a>`
         : '');
 
-      fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+      await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
