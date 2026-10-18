@@ -838,10 +838,17 @@ const WABA_ID  = '821925080310407';
 let _token = null;
 
 async function doLogin() {
-  const pwd = document.getElementById('login-pwd').value;
+  // Leer el valor con un frame de delay para capturar autofill de Chrome
+  await new Promise(r => setTimeout(r, 50));
+  const input = document.getElementById('login-pwd');
+  const pwd = input.value;
   const btn = document.getElementById('login-btn');
   const err = document.getElementById('login-err');
-  if (!pwd) return;
+  if (!pwd) {
+    err.textContent = 'Escribe la contraseña.';
+    err.classList.add('show');
+    return;
+  }
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>Entrando…';
