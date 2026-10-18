@@ -1,0 +1,1111 @@
+<title>Admin · Zipolite Bot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+
+<style>
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --red:    #E8312A;
+  --orange: #F5831F;
+  --yellow: #FFCA28;
+  --green:  #4CAF50;
+  --teal:   #00BCD4;
+  --purple: #9C27B0;
+  --ocean:  #0097A7;
+  --dark:   #1A3A4A;
+  --sand:   #FFFBF2;
+  --sky:    #E0F7FA;
+  --white:  #FFFFFF;
+
+  /* Semantic */
+  --bg:          #F5FAFB;
+  --bg-card:     #FFFFFF;
+  --bg-nav:      #FFFFFF;
+  --fg:          #1A3A4A;
+  --fg-muted:    #6B8A95;
+  --border:      rgba(0,150,170,0.14);
+  --shadow:      0 2px 14px rgba(0,150,170,0.08);
+  --shadow-lg:   0 8px 40px rgba(0,150,170,0.14);
+  --radius:      16px;
+  --radius-sm:   8px;
+
+  /* Status */
+  --ok:    #4CAF50;
+  --warn:  #FFCA28;
+  --err:   #E8312A;
+  --info:  #0097A7;
+
+  /* Type */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:       #0E2330;
+    --bg-card:  #132D3E;
+    --bg-nav:   #0C1E2C;
+    --fg:       #E8F4F8;
+    --fg-muted: #7EB3C0;
+    --border:   rgba(0,188,212,0.15);
+    --shadow:   0 2px 14px rgba(0,0,0,0.30);
+    --shadow-lg:0 8px 40px rgba(0,0,0,0.40);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:       #0E2330;
+  --bg-card:  #132D3E;
+  --bg-nav:   #0C1E2C;
+  --fg:       #E8F4F8;
+  --fg-muted: #7EB3C0;
+  --border:   rgba(0,188,212,0.15);
+  --shadow:   0 2px 14px rgba(0,0,0,0.30);
+  --shadow-lg:0 8px 40px rgba(0,0,0,0.40);
+  color-scheme: dark;
+}
+
+/* ── Reset & base ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--fg);
+  margin: 0;
+  min-height: 100vh;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ── Rainbow bar ───────────────────────────────────────────── */
+.rainbow-bar {
+  height: 5px;
+  background: linear-gradient(90deg, var(--red), var(--orange), var(--yellow), var(--green), var(--teal), var(--purple));
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+}
+
+/* ── Nav ───────────────────────────────────────────────────── */
+nav {
+  background: var(--bg-nav);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 5px;
+  z-index: 90;
+  box-shadow: var(--shadow);
+}
+.nav-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 14px max(16px, env(safe-area-inset-left, 0px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--ocean);
+  text-decoration: none;
+}
+.nav-badge {
+  background: var(--ocean);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.nav-logout {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.nav-logout:hover { color: var(--err); border-color: var(--err); }
+
+/* ── Page wrapper ──────────────────────────────────────────── */
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-block: 40px 80px;
+}
+
+/* ── Cards ─────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--fg);
+  margin: 0 0 4px;
+  text-wrap: balance;
+}
+.card-sub {
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+  margin: 0 0 24px;
+}
+
+/* ── Login screen ──────────────────────────────────────────── */
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+.login-box {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 40px 36px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 400px;
+}
+.login-logo {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ocean);
+  text-align: center;
+  margin-bottom: 6px;
+}
+.login-sub {
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+  margin-bottom: 28px;
+}
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 6px;
+}
+.form-group input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  background: var(--bg);
+  color: var(--fg);
+  outline: none;
+  transition: border-color .15s;
+}
+.form-group input:focus { border-color: var(--ocean); }
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  background: var(--ocean);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+  text-align: center;
+}
+.btn-primary:hover { opacity: .9; }
+.btn-primary:active { transform: scale(.98); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-secondary {
+  padding: 10px 20px;
+  background: transparent;
+  color: var(--ocean);
+  border: 1.5px solid var(--ocean);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.btn-secondary:hover { background: var(--sky); }
+
+.btn-danger {
+  padding: 10px 20px;
+  background: transparent;
+  color: var(--err);
+  border: 1.5px solid var(--err);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-danger:hover { background: #fef2f2; }
+
+/* ── Error banner ──────────────────────────────────────────── */
+.err-msg {
+  background: #fef2f2;
+  color: var(--err);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 12px;
+  display: none;
+}
+.err-msg.show { display: block; }
+
+/* ── Status pills ──────────────────────────────────────────── */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+.status-pill.ok     { background: #e8f5e9; color: #2e7d32; }
+.status-pill.warn   { background: #fffde7; color: #f57f17; }
+.status-pill.err    { background: #fef2f2; color: #b71c1c; }
+.status-pill.info   { background: var(--sky); color: #00838f; }
+.status-pill.loading{ background: var(--border); color: var(--fg-muted); }
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* ── Status grid ───────────────────────────────────────────── */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.status-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+.status-item .si-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 5px;
+}
+.status-item .si-val {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+
+/* ── Embedded Signup section ───────────────────────────────── */
+.signup-steps {
+  counter-reset: step;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.signup-steps li {
+  counter-increment: step;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+.signup-steps li::before {
+  content: counter(step);
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  background: var(--ocean);
+  color: #fff;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Meta App info box ─────────────────────────────────────── */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.info-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.info-table td:first-child {
+  width: 40%;
+  font-weight: 600;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+.info-table code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  word-break: break-all;
+}
+.info-table tr:last-child td { border-bottom: none; }
+
+/* ── Logs ──────────────────────────────────────────────────── */
+.log-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  max-height: 260px;
+  overflow-y: auto;
+  color: var(--fg);
+  margin-top: 12px;
+}
+.log-entry { display: flex; gap: 10px; }
+.log-ts    { color: var(--fg-muted); flex-shrink: 0; }
+.log-ok    { color: var(--ok); }
+.log-err   { color: var(--err); }
+.log-info  { color: var(--info); }
+
+/* ── Spinner ───────────────────────────────────────────────── */
+.spin {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toast ─────────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: max(24px, env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--dark);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s, transform .2s;
+  z-index: 200;
+  white-space: nowrap;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Section heading ───────────────────────────────────────── */
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.section-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--sky);
+  color: var(--ocean);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* ── Refresh row ───────────────────────────────────────────── */
+.refresh-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.refresh-row small {
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+}
+</style>
+
+<!-- ── Rainbow bar ──────────────────────────────────────────── -->
+<div class="rainbow-bar"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  LOGIN SCREEN                                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🌊 Zipolite Admin</div>
+    <p class="login-sub">Panel de administración del bot de WhatsApp</p>
+
+    <div class="form-group">
+      <label for="login-pwd">Contraseña</label>
+      <input
+        type="password"
+        id="login-pwd"
+        placeholder="••••••••••••"
+        autocomplete="current-password"
+      >
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="err-msg" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  ADMIN PANEL                                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="admin-panel" hidden>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">Zipolite al Desnudo</a>
+      <span class="nav-badge">Admin</span>
+      <button class="nav-logout" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </nav>
+
+  <div class="page">
+
+    <!-- ── 1. Estado del Bot ──────────────────────────────── -->
+    <div class="card" id="card-status">
+      <div class="section-heading">
+        <div class="section-icon">📱</div>
+        <div>
+          <h2 class="card-title">Estado del Bot de WhatsApp</h2>
+        </div>
+      </div>
+      <p class="card-sub">Información en tiempo real de tu número y cuenta de WhatsApp Business API.</p>
+
+      <div class="refresh-row">
+        <div id="wa-overall-status">
+          <span class="status-pill loading"><span class="dot"></span>Verificando…</span>
+        </div>
+        <button class="btn-secondary" onclick="checkWAStatus()" id="btn-refresh">
+          🔄 Actualizar
+        </button>
+      </div>
+
+      <div class="status-grid" id="status-grid">
+        <div class="status-item">
+          <div class="si-label">WABA ID</div>
+          <div class="si-val"><code style="font-family:monospace;font-size:0.85rem;">821925080310407</code></div>
+        </div>
+        <div class="status-item">
+          <div class="si-label">Número</div>
+          <div class="si-val">+52 958 219 9953</div>
+        </div>
+        <div class="status-item">
+          <div class="si-label">Phone ID</div>
+          <div class="si-val"><code style="font-family:monospace;font-size:0.85rem;">895651133627095</code></div>
+        </div>
+        <div class="status-item">
+          <div class="si-label">Estado del número</div>
+          <div class="si-val" id="si-phone-status">—</div>
+        </div>
+        <div class="status-item">
+          <div class="si-label">Plataforma</div>
+          <div class="si-val" id="si-platform">—</div>
+        </div>
+        <div class="status-item">
+          <div class="si-label">App suscrita (webhook)</div>
+          <div class="si-val" id="si-webhook">—</div>
+        </div>
+      </div>
+
+      <div class="log-box" id="status-log">
+        <div class="log-entry"><span class="log-ts">—</span><span class="log-info">Presiona "Actualizar" para verificar el estado.</span></div>
+      </div>
+    </div>
+
+    <!-- ── 2. Configuración del Webhook ──────────────────── -->
+    <div class="card">
+      <div class="section-heading">
+        <div class="section-icon">🔗</div>
+        <div>
+          <h2 class="card-title">Webhook · Zipolite WA Bot</h2>
+        </div>
+      </div>
+      <p class="card-sub">El webhook recibe los mensajes entrantes en Vercel y los procesa.</p>
+
+      <table class="info-table">
+        <tr>
+          <td>URL del webhook</td>
+          <td><code>https://zipolite-wa-bot.vercel.app/api/whatsapp</code></td>
+        </tr>
+        <tr>
+          <td>App Meta</td>
+          <td><code>Zipolite Leads Bot</code> · ID <code>2369911353756338</code></td>
+        </tr>
+        <tr>
+          <td>Suscripción al WABA</td>
+          <td>
+            <span class="status-pill ok"><span class="dot"></span>✅ Completada — <code>success:true</code></span>
+          </td>
+        </tr>
+        <tr>
+          <td>Variables en Vercel</td>
+          <td>
+            <code>WA_APP_SECRET</code> ✅ &nbsp;
+            <code>WA_VERIFY_TOKEN</code> ✅ &nbsp;
+            <code>WA_ACCESS_TOKEN</code> ✅ &nbsp;
+            <code>WA_PHONE_NUMBER_ID</code> ✅
+          </td>
+        </tr>
+        <tr>
+          <td>Estado del bot</td>
+          <td>
+            <span class="status-pill warn"><span class="dot"></span>Paso 1/3 — Solo logging, sin respuestas automáticas aún</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ── 3. Coexistencia · Embedded Signup ─────────────── -->
+    <div class="card" id="card-coexistencia">
+      <div class="section-heading">
+        <div class="section-icon">🤝</div>
+        <div>
+          <h2 class="card-title">Conectar en Coexistencia</h2>
+        </div>
+      </div>
+      <p class="card-sub">
+        Tu número (+52 958 219 9953) está actualmente en la app de WhatsApp Business
+        (<code>ON_PREMISE / DISCONNECTED</code>). El Embedded Signup conecta el número
+        a Cloud API <strong>sin desconectar la app</strong> — puedes seguir usándola normalmente.
+      </p>
+
+      <ul class="signup-steps">
+        <li>
+          <div>
+            <strong>Registrar "Zipolite Leads Bot" como Tech Provider en Meta</strong><br>
+            <span style="color:var(--fg-muted);font-size:0.83rem;">
+              En Meta Business Suite → WhatsApp → Configurar como proveedor de soluciones.
+              Una vez registrado, obtén el <code>config_id</code> del flujo de Embedded Signup.
+            </span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Lanzar el flujo de Embedded Signup con <code>featureType: "whatsapp_business_app_onboarding"</code></strong><br>
+            <span style="color:var(--fg-muted);font-size:0.83rem;">
+              Usa el botón de abajo. Se abrirá un popup de Meta para autorizar la conexión del número en coexistencia.
+              El popup requiere que tengas sesión activa en Facebook.
+            </span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>El código se intercambia automáticamente por un Access Token</strong><br>
+            <span style="color:var(--fg-muted);font-size:0.83rem;">
+              El endpoint <code>/api/whatsapp-token</code> (en zipolite-wa-bot) recibe el código del popup
+              y lo intercambia por un System User Token válido.
+            </span>
+          </div>
+        </li>
+      </ul>
+
+      <!-- Config ID input -->
+      <div class="form-group">
+        <label for="config-id-input">Config ID del flujo de Embedded Signup</label>
+        <input
+          type="text"
+          id="config-id-input"
+          placeholder="Ej: 1234567890123456  (obténlo en Meta Tech Provider)"
+          style="font-family:monospace;"
+        >
+        <p style="font-size:0.78rem;color:var(--fg-muted);margin-top:6px;">
+          El Config ID se obtiene en <strong>Meta Business Suite → WhatsApp → Tech Provider → Embedded Signup</strong>.
+          Cuando lo tengas, pégalo aquí y pulsa el botón.
+        </p>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-primary" id="btn-embedded-signup" onclick="launchEmbeddedSignup()" style="width:auto;padding:12px 24px;">
+          🚀 Iniciar Embedded Signup
+        </button>
+        <span id="signup-status" style="font-size:0.85rem;color:var(--fg-muted);"></span>
+      </div>
+
+      <div class="err-msg" id="signup-err" style="margin-top:14px;"></div>
+
+      <div id="signup-success" hidden style="margin-top:16px;padding:16px;background:#e8f5e9;border-radius:var(--radius-sm);border:1px solid #a5d6a7;">
+        <strong style="color:#2e7d32;">✅ ¡Conectado en coexistencia!</strong><br>
+        <span style="font-size:0.85rem;color:#2e7d32;">
+          El número +52 958 219 9953 está ahora activo en Cloud API y en la app de WhatsApp Business simultáneamente.
+          Recarga la sección de estado para confirmar.
+        </span>
+      </div>
+    </div>
+
+    <!-- ── 4. Acciones rápidas ────────────────────────────── -->
+    <div class="card">
+      <div class="section-heading">
+        <div class="section-icon">⚡</div>
+        <div>
+          <h2 class="card-title">Acciones rápidas</h2>
+        </div>
+      </div>
+      <p class="card-sub">Shortcuts para gestionar el bot y la configuración.</p>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a class="btn-secondary" href="https://business.facebook.com/" target="_blank" rel="noopener">
+          🏢 Meta Business Suite ↗
+        </a>
+        <a class="btn-secondary" href="https://vercel.com/miloia/zipolite-wa-bot" target="_blank" rel="noopener">
+          ▲ Vercel — zipolite-wa-bot ↗
+        </a>
+        <a class="btn-secondary" href="https://vercel.com/miloia/zipolite-aldesnudo" target="_blank" rel="noopener">
+          ▲ Vercel — sitio principal ↗
+        </a>
+        <a class="btn-secondary" href="https://rimpazjnhxnrkvziqmbj.supabase.co" target="_blank" rel="noopener">
+          🗃️ Supabase ↗
+        </a>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
+
+      <div>
+        <h3 style="font-size:0.95rem;font-weight:700;margin:0 0 12px;">📋 Respuestas rápidas para leads</h3>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;">
+            <div style="font-size:0.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:8px;">GLAMPING AÑO NUEVO · Precio base</div>
+            <p id="template-glamping" style="margin:0 0 10px;font-size:0.88rem;color:var(--fg);line-height:1.6;">
+              ¡Hola! 🌊✨ El Camping Año Nuevo en Zipolite incluye glamping con alberca, electricidad, sanitarios y duchas — muy diferente al camping básico. El precio es <strong>$4,750 MXN por persona</strong> en modalidad glamping. Si vienes solo hay transporte desde CDMX por <strong>$3,000 MXN</strong>, o en pareja/grupo por <strong>$1,800 MXN</strong> c/u. ¿Vienes solo/a, en pareja o en grupo? 🏳️‍🌈
+            </p>
+            <button class="btn-secondary" style="padding:7px 14px;font-size:0.8rem;" onclick="copyTemplate('template-glamping')">
+              📋 Copiar
+            </button>
+          </div>
+
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;">
+            <div style="font-size:0.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:8px;">PAQUETE PREMIUM · Precio</div>
+            <p id="template-premium" style="margin:0 0 10px;font-size:0.88rem;color:var(--fg);line-height:1.6;">
+              ¡Hola! 🌊 El paquete Premium en Zipolite incluye 5 noches en Hotel Paraíso + vuelo + traslados. El precio depende del alojamiento: habitación <strong>doble $7,900 MXN</strong> por persona, individual <strong>$10,300 MXN</strong>. ¿Vienes en pareja o solo/a?
+            </p>
+            <button class="btn-secondary" style="padding:7px 14px;font-size:0.8rem;" onclick="copyTemplate('template-premium')">
+              📋 Copiar
+            </button>
+          </div>
+
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;">
+            <div style="font-size:0.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-muted);margin-bottom:8px;">FINANCIAMIENTO</div>
+            <p id="template-financiamiento" style="margin:0 0 10px;font-size:0.88rem;color:var(--fg);line-height:1.6;">
+              Sí manejamos financiamiento con tarjeta de crédito en 3, 6, 9, 12, 18 o hasta 24 meses sin intereses (MSI). También puedes pagar por transferencia o depósito. ¿Te cuento los detalles? 🏳️‍🌈
+            </p>
+            <button class="btn-secondary" style="padding:7px 14px;font-size:0.8rem;" onclick="copyTemplate('template-financiamiento')">
+              📋 Copiar
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 5. Roadmap del bot ─────────────────────────────── -->
+    <div class="card">
+      <div class="section-heading">
+        <div class="section-icon">🗺️</div>
+        <div>
+          <h2 class="card-title">Roadmap del Bot · Mateo</h2>
+        </div>
+      </div>
+      <p class="card-sub">Progreso de construcción del bot de leads.</p>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);background:var(--bg);border:1px solid var(--border);">
+          <span style="font-size:1rem;">✅</span>
+          <div style="min-width:0;">
+            <div style="font-weight:700;font-size:0.88rem;">Paso 1 — Webhook funcionando</div>
+            <div style="color:var(--fg-muted);font-size:0.78rem;">Recibe mensajes, valida firma HMAC-SHA256, registra en Vercel Logs</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);background:var(--bg);border:1px solid var(--border);">
+          <span style="font-size:1rem;">🔄</span>
+          <div style="min-width:0;">
+            <div style="font-weight:700;font-size:0.88rem;">Paso 2 — Coexistencia con la app</div>
+            <div style="color:var(--fg-muted);font-size:0.78rem;">Embedded Signup con <code>featureType: whatsapp_business_app_onboarding</code> — pendiente Config ID</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);background:var(--bg);border:1px solid var(--border);">
+          <span style="font-size:1rem;">⏳</span>
+          <div style="min-width:0;">
+            <div style="font-weight:700;font-size:0.88rem;">Paso 3 — Flujo de Mateo (el bot)</div>
+            <div style="color:var(--fg-muted);font-size:0.78rem;">solo / pareja / grupo → paquete y precio → escalar a Fer</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);background:var(--bg);border:1px solid var(--border);">
+          <span style="font-size:1rem;">⏳</span>
+          <div style="min-width:0;">
+            <div style="font-weight:700;font-size:0.88rem;">Paso 4 — Guardar leads en Supabase</div>
+            <div style="color:var(--fg-muted);font-size:0.78rem;">Cada lead nuevo → tabla <code>cotizaciones</code> + notificación a Fer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page -->
+</div><!-- /admin-panel -->
+
+<div id="toast"></div>
+
+<!-- Facebook SDK (necesario para Embedded Signup) -->
+<script>
+  window.fbAsyncInit = function() {
+    if (typeof FB === 'undefined') return;
+    FB.init({
+      appId: '2369911353756338',
+      cookie: true,
+      xfbml: true,
+      version: 'v21.0'
+    });
+  };
+</script>
+<script async defer src="https://connect.facebook.net/en_US/sdk.js"></script>
+
+<script>
+/* ── Constants ─────────────────────────────────────────────── */
+const PHONE_ID = '895651133627095';
+const WABA_ID  = '821925080310407';
+
+/* ── Auth ──────────────────────────────────────────────────── */
+let _token = null;
+
+async function doLogin() {
+  const pwd = document.getElementById('login-pwd').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-err');
+  if (!pwd) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Entrando…';
+  err.classList.remove('show');
+
+  try {
+    const res = await fetch('/api/admin-auth?action=login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd })
+    });
+    const data = await res.json();
+
+    if (data.token) {
+      _token = data.token;
+      try { sessionStorage.setItem('adminToken_wa', data.token); } catch {}
+      showPanel();
+    } else {
+      err.textContent = res.status === 429 ? data.error : 'Contraseña incorrecta.';
+      err.classList.add('show');
+    }
+  } catch {
+    err.textContent = 'Error de conexión. Intenta de nuevo.';
+    err.classList.add('show');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Entrar';
+}
+
+async function verifyStoredToken() {
+  try {
+    const t = sessionStorage.getItem('adminToken_wa');
+    if (!t) return false;
+    const res = await fetch('/api/admin-auth?action=verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: t })
+    });
+    const d = await res.json();
+    if (d.valid) { _token = t; return true; }
+  } catch {}
+  return false;
+}
+
+function showPanel() {
+  document.getElementById('login-screen').hidden = true;
+  document.getElementById('admin-panel').hidden = false;
+  checkWAStatus();
+}
+
+function doLogout() {
+  _token = null;
+  try { sessionStorage.removeItem('adminToken_wa'); } catch {}
+  document.getElementById('admin-panel').hidden = true;
+  document.getElementById('login-screen').hidden = false;
+  document.getElementById('login-pwd').value = '';
+}
+
+/* ── WhatsApp status check ─────────────────────────────────── */
+function addLog(msg, type = 'info') {
+  const box = document.getElementById('status-log');
+  const ts  = new Date().toLocaleTimeString('es-MX');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-ts">${ts}</span><span class="log-${type}">${msg}</span>`;
+  box.innerHTML = '';
+  box.appendChild(entry);
+}
+
+async function checkWAStatus() {
+  const btn = document.getElementById('btn-refresh');
+  const overall = document.getElementById('wa-overall-status');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Verificando…';
+  overall.innerHTML = '<span class="status-pill loading"><span class="dot"></span>Verificando…</span>';
+
+  if (!_token) {
+    addLog('No hay sesión activa.', 'err');
+    btn.disabled = false; btn.innerHTML = '🔄 Actualizar';
+    return;
+  }
+
+  try {
+    addLog('Consultando estado del número en Meta Graph API…', 'info');
+
+    const res = await fetch(`/api/wa-status?phone_id=${PHONE_ID}&waba_id=${WABA_ID}`, {
+      headers: { 'Authorization': `Bearer ${_token}` }
+    });
+
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      addLog(`Error ${res.status}: ${e.error || 'sin detalles'}`, 'err');
+      overall.innerHTML = '<span class="status-pill err"><span class="dot"></span>Error al consultar</span>';
+      btn.disabled = false; btn.innerHTML = '🔄 Actualizar';
+      return;
+    }
+
+    const d = await res.json();
+
+    // Phone status
+    const phoneStatus = d.phone_status || '—';
+    const platform    = d.platform_type || '—';
+    const webhookOk   = d.webhook_subscribed ? '✅ Suscrita' : '❌ No suscrita';
+
+    document.getElementById('si-phone-status').innerHTML = statusPill(phoneStatus);
+    document.getElementById('si-platform').textContent = platform;
+    document.getElementById('si-webhook').innerHTML = d.webhook_subscribed
+      ? '<span class="status-pill ok"><span class="dot"></span>✅ Suscrita</span>'
+      : '<span class="status-pill err"><span class="dot"></span>❌ No suscrita</span>';
+
+    // Overall
+    if (phoneStatus === 'CONNECTED') {
+      overall.innerHTML = '<span class="status-pill ok"><span class="dot"></span>Conectado en Cloud API</span>';
+      addLog(`✅ Número conectado. Plataforma: ${platform}`, 'ok');
+    } else if (phoneStatus === 'DISCONNECTED') {
+      overall.innerHTML = '<span class="status-pill warn"><span class="dot"></span>En WhatsApp Business App (ON_PREMISE)</span>';
+      addLog(`⚠️ Estado: ${phoneStatus} — Plataforma: ${platform}. Necesita Embedded Signup para coexistencia.`, 'info');
+    } else {
+      overall.innerHTML = `<span class="status-pill info"><span class="dot"></span>${phoneStatus}</span>`;
+      addLog(`ℹ️ Estado: ${phoneStatus} — Plataforma: ${platform}`, 'info');
+    }
+
+  } catch(e) {
+    addLog(`Error de red: ${e.message}`, 'err');
+    overall.innerHTML = '<span class="status-pill err"><span class="dot"></span>Error de conexión</span>';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🔄 Actualizar';
+}
+
+function statusPill(status) {
+  if (status === 'CONNECTED')    return '<span class="status-pill ok"><span class="dot"></span>CONNECTED</span>';
+  if (status === 'DISCONNECTED') return '<span class="status-pill warn"><span class="dot"></span>DISCONNECTED</span>';
+  if (status === 'PENDING')      return '<span class="status-pill info"><span class="dot"></span>PENDING</span>';
+  return `<span class="status-pill loading"><span class="dot"></span>${status}</span>`;
+}
+
+/* ── Embedded Signup ────────────────────────────────────────── */
+function launchEmbeddedSignup() {
+  const configId = document.getElementById('config-id-input').value.trim();
+  const errEl    = document.getElementById('signup-err');
+  const statusEl = document.getElementById('signup-status');
+
+  errEl.classList.remove('show');
+  errEl.textContent = '';
+
+  if (!configId) {
+    errEl.textContent = 'Ingresa el Config ID del flujo antes de continuar.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  if (typeof FB === 'undefined') {
+    errEl.textContent = 'El SDK de Facebook no cargó. Verifica que no tengas un bloqueador de anuncios activo.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  statusEl.innerHTML = '<span class="spin"></span>Abriendo popup de Meta…';
+
+  // Save config_id for reuse
+  try { localStorage.setItem('wa_config_id', configId); } catch {}
+
+  FB.login(function(response) {
+    statusEl.textContent = '';
+
+    if (response.authResponse) {
+      const code = response.authResponse.code;
+      statusEl.innerHTML = '<span class="spin"></span>Intercambiando código…';
+      exchangeCode(code, configId);
+    } else {
+      errEl.textContent = 'El popup fue cancelado o no se autorizó el acceso.';
+      errEl.classList.add('show');
+    }
+  }, {
+    config_id: configId,
+    response_type: 'code',
+    override_default_response_type: true,
+    extras: {
+      featureType: 'whatsapp_business_app_onboarding',
+      sessionInfoVersion: 3
+    }
+  });
+}
+
+async function exchangeCode(code, configId) {
+  const statusEl = document.getElementById('signup-status');
+  const errEl    = document.getElementById('signup-err');
+
+  try {
+    const res = await fetch('https://zipolite-wa-bot.vercel.app/api/whatsapp-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, config_id: configId })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      statusEl.textContent = '';
+      document.getElementById('signup-success').hidden = false;
+      toast('✅ ¡Conectado en coexistencia!');
+      setTimeout(checkWAStatus, 2000);
+    } else {
+      statusEl.textContent = '';
+      errEl.textContent = data.error || `Error ${res.status} al intercambiar el código.`;
+      errEl.classList.add('show');
+    }
+  } catch(e) {
+    statusEl.textContent = '';
+    errEl.textContent = `Error de red: ${e.message}`;
+    errEl.classList.add('show');
+  }
+}
+
+/* ── Templates ──────────────────────────────────────────────── */
+function copyTemplate(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    toast('📋 Copiado al portapapeles');
+  }).catch(() => {
+    // Fallback: select text
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    toast('📋 Copiado');
+  });
+}
+
+/* ── Toast ──────────────────────────────────────────────────── */
+function toast(msg, duration = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+/* ── Enter key on login ─────────────────────────────────────── */
+document.getElementById('login-pwd').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+/* ── Init ───────────────────────────────────────────────────── */
+(async () => {
+  const valid = await verifyStoredToken();
+  if (valid) {
+    showPanel();
+  } else {
+    // Show login, focus password field
+    setTimeout(() => document.getElementById('login-pwd').focus(), 100);
+  }
+
+  // Restore config_id if saved
+  try {
+    const saved = localStorage.getItem('wa_config_id');
+    if (saved) document.getElementById('config-id-input').value = saved;
+  } catch {}
+})();
+</script>
