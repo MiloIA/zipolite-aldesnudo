@@ -179,6 +179,7 @@ nav {
   min-height: 100vh;
   padding: 24px;
 }
+#login-screen[hidden] { display: none !important; }
 .login-box {
   background: var(--bg-card);
   border-radius: var(--radius);
@@ -897,6 +898,7 @@ async function verifyStoredToken() {
 function showPanel() {
   document.getElementById('login-screen').hidden = true;
   document.getElementById('admin-panel').hidden = false;
+  window.scrollTo({ top: 0, behavior: 'instant' });
   checkWAStatus();
 }
 
