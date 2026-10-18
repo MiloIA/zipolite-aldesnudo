@@ -502,17 +502,19 @@ nav {
     <div class="login-logo">🌊 Zipolite Admin</div>
     <p class="login-sub">Panel de administración del bot de WhatsApp</p>
 
-    <div class="form-group">
-      <label for="login-pwd">Contraseña</label>
-      <input
-        type="password"
-        id="login-pwd"
-        placeholder="••••••••••••"
-        autocomplete="current-password"
-      >
-    </div>
-    <button class="btn-primary" id="login-btn" onclick="doLogin()">Entrar</button>
-    <div class="err-msg" id="login-err"></div>
+    <form id="login-form" onsubmit="event.preventDefault(); doLogin();">
+      <div class="form-group">
+        <label for="login-pwd">Contraseña</label>
+        <input
+          type="password"
+          id="login-pwd"
+          placeholder="••••••••••••"
+          autocomplete="current-password"
+        >
+      </div>
+      <button type="submit" class="btn-primary" id="login-btn">Entrar</button>
+      <div class="err-msg" id="login-err"></div>
+    </form>
   </div>
 </div>
 
@@ -838,8 +840,6 @@ const WABA_ID  = '821925080310407';
 let _token = null;
 
 async function doLogin() {
-  // Leer el valor con un frame de delay para capturar autofill de Chrome
-  await new Promise(r => setTimeout(r, 50));
   const input = document.getElementById('login-pwd');
   const pwd = input.value;
   const btn = document.getElementById('login-btn');
