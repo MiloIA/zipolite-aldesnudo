@@ -427,7 +427,7 @@ function renderDrawerItinerario(drawer, pkg) {
     const dias = [
       { emoji: '🚌', dia: '29 dic (noche)', titulo: 'Salida CDMX 10:00 pm en autobús' },
       { emoji: '🌊', dia: '30 dic',          titulo: 'Llegada a Zipolite. Instalación y primer día de playa' },
-      { emoji: '🎉', dia: '31 dic',          titulo: 'Día libre en Zipolite. Noche de Año Nuevo (por cuenta del viajero)' },
+      { emoji: '🎉', dia: '31 dic',          titulo: 'Visita al pueblo mágico de Mazunte · última puesta de sol desde Punta Cometa · Cena de Año Nuevo (lugares apartados en restaurante a las 8:30 pm, opcional — consumo por cuenta del viajero)' },
       { emoji: '☀️', dia: '1 ene',           titulo: 'Año Nuevo en la playa más libre de México' },
       { emoji: '🏖️', dia: '2 ene',           titulo: 'Día libre (tour opcional Carrizalillo + Bioluminiscencia)' },
       { emoji: '🌅', dia: '3 ene',           titulo: 'Último día en Zipolite. Salida 6:00 pm en autobús' },

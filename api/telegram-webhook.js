@@ -425,7 +425,7 @@ export default async function handler(req, res) {
 🚌 *Itinerario:*
 - *Mar 29 dic* — Salida CDMX 10:00 PM en autobús
 - *Mié 30 dic* — Llegada Zipolite ~10 AM. Instalación y primer día de playa
-- *Jue 31 dic* — Día libre. Noche de Año Nuevo (consumo por tu cuenta)
+- *Jue 31 dic* — Mazunte pueblo mágico · puesta de sol en Punta Cometa · Cena de Año Nuevo en restaurante 8:30 pm (opcional, consumo por tu cuenta)
 - *Vie 1 ene* — Año Nuevo en la playa más libre de México ☀️
 - *Sáb 2 ene* — Tour opcional: Carrizalillo + Bioluminiscencia (+$1,000)
 - *Dom 3 ene* — Último día. Salida 6:00 PM en autobús
